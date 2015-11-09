@@ -1,0 +1,1 @@
+{include file="./type_select.tpl" isMultiple=true}

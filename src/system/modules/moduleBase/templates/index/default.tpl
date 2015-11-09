@@ -1,0 +1,1 @@
+:D Hi, i am default template!
