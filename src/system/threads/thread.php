@@ -276,7 +276,7 @@ class thread
     {
         switch($_signal) {
             case SIGTERM:
-                MPCMF_DEBUG && self::log()->addDebug(__METHOD__ . ":exit()", [__METHOD__]);
+                MPCMF_DEBUG && self::log()->addDebug(__METHOD__ . ':exit()', [__METHOD__]);
                 exit();
                 break;
         }

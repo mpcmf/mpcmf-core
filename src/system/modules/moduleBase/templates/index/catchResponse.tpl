@@ -12,7 +12,7 @@
                     <a data-toggle="collapse" href="#collapseOne" aria-expanded="false" class="collapsed">Trace</a>
                 </h4>
             </div>
-            <div id="collapseOne" class="panel-collapse collapse" aria-expanded="false" style="height: 0px;">
+            <div id="collapseOne" class="panel-collapse collapse" aria-expanded="false" style="height: 0;">
                 <div class="panel-body">
                     <pre><code>{$trace}</code></pre>
                 </div>
@@ -34,7 +34,7 @@
                     <a data-toggle="collapse" href="#collapseOne" aria-expanded="false" class="collapsed">Доп.информация</a>
                 </h4>
             </div>
-            <div id="collapseOne" class="panel-collapse collapse" aria-expanded="false" style="height: 0px;">
+            <div id="collapseOne" class="panel-collapse collapse" aria-expanded="false" style="height: 0;">
                 <div class="panel-body">
                     <pre><code>{$data|json_encode:384}</code></pre>
                 </div>

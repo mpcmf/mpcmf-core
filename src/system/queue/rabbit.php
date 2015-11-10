@@ -60,12 +60,10 @@ class rabbit
         /** @var \AMQPConnection[] $connections */
         static $connections = [];
 
-        if(!isset($pid)) {
-            if(function_exists('posix_getpid')) {
-                $pid = posix_getpid();
-            } else {
-                $pid = getmypid();
-            }
+        if(function_exists('posix_getpid')) {
+            $pid = posix_getpid();
+        } else {
+            $pid = getmypid();
         }
 
         $key = "{$pid}:{$this->configSection}";
@@ -128,7 +126,7 @@ class rabbit
     public function getQueuesList()
     {
         static $curl;
-        if (!isset($curl)) {
+        if ($curl === null) {
             $curl = new curl();
         }
 
@@ -195,12 +193,10 @@ class rabbit
          */
         static $channels = [];
 
-        if(!isset($pid)) {
-            if(function_exists('posix_getpid')) {
-                $pid = posix_getpid();
-            } else {
-                $pid = getmypid();
-            }
+        if(function_exists('posix_getpid')) {
+            $pid = posix_getpid();
+        } else {
+            $pid = getmypid();
         }
 
         $key = "{$pid}:{$this->configSection}";

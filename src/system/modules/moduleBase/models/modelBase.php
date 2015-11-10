@@ -4,11 +4,11 @@ namespace mpcmf\modules\moduleBase\models;
 
 use mpcmf\modules\moduleBase\exceptions\mapperException;
 use mpcmf\modules\moduleBase\exceptions\modelException;
-use mpcmf\system\helper\module\exception\modulePartsHelperException;
-use mpcmf\system\validator\exception\validatorException;
-use mpcmf\system\helper\module\modulePartsHelper;
 use mpcmf\modules\moduleBase\mappers\mapperBase;
+use mpcmf\system\helper\module\exception\modulePartsHelperException;
+use mpcmf\system\helper\module\modulePartsHelper;
 use mpcmf\system\pattern\singletonInterface;
+use mpcmf\system\validator\exception\validatorException;
 use mpcmf\system\validator\metaValidator;
 
 /**
@@ -63,7 +63,7 @@ abstract class modelBase
     public static function validate($fields, $onlyExistingFields = false)
     {
         static $map;
-        if(!isset($map)) {
+        if($map === null) {
             $entity = static::getInstance();
             try {
                 $map = $entity->getMapper()->getMap();
@@ -199,7 +199,7 @@ abstract class modelBase
 
         if(!empty($mapperData['map']['validator'])) {
             $validator = new metaValidator($mapperData['map']['validator']);
-            if(substr($mapperData['map']['type'], -2) == '[]') {
+            if(substr($mapperData['map']['type'], -2) === '[]') {
                 if (!is_array($arguments[0]) && $mapperData['map']['options']['required']) {
                     /** @noinspection NotOptimalIfConditionsInspection */
                     throw new modelException('Field error: expected array, but given ' . gettype($arguments[0]));
@@ -253,6 +253,8 @@ abstract class modelBase
                 foreach($inValues as &$value) {
                     $value = $relationMapper->convert($mapperData['foreign_field'], $value);
                 }
+                unset($value);
+
                 $criteria = [
                     $mapperData['foreign_field'] => [
                         '$in' => $inValues

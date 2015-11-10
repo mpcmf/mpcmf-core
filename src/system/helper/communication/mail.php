@@ -19,11 +19,11 @@ class mail
         if (self::$instance === null) {
             self::$instance = new PHPMailer();
 
-            self::$instance->IsSendmail();
-            self::$instance->IsHTML();
+            self::$instance->isSendmail();
+            self::$instance->isHTML();
             self::$instance->CharSet = 'utf-8';
             self::$instance->ContentType = 'text/html';
-            self::$instance->AddCustomHeader('Content-Type: text/html; charset="UTF-8"');
+            self::$instance->addCustomHeader('Content-Type: text/html; charset="UTF-8"');
         }
 
         return self::$instance;

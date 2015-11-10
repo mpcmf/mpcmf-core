@@ -19,8 +19,8 @@ class socketStreamer
 
     protected $bind_host = '0.0.0.0';
     protected $bind_port = 9987;
-    protected $onEveryCycle = null;
-    protected $getDataArrayFunction = null;
+    protected $onEveryCycle;
+    protected $getDataArrayFunction;
     protected $json = true;
     protected $gzip = true;
     protected $delimiter = "\0";
@@ -155,7 +155,7 @@ class socketStreamer
      */
     protected function bind()
     {
-        self::DEBUG_ENABLED && $this->_log("Binding socket...", __FUNCTION__);
+        self::DEBUG_ENABLED && $this->_log('Binding socket...', __FUNCTION__);
         $this->socketServerHandle = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
         socket_set_option($this->socketServerHandle, SOL_SOCKET, SO_REUSEADDR, 1);
         $timeoutWrite = explode('.', $this->timeoutWrite);
@@ -171,7 +171,7 @@ class socketStreamer
             'usec' => $timeoutRead[1]
         ]);
         socket_bind($this->socketServerHandle, $this->bind_host, $this->bind_port);
-        self::DEBUG_ENABLED && $this->_log("Start listening...", __FUNCTION__);
+        self::DEBUG_ENABLED && $this->_log('Start listening...', __FUNCTION__);
         socket_listen($this->socketServerHandle);
     }
 

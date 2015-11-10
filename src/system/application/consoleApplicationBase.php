@@ -9,7 +9,6 @@ namespace mpcmf\system\application;
  */
 abstract class consoleApplicationBase
     extends applicationBase
-    implements applicationInterface
 {
 
     /**
@@ -31,8 +30,8 @@ abstract class consoleApplicationBase
      */
     public function run()
     {
-        MPCMF_DEBUG && self::log()->addDebug("Console application starts...");
+        MPCMF_DEBUG && self::log()->addDebug('Console application starts...');
         $this->handle();
-        MPCMF_DEBUG && self::log()->addDebug("Console application ends...");
+        MPCMF_DEBUG && self::log()->addDebug('Console application ends...');
     }
 }

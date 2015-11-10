@@ -24,7 +24,7 @@ class metaValidator
      */
     public function __construct($rules = null)
     {
-        if (isset($rules)) {
+        if ($rules !== null) {
             $this->setRules($rules);
         }
     }
@@ -69,7 +69,7 @@ class metaValidator
         $result = (bool)call_user_func([$class, $method], $input, $rule['data']);
 
         if(!$result) {
-            throw new validatorException("Validation was failed on rule type `{$rule['type']}`. Input: " . json_encode($input) . " Rule: " . json_encode($rule));
+            throw new validatorException("Validation was failed on rule type `{$rule['type']}`. Input: " . json_encode($input) . ' Rule: ' . json_encode($rule));
         }
 
         return true;

@@ -70,7 +70,7 @@ trait geoMapperHelper
                 ]
             ]
         ];
-        if(isset($addCriteria)) {
+        if($addCriteria !== null) {
             $criteria = array_replace_recursive($criteria, $addCriteria);
         }
 

@@ -19,7 +19,7 @@ trait singleton
     {
         static $instance;
 
-        if(!isset($instance)) {
+        if($instance === null) {
             $calledClass = get_called_class();
             $instance = new $calledClass();
         }

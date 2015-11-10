@@ -12,7 +12,6 @@ use mpcmf\system\pattern\singleton;
  */
 class applicationInstance
     extends applicationBase
-    implements applicationInterface
 {
 
     use singleton;

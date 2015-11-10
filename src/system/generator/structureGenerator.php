@@ -33,7 +33,7 @@ class structureGenerator
     public function setStructure($structure)
     {
         if (!is_array($structure)) {
-            throw new structureGeneratorException("Structure should be an array!");
+            throw new structureGeneratorException('Structure should be an array!');
         }
 
         foreach ($structure as $item) {
@@ -52,20 +52,20 @@ class structureGenerator
             MPCMF_DEBUG && self::log()->addDebug("Processing item: {$item['path']}{$item['name']}");
             switch($item['type']) {
                 case self::TYPE_FILE:
-                    MPCMF_DEBUG && self::log()->addDebug("Found item type: " . self::TYPE_FILE);
+                    MPCMF_DEBUG && self::log()->addDebug('Found item type: ' . self::TYPE_FILE);
                     $this->checkFile($item);
                     $this->processItemMeta($item);
                     break;
                 case self::TYPE_DIRECTORY:
-                    MPCMF_DEBUG && self::log()->addDebug("Found item type: " . self::TYPE_DIRECTORY);
+                    MPCMF_DEBUG && self::log()->addDebug('Found item type: ' . self::TYPE_DIRECTORY);
                     $this->checkDirectory($item);
                     break;
                 case self::TYPE_GENERATOR:
                     //@todo Implement processing type generator
-                    throw new structureGeneratorException("Processing meta `generator` nod implemented yet!");
+                    throw new structureGeneratorException('Processing meta `generator` nod implemented yet!');
                     break;
                 default:
-                    throw new structureGeneratorException("Unknown generate item type: ", $item['type']);
+                    throw new structureGeneratorException('Unknown generate item type: ', $item['type']);
                     break;
             }
         }
@@ -74,7 +74,7 @@ class structureGenerator
     protected function processItemMeta($item)
     {
         if(!isset($item['meta'])) {
-            throw new structureGeneratorException("Unable to find `meta` section of item");
+            throw new structureGeneratorException('Unable to find `meta` section of item');
         }
         foreach($item['meta'] as $metaType => $metaItem) {
             switch($metaType) {
@@ -139,7 +139,7 @@ class structureGenerator
     {
         static $filesystem;
 
-        if(!isset($filesystem)) {
+        if($filesystem === null) {
             $filesystem = new Filesystem();
         }
 
@@ -162,12 +162,12 @@ class structureGenerator
             case 'callable':
                 $callBack = $metaContent['value'];
                 if (!is_callable($callBack)) {
-                    throw new structureGeneratorException("Invalid content callable!");
+                    throw new structureGeneratorException('Invalid content callable!');
                 }
                 $content = $callBack($item);
 
                 if (!is_string($content)) {
-                    throw new structureGeneratorException("Content generate callable returns non-string value");
+                    throw new structureGeneratorException('Content generate callable returns non-string value');
                 }
                 file_put_contents($filePath, $content);
                 break;
@@ -213,7 +213,7 @@ class structureGenerator
         }
 
         if (!is_array($item['meta'])) {
-            throw new structureGeneratorException("Field `meta` should be an array! Structure item: " . json_encode($item));
+            throw new structureGeneratorException('Field `meta` should be an array! Structure item: ' . json_encode($item));
         }
     }
 }

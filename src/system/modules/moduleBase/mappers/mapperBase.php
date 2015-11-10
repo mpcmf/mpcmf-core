@@ -4,13 +4,13 @@ namespace mpcmf\modules\moduleBase\mappers;
 
 use mpcmf\modules\moduleBase\exceptions\mapperException;
 use mpcmf\modules\moduleBase\exceptions\modelException;
-use mpcmf\system\helper\module\exception\modulePartsHelperException;
-use mpcmf\system\storage\exception\storageException;
-use mpcmf\system\helper\io\codes;
-use mpcmf\system\helper\module\modulePartsHelper;
 use mpcmf\modules\moduleBase\models\modelBase;
 use mpcmf\modules\moduleBase\models\modelCursor;
+use mpcmf\system\helper\io\codes;
+use mpcmf\system\helper\module\exception\modulePartsHelperException;
+use mpcmf\system\helper\module\modulePartsHelper;
 use mpcmf\system\pattern\singletonInterface;
+use mpcmf\system\storage\exception\storageException;
 use mpcmf\system\storage\mongoCrud;
 
 /**
@@ -327,7 +327,7 @@ abstract class mapperBase
     public function generateId($itemData = null)
     {
         $id = microtime(true).json_encode($_SERVER);
-        if(isset($itemData)) {
+        if($itemData !== null) {
             $id .= json_encode($itemData);
         }
 
@@ -919,7 +919,7 @@ abstract class mapperBase
         $result = [];
         foreach($input as $field => $value) {
             $converted = $this->convert($field, $value);
-            if(isset($model) && $model->getFieldValue($field) === $value) {
+            if($model !== null && $model->getFieldValue($field) === $value) {
                 $result[$field] = $value;
                 continue;
             }
@@ -989,7 +989,7 @@ abstract class mapperBase
                     throw new mapperException("Unable to convert value of field `{$field}`");
                 }
                 $result = [];
-                if(substr($map[$field]['type'], -2) != '[]') {
+                if(substr($map[$field]['type'], -2) !== '[]') {
                     throw new mapperException("Invalid field type {$map[$field]['type']} for multiform");
                 }
                 foreach($value as $valueKey => $valueLine) {
@@ -1018,7 +1018,7 @@ abstract class mapperBase
                 break;
             case 'radio':
                 $v = trim(strtolower($value));
-                if($v == 'on' || $v == '1') {
+                if($v === 'on' || $v == '1') {
                     $result = true;
                 } else {
                     $result = false;

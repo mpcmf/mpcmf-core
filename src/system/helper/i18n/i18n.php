@@ -55,7 +55,7 @@ class i18n
     private function getConfig()
     {
         static $config;
-        if(!isset($config)) {
+        if($config === null) {
             $config = config::getConfig(__CLASS__);
         }
 

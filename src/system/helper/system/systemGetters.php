@@ -6,8 +6,8 @@ use mpcmf\system\application\applicationBase;
 use mpcmf\system\application\applicationInstance;
 use mpcmf\system\application\consoleApplicationBase;
 use mpcmf\system\application\consoleBase;
-use mpcmf\system\application\webApplicationBase;
 use mpcmf\system\application\exception\webApplicationException;
+use mpcmf\system\application\webApplicationBase;
 use Slim\Slim;
 
 /**
@@ -24,7 +24,7 @@ trait systemGetters
     protected function getApplication()
     {
         static $instance;
-        if (!isset($instance)) {
+        if ($instance === null) {
             $instance = applicationInstance::getInstance()->getCurrentApplication();
         }
 
@@ -38,7 +38,7 @@ trait systemGetters
     protected function getSlim()
     {
         static $slim;
-        if (!isset($slim)) {
+        if ($slim === null) {
             $slim = $this->getApplication()->slim();
         }
 

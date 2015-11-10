@@ -4,7 +4,6 @@ namespace mpcmf\system\generator;
 
 use mpcmf\system\generator\exception\moduleGeneratorException;
 use mpcmf\system\helper\io\log;
-use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Class moduleGenerator
@@ -40,13 +39,13 @@ class moduleGenerator
     public function setModuleData($moduleData)
     {
         if(!isset($moduleData['name'])) {
-            throw new moduleGeneratorException("moduleData check failed: `name` not exists!");
+            throw new moduleGeneratorException('moduleData check failed: `name` not exists!');
         }
         if(!isset($moduleData['namespace'])) {
-            throw new moduleGeneratorException("moduleData check failed: `namespace` not exists!");
+            throw new moduleGeneratorException('moduleData check failed: `namespace` not exists!');
         }
         if(!isset($moduleData['path'])) {
-            throw new moduleGeneratorException("moduleData check failed: `path` not exists!");
+            throw new moduleGeneratorException('moduleData check failed: `path` not exists!');
         }
         $this->moduleData = $moduleData;
     }
@@ -59,7 +58,7 @@ class moduleGenerator
     protected function getStructure()
     {
         static $structure;
-        if(!isset($structure)) {
+        if($structure === null) {
             $structure  = [
                 [
                     'path' => '/',

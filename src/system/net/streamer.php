@@ -124,7 +124,7 @@ class streamer
             $cleanerLimit = $this->config['doubles_check']['limit'];
         }
         static $hasOutputQueue;
-        if(!isset($hasOutputQueue)) {
+        if($hasOutputQueue === null) {
             $hasOutputQueue = isset($this->config['output-queue'], $this->config['output-queue']['enabled']) && $this->config['output-queue']['enabled'];
         }
 
@@ -132,7 +132,7 @@ class streamer
 
         if($hasOutputQueue) {
             static $outputQueue, $queue;
-            if (!isset($outputQueue, $queue)) {
+            if ($outputQueue === null || $queue === null) {
                 $outputQueue = $this->config['output-queue'];
                 $queue = rabbit::factory($outputQueue['section']);
             }
@@ -233,18 +233,18 @@ class streamer
 
     protected static function onShutdown()
     {
-        MPCMF_DEBUG && self::log()->addDebug("Destructing and returning queue to queueServer...");
+        MPCMF_DEBUG && self::log()->addDebug('Destructing and returning queue to queueServer...');
         if(!count(self::$queue)) {
-            MPCMF_DEBUG && self::log()->addDebug("Nothing to return, exiting...");
+            MPCMF_DEBUG && self::log()->addDebug('Nothing to return, exiting...');
             return;
         }
         while(null !== ($item = array_pop(self::$queue))) {
             rabbit::factory(self::$shutDownData['config']['queue']['section'])
                        ->sendToBackground(self::$shutDownData['config']['queue']['queueName'], $item, false);
         }
-        MPCMF_DEBUG && self::log()->addDebug("Commiting return transaction...");
+        MPCMF_DEBUG && self::log()->addDebug('Commiting return transaction...');
         rabbit::factory(self::$shutDownData['config']['queue']['section'])->runTasks();
-        MPCMF_DEBUG && self::log()->addDebug("Exiting...");
+        MPCMF_DEBUG && self::log()->addDebug('Exiting...');
     }
 
     public function __destruct()

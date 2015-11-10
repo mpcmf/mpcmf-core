@@ -13,8 +13,8 @@ class consoleBase
     {
         static $commands;
 
-        if(!isset($commands)) {
-            MPCMF_DEBUG && self::log()->addDebug("Searching commands for console toolkit...");
+        if($commands === null) {
+            MPCMF_DEBUG && self::log()->addDebug('Searching commands for console toolkit...');
             $commands = [];
             $reflection = new \ReflectionClass(get_called_class());
             $directory = dirname($reflection->getFileName());
@@ -34,14 +34,14 @@ class consoleBase
 
         MPCMF_DEBUG && self::log()->addDebug("Processing directory: {$directory}");
         $context = basename($directory, '.php');
+        $possibleNamespace = "{$baseNamespace}\\{$context}";
         foreach(scandir($directory) as $commandFile) {
             $filePath = "{$directory}/{$commandFile}";
-            $possibleNamespace = "{$baseNamespace}\\{$context}";
             if(strpos($commandFile, '.') === 0) {
                 MPCMF_DEBUG && self::log()->addDebug("Skipping file: {$commandFile}");
                 continue;
             } elseif(is_dir($filePath)) {
-                MPCMF_DEBUG && self::log()->addDebug("Directory found, recursive processing: {$commandFile}", ["Command search"]);
+                MPCMF_DEBUG && self::log()->addDebug("Directory found, recursive processing: {$commandFile}", ['Command search']);
                 $commands = array_merge($commands, $this->getCommandsFromDirectory($filePath, $possibleNamespace));
             } elseif(is_readable($filePath)) {
                 MPCMF_DEBUG && self::log()->addDebug("Command file found: {$commandFile}");
@@ -58,7 +58,7 @@ class consoleBase
     {
         static $application;
 
-        if(!isset($application)) {
+        if($application === null) {
             $application = new Application();
         }
 

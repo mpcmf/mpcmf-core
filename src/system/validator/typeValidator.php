@@ -43,7 +43,7 @@ class typeValidator
                 return is_string($value);
             case 'int':
             case 'integer':
-                return is_integer($value);
+                return is_int($value);
             case 'numeric':
                 return is_numeric($value);
             case 'array':
@@ -52,9 +52,8 @@ class typeValidator
             case 'boolean':
                 return is_bool($value);
             case 'float':
-                return is_float($value);
             case 'double':
-                return is_double($value);
+                return is_float($value);
             case 'object':
                 return is_object($value);
             case 'resource':
@@ -62,7 +61,7 @@ class typeValidator
             case 'callable':
                 return is_callable($value);
             case 'null':
-                return is_null($value);
+                return $value === null;
             default:
                 throw new validatorException("Unknown variable type `{$type}`");
         }

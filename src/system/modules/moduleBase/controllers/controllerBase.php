@@ -106,7 +106,7 @@ abstract class controllerBase
      */
     public function __crudGet($input = null)
     {
-        if(!isset($input)) {
+        if($input === null) {
             return self::error([
                 'errors' => [
                     "Required field `{$this->getMapper()->getKey()}` missed!"
@@ -175,7 +175,7 @@ abstract class controllerBase
                 'result' => $result,
                 'item' => $model,
             ], codes::RESPONSE_CODE_SAVED);
-        } elseif(isset($input)) {
+        } elseif($input !== null) {
 
             return self::nothing([
                 'item' => $model
@@ -253,7 +253,7 @@ abstract class controllerBase
     public function __crudRemove($input = null)
     {
         if($this->getSlim()->request()->isPost()) {
-            if (!isset($input)) {
+            if ($input === null) {
 
                 return self::error([
                     'errors' => [
@@ -449,7 +449,7 @@ abstract class controllerBase
      */
     public function api_get($input = null)
     {
-        if (!isset($input)) {
+        if ($input === null) {
             return [
                 'response' => self::error([
                     'errors' => [
@@ -577,7 +577,7 @@ abstract class controllerBase
                     'item' => $model->export(),
                 ], codes::RESPONSE_CODE_SAVED)
             ];
-        } elseif (isset($input)) {
+        } elseif ($input !== null) {
 
             return [
                 'response' => self::nothing([
@@ -607,7 +607,7 @@ abstract class controllerBase
     public function api_remove($input = null)
     {
         if ($this->getSlim()->request()->isPost()) {
-            if (!isset($input)) {
+            if ($input === null) {
 
                 return [
                     'response' => self::error([
