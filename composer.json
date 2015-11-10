@@ -1,0 +1,29 @@
+{
+    "name": "infostars/mpcmf-core",
+    "type": "app",
+    "require": {
+        "slim/slim": "2.*",
+        "symfony/console": "~2.6",
+        "phpdocumentor/reflection-docblock": "~2.0",
+        "symfony/filesystem": "~2.6",
+        "wingu/code-generator": "1.0.5",
+        "phpmailer/phpmailer": "dev-master",
+        "monolog/monolog": "~1.12",
+        "khr/react-curl": "dev-master",
+        "react/http": "dev-master",
+        "infostars/net-curl": "dev-master",
+        "smarty/smarty": "3.1.27"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Gregory Ostrovsky",
+            "email": "greevex@gmail.com"
+        },
+        {
+            "name": "Dmitriy Emelyanov",
+            "email": "gilberg.vrn@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev"
+}
