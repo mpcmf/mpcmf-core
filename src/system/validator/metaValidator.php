@@ -2,8 +2,8 @@
 
 namespace mpcmf\system\validator;
 
-use mpcmf\system\validator\exception\validatorException;
 use mpcmf\system\helper\io\log;
+use mpcmf\system\validator\exception\validatorException;
 
 /**
  * Validator class
@@ -53,7 +53,7 @@ class metaValidator
      *
      * @return bool
      *
-     * @throws \mpcmf\system\exceptions\validatorException
+     * @throws validatorException
      */
     public function validateByRule($input, $rule)
     {

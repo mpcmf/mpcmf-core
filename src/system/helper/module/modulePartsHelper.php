@@ -2,20 +2,19 @@
 
 namespace mpcmf\system\helper\module;
 
-use mpcmf\modules\msFilter\mappers\userMapper;
 use mpcmf\loader;
+use mpcmf\modules\moduleBase\actions\actionsBase;
+use mpcmf\modules\moduleBase\controllers\controllerBase;
+use mpcmf\modules\moduleBase\entities\entityBase;
 use mpcmf\modules\moduleBase\exceptions\controllerException;
 use mpcmf\modules\moduleBase\exceptions\entityException;
 use mpcmf\modules\moduleBase\exceptions\mapperException;
 use mpcmf\modules\moduleBase\exceptions\modelException;
-use mpcmf\system\helper\module\exception\modulePartsHelperException;
-use mpcmf\modules\moduleBase\actions\actionsBase;
-use mpcmf\modules\moduleBase\controllers\controllerBase;
-use mpcmf\modules\moduleBase\entities\entityBase;
 use mpcmf\modules\moduleBase\mappers\mapperBase;
 use mpcmf\modules\moduleBase\models\modelBase;
 use mpcmf\modules\moduleBase\moduleBase;
 use mpcmf\system\helper\io\log;
+use mpcmf\system\helper\module\exception\modulePartsHelperException;
 
 /**
  * Log trait
@@ -242,7 +241,7 @@ trait modulePartsHelper
     /**
      * Get mapper for current entity
      *
-     * @return mapperBase|userMapper
+     * @return mapperBase
      * @throws mapperException
      * @throws modulePartsHelperException
      */
