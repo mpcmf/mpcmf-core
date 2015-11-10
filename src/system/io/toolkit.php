@@ -2,8 +2,6 @@
 
 namespace mpcmf\system\io;
 
-use Symfony\Component\Console\Input\InputInterface;
-
 /**
  * Toolkit class
  *

@@ -2,8 +2,6 @@
 
 namespace mpcmf\system\validator;
 
-use mpcmf\system\helper\io\log;
-
 /**
  * Integer validator class
  *

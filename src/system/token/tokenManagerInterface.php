@@ -2,7 +2,7 @@
 
 namespace mpcmf\system\token;
 
-use mpcmf\modules\authex\models\tokenModel;
+use mpcmf\modules\moduleBase\models\modelBase;
 
 /**
  * Token manager class
@@ -13,7 +13,7 @@ interface tokenManagerInterface
 {
     public function validateToken($tokenString, $checkLimits = true);
 
-    public function generateToken(tokenModel $tokenModel);
+    public function generateToken(modelBase $tokenModel);
 
     public function decode($tokenString);
 }

@@ -150,9 +150,15 @@ class rabbit
         return $result;
     }
 
+    /**
+     * @param null|string $queueName
+     * @param string $queueType
+     *
+     * @return \AMQPExchange
+     */
     protected function getExchange($queueName = null, $queueType = self::EXCHANGE_TYPE_DIRECT)
     {
-        if(empty($queueName)) {
+        if($queueName === null || $queueName === '') {
             $queueName = self::EXCHANGE_POINT;
         }
 

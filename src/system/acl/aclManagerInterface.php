@@ -2,8 +2,8 @@
 
 namespace mpcmf\system\acl;
 
-use mpcmf\modules\authex\models\userModel;
 use mpcmf\modules\moduleBase\actions\action;
+use mpcmf\modules\moduleBase\models\modelBase;
 
 /**
  * Base system ACL manager
@@ -24,11 +24,11 @@ interface aclManagerInterface
 
     /**
      * @param action $action
-     * @param userModel $userModel
+     * @param modelBase $userModel
      *
      * @return array Response
      */
-    public function checkActionAccess(action $action, userModel $userModel);
+    public function checkActionAccess(action $action, modelBase $userModel);
 
     /**
      * @param mixed $data

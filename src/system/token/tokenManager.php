@@ -2,7 +2,7 @@
 
 namespace mpcmf\system\token;
 
-use mpcmf\modules\authex\models\tokenModel;
+use mpcmf\modules\moduleBase\models\modelBase;
 use mpcmf\system\configuration\config;
 use mpcmf\system\helper\io\response;
 use mpcmf\system\pattern\singleton;
@@ -36,7 +36,7 @@ class tokenManager
         return $this->token_class->validateToken($tokenString, $checkLimits);
     }
 
-    public function generateToken(tokenModel $tokenModel)
+    public function generateToken(modelBase $tokenModel)
     {
         return $this->token_class->generateToken($tokenModel);
     }

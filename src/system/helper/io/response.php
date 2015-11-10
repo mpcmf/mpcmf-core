@@ -2,8 +2,6 @@
 
 namespace mpcmf\system\helper\io;
 
-use Slim\Slim;
-
 /**
  * System response helper
  *
