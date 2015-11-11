@@ -2,12 +2,10 @@
 
 namespace mpcmf\system\acl;
 
-use mpcmf\cache;
-use mpcmf\modules\authex\mappers\userMapper;
-use mpcmf\modules\authex\models\userModel;
 use mpcmf\modules\moduleBase\actions\action;
 use mpcmf\modules\moduleBase\exceptions\mapperException;
 use mpcmf\modules\moduleBase\exceptions\modelException;
+use mpcmf\modules\moduleBase\models\modelBase;
 use mpcmf\system\acl\exception\aclException;
 use mpcmf\system\configuration\config;
 use mpcmf\system\configuration\environment;
@@ -23,6 +21,19 @@ use Slim\Slim;
 class aclManager
 {
     use singleton, response;
+
+    const ACL__GROUP_ROOT = 'root';
+    const ACL__GROUP_ADMIN = 'admin';
+    const ACL__GROUP_USER = 'user';
+    const ACL__GROUP_GUEST = 'guest';
+
+    const ACL__GROUP_CRUD_FULL = 'crud.full';
+    const ACL__GROUP_CRUD_READ = 'crud.read';
+    const ACL__GROUP_CRUD_WRITE = 'crud.write';
+
+    const ACL__GROUP_API_FULL = 'api.full';
+    const ACL__GROUP_API_READ = 'api.read';
+    const ACL__GROUP_API_WRITE = 'api.write';
 
     /** @var aclManagerInterface */
     protected $aclManager;
@@ -82,8 +93,13 @@ class aclManager
         return $this->aclManager->generateSign($data);
     }
 
+    public function createGroupsByList($entityAclGroups)
+    {
+        return $this->aclManager->createGroupsByList($entityAclGroups);
+    }
+
     /**
-     * @return \mpcmf\modules\moduleBase\models\modelBase|userModel
+     * @return modelBase
      *
      * @throws mapperException
      * @throws aclException
@@ -91,31 +107,8 @@ class aclManager
     public function getCurrentUser()
     {
         $cookieData = $this->getCookieData();
-        if(!$cookieData) {
-            static $guestCacheKey = 'acl/user/guest';
 
-            if(!($guestData = cache::getCached($guestCacheKey))) {
-                $guestModel = userMapper::getInstance()->getGuestUser();
-                $guestData = $guestModel->export();
-                cache::setCached($guestCacheKey, $guestData, 3600);
-            } else {
-                $guestModel = userModel::fromArray($guestData);
-            }
-
-            return $guestModel;
-        }
-
-        $userId = $cookieData[userMapper::FIELD__USER_ID];
-        $userCacheKey = "acl/user/{$userId}";
-        if(!($userData = cache::getCached($userCacheKey))) {
-            $userModel = userMapper::getInstance()->getById($userId);
-            $userData = $userModel->export();
-            cache::setCached($userCacheKey, $userData, 300);
-        } else {
-            $userModel = userModel::fromArray($userData);
-        }
-
-        return $userModel;
+        return $this->aclManager->getCurrentUser($cookieData);
     }
 
     /**
@@ -152,18 +145,13 @@ class aclManager
     }
 
     /**
-     * @param userModel $user
+     * @param modelBase $user
      *
      * @throws modelException
      */
-    public function saveUserCookie(userModel $user)
+    public function saveUserCookie($user)
     {
-        $cookieData = [
-            userMapper::FIELD__USER_ID => $user->getIdValue(),
-            'name' => $user->getFirstName(),
-            'groups' => $user->getGroupIds(),
-            'email' => $user->getEmail()
-        ];
+        $cookieData = $this->aclManager->buildCookieDataByUser($user);
 
         $this->setCookieData($cookieData);
     }

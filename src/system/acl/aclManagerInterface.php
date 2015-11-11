@@ -36,4 +36,27 @@ interface aclManagerInterface
      * @return string
      */
     public function generateSign($data);
+
+    /**
+     * @param array $entityAclGroups
+     *
+     * @return mixed
+     */
+    public function createGroupsByList(array $entityAclGroups);
+
+    /**
+     * Return current user by cookieData or return guest user
+     *
+     * @param array $cookieData
+     *
+     * @return modelBase
+     */
+    public function getCurrentUser(array $cookieData);
+
+    /**
+     * @param $user
+     *
+     * @return array
+     */
+    public function buildCookieDataByUser(modelBase $user);
 }

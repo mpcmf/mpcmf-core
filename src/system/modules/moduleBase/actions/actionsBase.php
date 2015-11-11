@@ -3,8 +3,8 @@
 namespace mpcmf\modules\moduleBase\actions;
 
 use mpcmf\cache;
-use mpcmf\modules\authex\mappers\groupMapper;
 use mpcmf\modules\moduleBase\exceptions\actionException;
+use mpcmf\system\acl\aclManager;
 use mpcmf\system\helper\module\modulePartsHelper;
 use mpcmf\system\pattern\singletonInterface;
 
@@ -50,9 +50,9 @@ abstract class actionsBase
                     'template' => 'crud/create.tpl',
                     'type' => action::TYPE__GLOBAL,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_CRUD_FULL,
-                        groupMapper::ACL__GROUP_CRUD_WRITE,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_CRUD_FULL,
+                        aclManager::ACL__GROUP_CRUD_WRITE,
                     ],
                 ], $this),
                 'crud.get' => new action([
@@ -68,9 +68,9 @@ abstract class actionsBase
                     'template' => 'crud/get.tpl',
                     'type' => action::TYPE__FOR_ITEM,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_CRUD_FULL,
-                        groupMapper::ACL__GROUP_CRUD_READ,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_CRUD_FULL,
+                        aclManager::ACL__GROUP_CRUD_READ,
                     ],
                 ], $this),
                 'crud.update' => new action([
@@ -87,9 +87,9 @@ abstract class actionsBase
                     'template' => 'crud/update.tpl',
                     'type' => action::TYPE__FOR_ITEM,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_CRUD_FULL,
-                        groupMapper::ACL__GROUP_CRUD_WRITE,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_CRUD_FULL,
+                        aclManager::ACL__GROUP_CRUD_WRITE,
                     ],
                 ], $this),
                 'crud.multiUpdate' => new action([
@@ -105,9 +105,9 @@ abstract class actionsBase
                     'template' => 'crud/multiUpdate.tpl',
                     'type' => action::TYPE__DEFAULT,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_CRUD_FULL,
-                        groupMapper::ACL__GROUP_CRUD_WRITE,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_CRUD_FULL,
+                        aclManager::ACL__GROUP_CRUD_WRITE,
                     ],
                 ], $this),
                 'crud.remove' => new action([
@@ -124,9 +124,9 @@ abstract class actionsBase
                     'template' => 'crud/remove.tpl',
                     'type' => action::TYPE__FOR_ITEM,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_CRUD_FULL,
-                        groupMapper::ACL__GROUP_CRUD_WRITE,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_CRUD_FULL,
+                        aclManager::ACL__GROUP_CRUD_WRITE,
                     ],
                 ], $this),
                 'crud.multiRemove' => new action([
@@ -142,9 +142,9 @@ abstract class actionsBase
                     'template' => 'crud/multiRemove.tpl',
                     'type' => action::TYPE__DEFAULT,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_CRUD_FULL,
-                        groupMapper::ACL__GROUP_CRUD_WRITE,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_CRUD_FULL,
+                        aclManager::ACL__GROUP_CRUD_WRITE,
                     ],
                 ], $this),
                 'crud.list' => new action([
@@ -158,9 +158,9 @@ abstract class actionsBase
                     'template' => 'crud/list.tpl',
                     'type' => action::TYPE__GLOBAL,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_CRUD_FULL,
-                        groupMapper::ACL__GROUP_CRUD_READ,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_CRUD_FULL,
+                        aclManager::ACL__GROUP_CRUD_READ,
                     ],
                 ], $this),
             ]);
@@ -179,9 +179,9 @@ abstract class actionsBase
                     'template' => 'crud/api.json.tpl',
                     'type' => action::TYPE__API_GLOBAL,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_API_FULL,
-                        groupMapper::ACL__GROUP_API_READ,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_API_FULL,
+                        aclManager::ACL__GROUP_API_READ,
                     ],
                 ], $this),
                 'api.create' => new action([
@@ -197,9 +197,9 @@ abstract class actionsBase
                     'template' => 'crud/api.json.tpl',
                     'type' => action::TYPE__API_GLOBAL,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_API_FULL,
-                        groupMapper::ACL__GROUP_API_WRITE,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_API_FULL,
+                        aclManager::ACL__GROUP_API_WRITE,
                     ],
                 ], $this),
                 'api.get' => new action([
@@ -216,9 +216,9 @@ abstract class actionsBase
                     'template' => 'crud/api.json.tpl',
                     'type' => action::TYPE__API_FOR_ITEM,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_API_FULL,
-                        groupMapper::ACL__GROUP_API_READ,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_API_FULL,
+                        aclManager::ACL__GROUP_API_READ,
                     ],
                 ], $this),
                 'api.update' => new action([
@@ -236,9 +236,9 @@ abstract class actionsBase
                     'template' => 'crud/api.json.tpl',
                     'type' => action::TYPE__API_FOR_ITEM,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_API_FULL,
-                        groupMapper::ACL__GROUP_API_WRITE,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_API_FULL,
+                        aclManager::ACL__GROUP_API_WRITE,
                     ],
                 ], $this),
                 'api.remove' => new action([
@@ -256,9 +256,9 @@ abstract class actionsBase
                     'template' => 'crud/api.json.tpl',
                     'type' => action::TYPE__API_FOR_ITEM,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_API_FULL,
-                        groupMapper::ACL__GROUP_API_WRITE,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_API_FULL,
+                        aclManager::ACL__GROUP_API_WRITE,
                     ],
                 ], $this),
                 'api.list' => new action([
@@ -273,9 +273,9 @@ abstract class actionsBase
                     'template' => 'crud/api.json.tpl',
                     'type' => action::TYPE__API_GLOBAL,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_API_FULL,
-                        groupMapper::ACL__GROUP_API_READ,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_API_FULL,
+                        aclManager::ACL__GROUP_API_READ,
                     ],
                 ], $this),
                 'api.getInfo' => new action([
@@ -290,9 +290,9 @@ abstract class actionsBase
                     'template' => 'crud/api.json.tpl',
                     'type' => action::TYPE__API_GLOBAL,
                     'acl' => [
-                        groupMapper::ACL__GROUP_ADMIN,
-                        groupMapper::ACL__GROUP_API_FULL,
-                        groupMapper::ACL__GROUP_API_READ,
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_API_FULL,
+                        aclManager::ACL__GROUP_API_READ
                     ],
                 ], $this),
             ]);
@@ -402,7 +402,7 @@ abstract class actionsBase
             MPCMF_DEBUG && self::log()->addDebug("[{$entityName}] Registering action's groups: " . count($entityAclGroups));
             MPCMF_LL_DEBUG && self::log()->addDebug("[{$entityName}] Groups: " . implode(',', $entityAclGroups));
 
-            groupMapper::getInstance()->createGroupsByList($entityAclGroups);
+            aclManager::getInstance()->createGroupsByList($entityAclGroups);
             cache::setCached($cacheKey, true);
         } else {
             MPCMF_LL_DEBUG && self::log()->addDebug("[{$entityName}] Found registered groups, skipping");

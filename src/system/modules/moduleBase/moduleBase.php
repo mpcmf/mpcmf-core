@@ -2,7 +2,6 @@
 
 namespace mpcmf\modules\moduleBase;
 
-use mpcmf\system\helper\acl\aclHelper;
 use mpcmf\system\helper\module\moduleHelper;
 use mpcmf\system\pattern\singletonInterface;
 
@@ -15,11 +14,10 @@ use mpcmf\system\pattern\singletonInterface;
 abstract class moduleBase
     implements singletonInterface
 {
-    use moduleHelper, aclHelper;
+    use moduleHelper;
 
     public function __construct()
     {
-        $this->registerAclGroups();
         $this->bindAclGroups();
     }
 
