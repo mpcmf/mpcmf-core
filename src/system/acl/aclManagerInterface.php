@@ -47,11 +47,11 @@ interface aclManagerInterface
     /**
      * Return current user by cookieData or return guest user
      *
-     * @param array $cookieData
+     * @param $cookieData
      *
      * @return modelBase
      */
-    public function getCurrentUser(array $cookieData);
+    public function getCurrentUser($cookieData);
 
     /**
      * @param $user
