@@ -8,12 +8,15 @@ use mpcmf\system\io\log;
 if (!defined('APP_ROOT')) {
     define('APP_ROOT', __DIR__);
 }
+if (!defined('CORE_ROOT')) {
+    define('CORE_ROOT', __DIR__);
+}
 if (!defined('APP_NAME')) {
     define('APP_NAME', 'mpcmf');
 }
 $GLOBALS['MPCMF_START_TIME'] = microtime(true);
 
-require_once __DIR__ . '/../vendor/autoload.php';
+require_once APP_ROOT . '/vendor/autoload.php';
 
 class cache
 {
@@ -265,6 +268,6 @@ class profiler
 }
 loader::load();
 
-require_once APP_ROOT . '/environment.php';
+require_once CORE_ROOT . '/environment.php';
 
 MPCMF_DEBUG && log::factory()->addDebug('Base project directory: ' . APP_ROOT);
