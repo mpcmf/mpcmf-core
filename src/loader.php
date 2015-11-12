@@ -5,8 +5,12 @@ namespace mpcmf;
 use Composer\Autoload\ClassLoader;
 use mpcmf\system\io\log;
 
-define('APP_ROOT', __DIR__);
-define('APP_NAME', 'mpcmf');
+if (!defined('APP_ROOT')) {
+    define('APP_ROOT', __DIR__);
+}
+if (!defined('APP_NAME')) {
+    define('APP_NAME', 'mpcmf');
+}
 $GLOBALS['MPCMF_START_TIME'] = microtime(true);
 
 require_once __DIR__ . '/../vendor/autoload.php';
