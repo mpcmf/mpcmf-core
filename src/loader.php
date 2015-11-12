@@ -119,7 +119,7 @@ class loader
         if(!($paths = cache::getCached($cacheKey))) {
             $paths = [
                 'modules' => [
-                    APP_ROOT . '/system/modules'
+                    CORE_ROOT . '/system/modules'
                 ],
                 'system' => []
             ];
@@ -148,7 +148,7 @@ class loader
         $loader->register(false);
 
         $loader->addPsr4('mpcmf\\system\\', $paths['system'], true);
-        $loader->addPsr4('mpcmf\\', [APP_ROOT], true);
+        $loader->addPsr4('mpcmf\\', [CORE_ROOT], true);
     }
 }
 
