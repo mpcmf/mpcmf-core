@@ -148,7 +148,7 @@ class loader
         $loader->register(false);
 
         $loader->addPsr4('mpcmf\\system\\', $paths['system'], true);
-        $loader->addPsr4('mpcmf\\', [CORE_ROOT], true);
+        $loader->addPsr4('mpcmf\\', [CORE_ROOT, APP_ROOT], true);
     }
 }
 
