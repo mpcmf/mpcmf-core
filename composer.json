@@ -1,29 +1,58 @@
 {
-    "name": "infostars/mpcmf-core",
-    "type": "app",
-    "require": {
-        "slim/slim": "2.*",
-        "symfony/console": "~2.6",
-        "phpdocumentor/reflection-docblock": "~2.0",
-        "symfony/filesystem": "~2.6",
-        "wingu/code-generator": "1.0.5",
-        "phpmailer/phpmailer": "dev-master",
-        "monolog/monolog": "~1.12",
-        "khr/react-curl": "dev-master",
-        "react/http": "dev-master",
-        "infostars/net-curl": "dev-master",
-        "smarty/smarty": "3.1.27"
+  "name": "greevex/mpcmf-core",
+  "version": "1.0.0-dev",
+  "description": "Build fast and powerful console and web applications. Part of mpcmf solution.",
+  "keywords": [
+    "cache",
+    "threads",
+    "mongodb",
+    "rabbitmq",
+    "console",
+    "applications",
+    "slim",
+    "smarty",
+    "mvc"
+  ],
+  "type": "library",
+  "require": {
+    "php": ">=5.5.10",
+    "slim/slim": "2.*",
+    "symfony/console": "~2.6",
+    "phpdocumentor/reflection-docblock": "~2.0",
+    "symfony/filesystem": "~2.6",
+    "wingu/code-generator": "1.0.5",
+    "phpmailer/phpmailer": "dev-master",
+    "monolog/monolog": "~1.12",
+    "khr/react-curl": "dev-master",
+    "react/http": "dev-master",
+    "infostars/net-curl": "dev-master",
+    "smarty/smarty": "3.1.27"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^4.0@dev"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Gregory Ostrovsky",
+      "email": "greevex@gmail.com",
+      "homepage": "https://github.com/greevex"
     },
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Gregory Ostrovsky",
-            "email": "greevex@gmail.com"
-        },
-        {
-            "name": "Dmitriy Emelyanov",
-            "email": "gilberg.vrn@gmail.com"
-        }
-    ],
-    "minimum-stability": "dev"
+    {
+      "name": "Dmitry Emelyanov",
+      "email": "gilberg.vrn@gmail.com",
+      "homepage": "https://github.com/gilberg-vrn"
+    }
+  ],
+  "support": {
+    "issues": "https://github.com/greevex/mpcmf-core/issues?state=open",
+    "source": "https://github.com/greevex/mpcmf-core",
+    "email": "greevex@gmail.com"
+  },
+  "autoload": {
+    "psr-4": {
+      "mpcmf\\system\\": "src/system/"
+    }
+  },
+  "minimum-stability": "dev"
 }
