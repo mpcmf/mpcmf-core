@@ -76,7 +76,7 @@ class systemStructure
                 $this->modules["mpcmf\\modules\\{$moduleName}"] = $moduleName;
             }
         }
-        $modulesRoot = APP_ROOT . '/system/modules';
+        $modulesRoot = CORE_ROOT . '/system/modules';
         foreach(scandir($modulesRoot) as $moduleName) {
             if($moduleName[0] === '.' || !file_exists("{$modulesRoot}/{$moduleName}/module.php")) {
                 continue;

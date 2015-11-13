@@ -172,7 +172,7 @@ abstract class webApplicationBase
                     MPCMF_DEBUG && self::log()->addNotice("Application template directory not exists: {$defaultApplicationDirectory}");
                 }
 
-                $defaultSystemDirectory = APP_ROOT . self::DEFAULT_TEMPLATES_DIRECTORY;
+                $defaultSystemDirectory = CORE_ROOT . self::DEFAULT_TEMPLATES_DIRECTORY;
                 if (file_exists($defaultSystemDirectory) && is_dir($defaultSystemDirectory)) {
                     MPCMF_DEBUG && self::log()->addDebug("Registering system template directory: {$defaultSystemDirectory}");
                     $directories[$appKey][] = $defaultSystemDirectory;
