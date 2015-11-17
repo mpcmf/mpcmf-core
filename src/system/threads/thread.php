@@ -203,7 +203,12 @@ class thread
             pcntl_signal(SIGTERM, array(__CLASS__, 'signalHandler'));
             register_shutdown_function(array(__CLASS__, 'signalHandler'));
             pcntl_signal_dispatch();
-            call_user_func_array($this->runnable, $arguments);
+            try {
+                call_user_func_array($this->runnable, $arguments);
+            } catch (\Exception $exception) {
+                self::log()->addError("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}");
+                MPCMF_DEBUG && error_log("Stack trace:\n{$exception->getTraceAsString()}");
+            }
             exit(0);
         }
         return $this;
