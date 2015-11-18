@@ -40,6 +40,7 @@ class applicationInstance
      * Runs the current application.
      *
      * @api
+     * @throws applicationException
      */
     public function run()
     {
