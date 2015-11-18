@@ -2,7 +2,7 @@
 
 namespace mpcmf\system\exceptions;
 
-use mpcmf\profiler;
+use mpcmf\system\helper\system\profiler;
 
 /**
  * MPCMF base exception class

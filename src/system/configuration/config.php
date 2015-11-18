@@ -2,8 +2,8 @@
 
 namespace mpcmf\system\configuration;
 
-use mpcmf\profiler;
 use mpcmf\system\configuration\exception\configurationException;
+use mpcmf\system\helper\system\profiler;
 use mpcmf\system\io\log;
 
 /**

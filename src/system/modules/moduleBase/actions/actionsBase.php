@@ -2,9 +2,9 @@
 
 namespace mpcmf\modules\moduleBase\actions;
 
-use mpcmf\cache;
 use mpcmf\modules\moduleBase\exceptions\actionException;
 use mpcmf\system\acl\aclManager;
+use mpcmf\system\cache\cache;
 use mpcmf\system\helper\module\modulePartsHelper;
 use mpcmf\system\pattern\singletonInterface;
 

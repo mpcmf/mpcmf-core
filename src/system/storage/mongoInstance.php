@@ -2,9 +2,9 @@
 
 namespace mpcmf\system\storage;
 
-use mpcmf\profiler;
 use mpcmf\system\configuration\exception\configurationException;
 use mpcmf\system\helper\io\log;
+use mpcmf\system\helper\system\profiler;
 use mpcmf\system\pattern\factory;
 
 /**

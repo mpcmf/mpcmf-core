@@ -2,9 +2,9 @@
 
 namespace mpcmf\system\cache;
 
-use mpcmf\profiler;
-use mpcmf\system\configuration\config;
 use mpcmf\system\cache\exception\cacheException;
+use mpcmf\system\configuration\config;
+use mpcmf\system\helper\system\profiler;
 use mpcmf\system\pattern\factory;
 
 /**

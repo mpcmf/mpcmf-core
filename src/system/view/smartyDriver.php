@@ -2,8 +2,8 @@
 
 namespace mpcmf\system\view;
 
-use mpcmf\profiler;
 use mpcmf\system\configuration\config;
+use mpcmf\system\helper\system\profiler;
 
 /**
  * Smarty view driver for slim mfr
