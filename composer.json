@@ -52,7 +52,10 @@
   "autoload": {
     "psr-4": {
       "mpcmf\\system\\": "src/system/"
-    }
+    },
+    "files": [
+      "src/loader.php"
+    ]
   },
   "minimum-stability": "dev"
 }
