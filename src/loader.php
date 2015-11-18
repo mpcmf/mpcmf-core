@@ -43,7 +43,8 @@ class loader
         if(!($paths = cache::getCached($cacheKey))) {
             $paths = [
                 'modules' => [
-                    APP_ROOT . '/system/modules'
+                    APP_ROOT . '/system/modules',
+                    CORE_ROOT . '/system/modules'
                 ],
                 'system' => []
             ];
