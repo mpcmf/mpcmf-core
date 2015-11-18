@@ -8,5 +8,5 @@
  */
 
 if (!defined('CORE_ROOT')) {
-    define('CORE_ROOT', __DIR__ . '/..');
+    define('CORE_ROOT', __DIR__);
 }
