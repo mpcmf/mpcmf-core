@@ -32,6 +32,22 @@ class loader
         }
 
         $loader = self::getLoader();
+
+        $map = require APP_ROOT . '/vendor/composer/autoload_namespaces.php';
+        foreach ($map as $namespace => $path) {
+            $loader->set($namespace, $path);
+        }
+
+        $map = require APP_ROOT . '/vendor/composer/autoload_psr4.php';
+        foreach ($map as $namespace => $path) {
+            $loader->setPsr4($namespace, $path);
+        }
+
+        $classMap = require APP_ROOT . '/vendor/composer/autoload_classmap.php';
+        if ($classMap) {
+            $loader->addClassMap($classMap);
+        }
+
         $loader->register(true);
 
         $gitFile = APP_ROOT . '/.git/ORIG_HEAD';
