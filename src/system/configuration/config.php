@@ -235,7 +235,7 @@ class config
 
     protected static function getModuleBasePath($packageName)
     {
-        static $cached = [], $pathPattern = '%s' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'config.d';
+        static $cached = [];
 
         if(!array_key_exists($packageName, $cached)) {
             $className = self::getClassName($packageName);
@@ -255,6 +255,7 @@ class config
 
             $cached[$packageName] = null;
             if ($modulePath !== null) {
+                $pathPattern = '%s' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'config.d';
                 $cached[$packageName] = sprintf($pathPattern, $modulePath);
             }
         }
