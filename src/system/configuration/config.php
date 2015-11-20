@@ -2,6 +2,7 @@
 
 namespace mpcmf\system\configuration;
 
+use mpcmf\loader;
 use mpcmf\system\configuration\exception\configurationException;
 use mpcmf\system\helper\system\profiler;
 use mpcmf\system\io\log;
@@ -199,6 +200,17 @@ class config
     {
         $filename = self::getBasePath() . DIRECTORY_SEPARATOR . "{$packageName}.php";
 
+        if(file_exists($filename) && is_readable($filename)) {
+            MPCMF_LL_DEBUG && error_log("Loading config [{$packageName}] {$filename} ...");
+            require_once $filename;
+
+            return;
+        }
+
+        MPCMF_LL_DEBUG && error_log("Config for [{$packageName}]: Not found {$filename}, try to use module config ...");
+
+        $filename = self::getModuleBasePath($packageName) . DIRECTORY_SEPARATOR . "{$packageName}.php";
+
         if(!file_exists($filename) || !is_readable($filename)) {
             throw new configurationException("Configuration not found for package: {$packageName}! Please, fix it.");
         }
@@ -219,5 +231,34 @@ class config
         }
 
         return $cached;
+    }
+
+    protected static function getModuleBasePath($packageName)
+    {
+        static $cached = [], $pathPattern = '%s' . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'config.d';
+
+        if(!array_key_exists($packageName, $cached)) {
+            $className = self::getClassName($packageName);
+            $filePath = loader::getLoader()->findFile($className);
+
+            $modulePath = null;
+            $currentPath = dirname($filePath);
+            while (($parentPath = dirname($currentPath)) !== $currentPath) {
+                $currentPath = $parentPath;
+
+                if (in_array('composer.json', scandir($currentPath), true)) {
+                    $modulePath = $currentPath;
+
+                    break;
+                }
+            }
+
+            $cached[$packageName] = null;
+            if ($modulePath !== null) {
+                $cached[$packageName] = sprintf($pathPattern, $modulePath);
+            }
+        }
+
+        return $cached[$packageName];
     }
 }
