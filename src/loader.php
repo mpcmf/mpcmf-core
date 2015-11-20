@@ -66,19 +66,21 @@ class loader
             ];
 
             $appsDir = APP_ROOT . '/apps';
-            foreach (scandir($appsDir) as $appName) {
-                if ($appName[0] === '.') {
-                    continue;
-                }
+            if (file_exists($appsDir)) {
+                foreach (scandir($appsDir) as $appName) {
+                    if ($appName[0] === '.') {
+                        continue;
+                    }
 
-                $currentModulesDir = "{$appsDir}/{$appName}/modules";
-                if(file_exists($currentModulesDir)) {
-                    $paths['modules'][] = $currentModulesDir;
-                }
+                    $currentModulesDir = "{$appsDir}/{$appName}/modules";
+                    if(file_exists($currentModulesDir)) {
+                        $paths['modules'][] = $currentModulesDir;
+                    }
 
-                $currentModulesSystemDir = "{$appsDir}/{$appName}/system";
-                if(file_exists($currentModulesSystemDir)) {
-                    $paths['system'][] = $currentModulesSystemDir;
+                    $currentModulesSystemDir = "{$appsDir}/{$appName}/system";
+                    if(file_exists($currentModulesSystemDir)) {
+                        $paths['system'][] = $currentModulesSystemDir;
+                    }
                 }
             }
 
