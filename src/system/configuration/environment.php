@@ -21,13 +21,18 @@ class environment
     protected static $environment;
 
     /**
+     * @var string Base environment name
+     */
+    protected static $baseEnvironment;
+
+    /**
      * Get name of the current environment
      *
      * @return string
      */
     public static function getCurrentEnvironment()
     {
-        if(!isset(self::$environment)) {
+        if(self::$environment === null) {
             self::$environment = self::ENV_DEFAULT;
         }
 
@@ -42,5 +47,29 @@ class environment
     public static function setCurrentEnvironment($inputEnvironment)
     {
         self::$environment = (string)$inputEnvironment;
+    }
+
+    /**
+     * Set name of the current environment
+     *
+     * @param string $inputEnvironment
+     */
+    public static function setBaseEnvironment($inputEnvironment)
+    {
+        self::$baseEnvironment = (string)$inputEnvironment;
+    }
+
+    /**
+     * Set name of the current environment
+     *
+     * @return string
+     */
+    public static function getBaseEnvironment()
+    {
+        if (self::$baseEnvironment === null) {
+            self::$environment = self::ENV_DEFAULT;
+        }
+
+        return self::$baseEnvironment;
     }
 }

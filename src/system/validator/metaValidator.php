@@ -35,6 +35,7 @@ class metaValidator
      * @param $input
      *
      * @return bool
+     * @throws validatorException
      */
     public function validate($input)
     {
@@ -52,7 +53,6 @@ class metaValidator
      * @param $rule
      *
      * @return bool
-     *
      * @throws validatorException
      */
     public function validateByRule($input, $rule)

@@ -48,7 +48,7 @@ trait modulePartsHelper
      */
     public function getCurrentNamespace()
     {
-        if(!isset($this->currentNamespace)) {
+        if($this->currentNamespace === null) {
             $currentClass = get_called_class();
             if (!isset(modulePartsStorage::$namespaces[$currentClass])) {
                 modulePartsStorage::$namespaces[$currentClass] = (new \ReflectionClass($currentClass))->getNamespaceName();
@@ -68,7 +68,7 @@ trait modulePartsHelper
      */
     public function getCurrentClassName()
     {
-        if(!isset($this->currentClassName)) {
+        if($this->currentClassName === null) {
             $this->currentClassName = get_called_class();
         }
 
@@ -82,7 +82,7 @@ trait modulePartsHelper
      */
     public function getShortClassName()
     {
-        if(!isset($this->currentShortName)) {
+        if($this->currentShortName === null) {
             $this->currentShortName = trim(str_replace($this->getCurrentNamespace(), '', $this->getCurrentClassName()), '/\\ ');
         }
 
@@ -97,7 +97,7 @@ trait modulePartsHelper
      */
     public function getCurrentDirectory()
     {
-        if(!isset($this->currentDirectory)) {
+        if($this->currentDirectory === null) {
             $currentClass = get_called_class();
             if(!isset(modulePartsStorage::$directories[$currentClass])) {
                 $file = loader::getLoader()->findFile($currentClass);
@@ -121,7 +121,7 @@ trait modulePartsHelper
      */
     public function getEntityName()
     {
-        if(!isset($this->entityName)) {
+        if($this->entityName === null) {
             $currentClass = get_called_class();
             if(!isset(modulePartsStorage::$entityNames[$currentClass])) {
                 MPCMF_DEBUG && self::log()->addDebug(json_encode(modulePartsStorage::$entityNames, 384));
@@ -154,7 +154,7 @@ trait modulePartsHelper
      */
     public function getPublicName()
     {
-        if(!isset($this->entityPublicName)) {
+        if($this->entityPublicName === null) {
             $currentClass = get_called_class();
             if(!isset(modulePartsStorage::$entityPublicNames[$currentClass])) {
                 modulePartsStorage::$entityPublicNames[$currentClass] = $this->getMapper()->getPublicName();
@@ -195,7 +195,7 @@ trait modulePartsHelper
      */
     public function getEntity()
     {
-        if(!isset($this->entityInstance)) {
+        if($this->entityInstance === null) {
             $entityUniqName = $this->getEntityUniqueName();
             if(!isset(modulePartsStorage::$entityInstances[$entityUniqName])) {
                 /** @var entityBase $entityClass */

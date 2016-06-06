@@ -38,13 +38,23 @@ class rabbit
      */
     protected $transactionStarted = false;
 
+    private $connectionData = [];
+    private $declaredQueues = [];
+    /**
+     * @var \AMQPQueue[]
+     */
+    private $queues = [];
+    private $connection;
+    /**
+     * @var \AMQPChannel
+     */
+    private $channel;
+
     protected function getConnectionData()
     {
-        static $connectionData = [];
-
-        if (!isset($connectionData[$this->configSection])) {
+        if (!isset($this->connectionData[$this->configSection])) {
             $config = $this->getPackageConfig();
-            $connectionData[$this->configSection] = [
+            $this->connectionData[$this->configSection] = [
                 'host' => isset($config['host']) ? $config['host'] : self::DEFAULT_HOST,
                 'port' => isset($config['port']) ? $config['port'] : self::DEFAULT_PORT,
                 'login' => isset($config['login']) ? $config['login'] : self::DEFAULT_LOGIN,
@@ -52,29 +62,16 @@ class rabbit
             ];
         }
 
-        return $connectionData[$this->configSection];
+        return $this->connectionData[$this->configSection];
     }
 
     protected function getConnection()
     {
-        /** @var \AMQPConnection[] $connections */
-        static $connections = [];
+        $connectionData = $this->getConnectionData();
+        $this->connection = new \AMQPConnection($connectionData);
+        $this->connection->connect();
 
-        if(function_exists('posix_getpid')) {
-            $pid = posix_getpid();
-        } else {
-            $pid = getmypid();
-        }
-
-        $key = "{$pid}:{$this->configSection}";
-        if (!isset($connections[$key])) {
-            $connectionData = $this->getConnectionData();
-            MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize connection: " . json_encode($connectionData), [__METHOD__]);
-            $connections[$key] = new \AMQPConnection($connectionData);
-            $connections[$key]->connect();
-        }
-
-        return $connections[$key];
+        return $this->connection;
     }
 
     public function sendToBackground($queueName, $body = null, $start = true, $persistent = true)
@@ -95,11 +92,9 @@ class rabbit
 
     protected function publishMessage($body, $queueName, $persistent = false)
     {
-        static $declaredQueues = [];
-
         $key = "{$this->configSection}:{$queueName}";
-        if(!isset($declaredQueues[$key])) {
-            $declaredQueues[$key] = true;
+        if(!isset($this->declaredQueues[$key])) {
+            $this->declaredQueues[$key] = true;
             $this->getQueue($queueName);
         }
 
@@ -151,14 +146,14 @@ class rabbit
     }
 
     /**
-     * @param null|string $queueName
+     * @param string|null $queueName
      * @param string $queueType
      *
      * @return \AMQPExchange
      */
     protected function getExchange($queueName = null, $queueType = self::EXCHANGE_TYPE_DIRECT)
     {
-        if($queueName === null || $queueName === '') {
+        if(empty($queueName)) {
             $queueName = self::EXCHANGE_POINT;
         }
 
@@ -194,50 +189,27 @@ class rabbit
      */
     protected function getChannel()
     {
-        /**
-         * @var \AMQPChannel[] $channels
-         */
-        static $channels = [];
-
-        if(function_exists('posix_getpid')) {
-            $pid = posix_getpid();
-        } else {
-            $pid = getmypid();
+        if ($this->channel === null) {
+            $this->channel = new \AMQPChannel($this->getConnection());
+            $this->channel->setPrefetchCount(1);
         }
 
-        $key = "{$pid}:{$this->configSection}";
-        if (!isset($channels[$key])) {
-            MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize channel...", [__METHOD__]);
-            $channels[$key] = new \AMQPChannel($this->getConnection());
-            $channels[$key]->setPrefetchCount(1);
-        }
-
-        return $channels[$key];
+        return $this->channel;
     }
 
     public function getQueue($queueName)
     {
-        /** @var $queues \AMQPQueue[] */
-        static $queues = [];
-
-        if(function_exists('posix_getpid')) {
-            $pid = posix_getpid();
-        } else {
-            $pid = getmypid();
-        }
-
-        $key = "{$pid}:{$this->configSection}:{$queueName}";
-        if (!isset($queues[$key])) {
-            MPCMF_DEBUG && self::log()->addDebug("[{$key}] Declaring queue: {$queueName}", [__METHOD__]);
-            $queues[$key] = new \AMQPQueue($this->getChannel());
-            $queues[$key]->setName($queueName);
-            $queues[$key]->setFlags(AMQP_DURABLE);
-            $queues[$key]->declare();
+        if (!isset($this->queues[$queueName])) {
+            MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
+            $this->queues[$queueName] = new \AMQPQueue($this->getChannel());
+            $this->queues[$queueName]->setName($queueName);
+            $this->queues[$queueName]->setFlags(AMQP_DURABLE);
+            $this->queues[$queueName]->declare();
             $this->getExchange($queueName);
-            $queues[$key]->bind(self::getExchangeName($queueName), $queueName);
+            $this->queues[$queueName]->bind(self::getExchangeName($queueName), $queueName);
         }
 
-        return $queues[$key];
+        return $this->queues[$queueName];
     }
 
     public function __destruct()

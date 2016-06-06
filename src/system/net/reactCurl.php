@@ -2,12 +2,9 @@
 
 namespace mpcmf\system\net;
 
-use KHR\React\Curl\Curl;
+use KHR\React\Curl\Curl as khrCurl;
 use mpcmf\system\helper\convert\url;
-use React\EventLoop\ExtEventLoop;
-use React\EventLoop\LibEventLoop;
-use React\EventLoop\LibEvLoop;
-use React\EventLoop\StreamSelectLoop;
+use React\EventLoop\LoopInterface;
 use React\Promise\Promise;
 
 /**
@@ -39,7 +36,7 @@ class reactCurl
     /**
      * initialized curl resource
      *
-     * @var Curl
+     * @var khrCurl
      */
     private $curl;
 
@@ -71,11 +68,11 @@ class reactCurl
     ];
 
     /**
-     * @param ExtEventLoop|LibEventLoop|LibEvLoop|StreamSelectLoop $loop
+     * @param LoopInterface $loop
      */
     public function __construct($loop)
     {
-        $this->curl = new Curl($loop);
+        $this->curl = new khrCurl($loop);
         $this->options = $this->_defaultOptions;
 
         $sleepConf = $this->baseConfig['sleep_after'];
@@ -113,7 +110,7 @@ class reactCurl
     public function getProxyOptions($proxyData)
     {
         $options = [];
-        
+
         switch($proxyData['proxy_type']) {
             case 'http':
             case 'https':
@@ -142,12 +139,12 @@ class reactCurl
      *
      * @return Promise
      */
-    public function prepareTask($url, $method = 'GET', array $params = [], array $options = [])
+    public function prepareTask($url, $method = 'GET', $params = null, array $options = [])
     {
         $url = trim($url);
         $method = strtoupper($method);
 
-        $queryString = http_build_query($params);
+        $queryString = (string)(is_array($params) ? http_build_query($params) : $params);
 
         switch($method) {
             case 'GET':
@@ -175,7 +172,6 @@ class reactCurl
         $options[CURLOPT_URL] = $url;
 
         $promise = $this->curl->add($options);
-        $this->curl->run();
         $promise->then($this->doneCallback, $this->errorCallback, $this->progressCallback);
 
         return $promise;
@@ -196,7 +192,7 @@ class reactCurl
     }
 
     /**
-     * @return Curl
+     * @return khrCurl
      */
     public function getReactCurl()
     {

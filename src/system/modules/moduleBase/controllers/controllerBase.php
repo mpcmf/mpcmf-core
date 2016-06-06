@@ -325,24 +325,28 @@ abstract class controllerBase
      * @param int $limit
      * @param int $offset
      *
-     * @return array|null|void
+     * @return array
      * @throws mapperException
      * @throws modulePartsHelperException
      * @throws webApplicationException
      */
     public function __crudList($limit = 10, $offset = 0)
     {
+        $request = $this->getSlim()->request();
+        $mapper = $this->getMapper();
+
+        $sort = $request->get('sort');
+        $query = $request->get('q');
+        $item = $request->get('item');
+
         try {
-            $sort = $this->getSlim()->request()->get('sort');
-            $query = $this->getSlim()->request()->get('q');
-            $item = $this->getSlim()->request()->get('item');
             if(!empty($query)) {
-                $cursor = $this->getMapper()->searchAllBy($query, [], $sort);
+                $cursor = $mapper->searchAllBy($query, [], $sort);
             } elseif(!empty($item)) {
-                $item = $this->getMapper()->convertDataFromForm($item);
-                $cursor = $this->getMapper()->searchAllByCriteria($item, [], $sort);
+                $item = $mapper->convertDataFromForm($item);
+                $cursor = $mapper->searchAllByCriteria($item, [], $sort);
             } else {
-                $cursor = $this->getMapper()->getAllBy([], [], $sort);
+                $cursor = $mapper->getAllBy([], [], $sort);
             }
         } catch (mapperException $mapperException) {
 
@@ -379,24 +383,27 @@ abstract class controllerBase
         if ($this->getSlim()->request()->isPost()) {
             $item = $this->getSlim()->request()->post('item');
 
-            $input = $this->getMapper()->convertDataFromForm($item);
-
-            if (!$this->checkInputByValidator($input, $errors)) {
-                return self::error([
-                    'errors' => $errors
-                ]);
-            }
-
-            $model = $this->createModelByInput($input);
-
             try {
+                $input = $this->getMapper()->convertDataFromForm($item);
+
+                if (!$this->checkInputByValidator($input, $errors)) {
+                    return self::error([
+                        'errors' => $errors
+                    ]);
+                }
+
+                $model = $this->createModelByInput($input);
+
                 $result = $model->getMapper()->save($model);
             } catch (mapperException $mapperException) {
 
                 switch((int)$mapperException->getCode()) {
                     case codes::RESPONSE_CODE_DUPLICATE_STORAGE:
                     case codes::RESPONSE_CODE_DUPLICATE:
-                        $found = $model->getMapper()->getBy($input);
+                        $found = false;
+                        if(isset($model, $input)) {
+                            $found = $model->getMapper()->getBy($input);
+                        }
                         if($found) {
                             return [
                                 'response' => self::error([
@@ -465,7 +472,7 @@ abstract class controllerBase
 
             if($mapperException->getCode() === codes::RESPONSE_CODE_NOT_FOUND) {
                 return [
-                    'response' => self::error($mapperException->getMessage(), codes::RESPONSE_CODE_FAIL)
+                    'response' => self::error($mapperException->getMessage(), codes::RESPONSE_CODE_NOT_FOUND)
                 ];
             } else {
                 return [
@@ -543,27 +550,27 @@ abstract class controllerBase
 
         if ($this->getSlim()->request()->isPost()) {
             $inputItem = $this->getSlim()->request()->post('item');
-            $item = $this->getMapper()->convertDataFromForm($inputItem);
-
-            if (!$this->checkInputByValidator($item, $errors)) {
-
-                return [
-                    'response' => self::error([
-                        'item' => $model->export(),
-                        'errors' => $errors
-                    ])
-                ];
-            }
 
             try {
+                $item = $this->getMapper()->convertDataFromForm($inputItem);
+
+                if (!$this->checkInputByValidator($item, $errors)) {
+
+                    return [
+                        'response' => self::error([
+                            'item' => $model->export(),
+                            'errors' => $errors
+                        ])
+                    ];
+                }
+
                 $model->updateFields($item);
+
+                $result = $model->getMapper()->updateById($input, $model);
             } catch (modelException $exception) {
                 return [
                     'response' => self::errorByException($exception)
                 ];
-            }
-            try {
-                $result = $model->getMapper()->updateById($input, $model);
             } catch (mapperException $mapperException) {
 
                 return [
@@ -686,9 +693,9 @@ abstract class controllerBase
         }
 
         $limit = (int)$limit;
-        if($limit < 1 || $limit > 500) {
+        if($limit < 1 || $limit > 5000) {
             return [
-                'response' => self::error('limit must be 1..500', codes::RESPONSE_CODE_FAIL, codes::RESPONSE_CODE_FORM_FIELDS_ERROR)
+                'response' => self::error('limit must be 1..5000', codes::RESPONSE_CODE_FAIL, codes::RESPONSE_CODE_FORM_FIELDS_ERROR)
             ];
         }
         $cursor->limit($limit);

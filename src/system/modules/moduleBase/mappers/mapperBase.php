@@ -50,6 +50,10 @@ abstract class mapperBase
     const ROLE__GEO_AREA = 'geo-area';
     const ROLE__GEO_POINT = 'geo-point';
 
+    const SAVE__MODE_DEFAULT = false;
+    const SAVE__MODE_INSERT_ONLY = true;
+    const SAVE__MODE_CHANGES_ONLY = 2;
+
     //ROLES
     private $key;
     private $keyGenerate;
@@ -233,11 +237,20 @@ abstract class mapperBase
      * Save new item
      *
      * @param modelBase|array $itemData
+     * @param bool            $saveMode
      *
      * @return mixed
+     * @throws \Exception
+     * @throws \MongoException
+     * @throws \MongoCursorTimeoutException
+     * @throws \mpcmf\system\configuration\exception\configurationException
+     * @throws \MongoCursorException
+     * @throws \MongoConnectionException
+     * @throws \InvalidArgumentException
+     * @throws \mpcmf\modules\moduleBase\exceptions\modelException
      * @throws mapperException
      */
-    public function save(&$itemData)
+    public function save(&$itemData, $saveMode = self::SAVE__MODE_DEFAULT)
     {
         if (!isset($this->key)) {
             $this->initializeRoleFields();
@@ -246,8 +259,7 @@ abstract class mapperBase
 //        $changedFields = [];
         if($itemData instanceof modelBase) {
             MPCMF_DEBUG && self::log()->addDebug('Input data is instance of modelBase', [__METHOD__]);
-            $data = $itemData->export();
-//            $changedFields = $itemData->getChangedFields();
+            $data = $itemData->export($saveMode === self::SAVE__MODE_CHANGES_ONLY);
             MPCMF_DEBUG && self::log()->addDebug('Data exported', [__METHOD__]);
         } else {
             MPCMF_DEBUG && self::log()->addDebug('Input data is an array', [__METHOD__]);
@@ -255,6 +267,9 @@ abstract class mapperBase
             MPCMF_DEBUG && self::log()->addDebug('Variable linked', [__METHOD__]);
         }
         MPCMF_DEBUG && self::log()->addDebug('Input data prepared', [__METHOD__]);
+
+        $primaryKey = $this->getKey();
+
         if(isset($data['_id'])) {
             MPCMF_DEBUG && self::log()->addDebug('Input data has _id field', [__METHOD__]);
             if(!($data['_id'] instanceof \MongoId)) {
@@ -268,55 +283,49 @@ abstract class mapperBase
             MPCMF_DEBUG && self::log()->addDebug('Input data has _id field, saving...', [__METHOD__]);
 
             try {
-//                $toSave = [];
-//                foreach($changedFields as $changedField => $changedFieldNothing) {
-//                    $toSave[$changedField] = $data[$changedField];
-//                }
-//                return $this->_save($toSave);
-                return $this->_save($data);
+                if($saveMode === self::SAVE__MODE_INSERT_ONLY) {
+                    return $this->_create($data);
+                } elseif($saveMode === self::SAVE__MODE_DEFAULT) {
+                    return $this->_save($data);
+                } elseif($saveMode === self::SAVE__MODE_CHANGES_ONLY) {
+                    return $this->updateBy([
+                        '_id' => $data['_id']
+                    ], $data);
+                }
+
+                throw new mapperException('Unexpected save mode: ' . json_encode($saveMode));
             } catch(storageException $storageException) {
                 throw new mapperException('Some error in storage, request failed', $storageException->getCode(), $storageException);
             }
         } elseif($this->keyGenerate) {
-            if (!empty($data[$this->getKey()])) {
+            if (!empty($data[$primaryKey])) {
                 MPCMF_DEBUG && self::log()->addDebug('Input data has generated key field, updating...', [__METHOD__]);
 
-//                $toSave = [];
-//                foreach($changedFields as $changedField => $changedFieldNothing) {
-//                    $toSave[$changedField] = $data[$changedField];
-//                }
-//                return $this->updateById($data[$this->getKey()], $toSave);
-
-                return $this->updateById($data[$this->getKey()], $data);
+                return $this->updateById($data[$primaryKey], $data);
             }
 
-            $data[$this->getKey()] = $this->getKey() === '_id' ? new \MongoId() : $this->generateId();
+            $isMongoId = $primaryKey === '_id';
+            $needUpdateMongoId = !$isMongoId && !isset($data['_id']);
+            $data[$primaryKey] = $isMongoId ? new \MongoId() : $this->generateId();
+            if($needUpdateMongoId) {
+                $data['_id'] = new \MongoId();
+            }
 
             try {
-                $response = $this->_create($data);
-                //@todo Check, real need to this line, because here
-                //@todo $itemData is array, not instance of modelBase
                 if ($itemData instanceof modelBase) {
                     $itemData->updateFields($data);
                 }
-
-                return $response;
+                return $this->_create($data);
             } catch (\Exception $e) {
                 throw new mapperException("Storage exception: {$e->getMessage()}", $e->getCode(), $e);
             }
-        } elseif(isset($data[$this->getKey()]) && !empty($data[$this->getKey()])) {
+        } elseif(isset($data[$primaryKey]) && !empty($data[$primaryKey])) {
             MPCMF_DEBUG && self::log()->addDebug('Input data has manually typed key field, updating...', [__METHOD__]);
 
-//            $toSave = [];
-//            foreach($changedFields as $changedField => $changedFieldNothing) {
-//                $toSave[$changedField] = $data[$changedField];
-//            }
-//            return $this->updateById($data[$this->getKey()], !empty($toSave) ? $toSave : $data, true);
-
-            return $this->updateById($data[$this->getKey()], $data, true);
+            return $this->updateById($data[$primaryKey], $data, true);
         }
 
-        throw new mapperException("Unable to save item without key field: {$this->getKey()} (generate:off)");
+        throw new mapperException("Unable to save item without key field: {$primaryKey} (generate:off)");
     }
 
     /**
@@ -377,17 +386,7 @@ abstract class mapperBase
         return $class::createAll($cursor);
     }
 
-    /**
-     * Search items from storage by mongo-like criteria
-     *
-     * @param mixed $query
-     * @param array $fields
-     * @param array $sort
-     *
-     * @return modelCursor
-     * @throws mapperException
-     */
-    public function searchAllBy($query, array $fields = [], array $sort = null)
+    public function getSearchCriteria($query)
     {
         if(!$this->getIsSearchable()) {
             throw new mapperException('That entity mapper has not any searchable fields!');
@@ -413,6 +412,24 @@ abstract class mapperBase
         }
 
         MPCMF_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
+
+        return $criteria;
+    }
+
+    /**
+     * Search items from storage by mongo-like criteria
+     *
+     * @param mixed $query
+     * @param array $fields
+     * @param array $sort
+     *
+     * @return modelCursor
+     * @throws mapperException
+     */
+    public function searchAllBy($query, array $fields = [], array $sort = null)
+    {
+        $criteria = $this->getSearchCriteria($query);
+
         try {
             $class = $this->getModelClass();
         } catch(modelException $modelException) {
@@ -544,7 +561,8 @@ abstract class mapperBase
      */
     public function updateById($id, $newData, $createIfNotExists = false)
     {
-        MPCMF_DEBUG && self::log()->addDebug("id:{$id} data:" . json_encode($newData), [__METHOD__]);
+        MPCMF_DEBUG && self::log()->addDebug("id:{$id}", [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug("id:{$id} data:" . json_encode($newData), [__METHOD__]);
         $criteria = [
             $this->getKey() => $id
         ];
@@ -1180,5 +1198,30 @@ abstract class mapperBase
         }
 
         return $this->modelClassName;
+    }
+
+    /**
+     * @param                $fieldName
+     * @param modelBase|null $model
+     *
+     * @return modelCursor
+     * @throws mapperException
+     */
+    public function getAllRelatedModels($fieldName, modelBase $model = null)
+    {
+        $criteria = $this->relatedMapperCriteria($fieldName, $model);
+
+        return $this->getRelationMapper($fieldName)->getAllBy($criteria);
+    }
+
+    /**
+     * @param                $fieldName
+     * @param modelBase|null $model
+     *
+     * @return array
+     */
+    protected function relatedMapperCriteria($fieldName, modelBase $model = null)
+    {
+        return [];
     }
 }

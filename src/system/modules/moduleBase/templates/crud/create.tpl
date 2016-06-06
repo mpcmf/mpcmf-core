@@ -17,7 +17,7 @@
                 {if isset($data.item)}
                     <td>{include file="forms/generate/type_{$field.formType}.tpl" fieldName=$fieldName field=$field item=$data.item}</td>
                 {else}
-                    <td>{include file="forms/generate/type_{$field.formType}.tpl" fieldName=$fieldName field=$field}</td>
+                    <td>{include file="forms/generate/type_{$field.formType}.tpl" fieldName=$fieldName field=$field item=null}</td>
                 {/if}
             </tr>
         {/foreach}

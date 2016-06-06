@@ -187,7 +187,10 @@ class smartyDriver
      * @param string $template Path to template
      * @param bool $asString Return result as string
      * @param null|string $cache_id ID of template cache
+     *
      * @return bool|string
+     * @throws \Exception
+     * @throws \SmartyException
      */
     public function render($template, $asString = true, $cache_id = null)
     {

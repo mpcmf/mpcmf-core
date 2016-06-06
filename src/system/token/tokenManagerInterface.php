@@ -16,4 +16,6 @@ interface tokenManagerInterface
     public function generateToken(modelBase $tokenModel);
 
     public function decode($tokenString);
+
+    public function encode($something);
 }

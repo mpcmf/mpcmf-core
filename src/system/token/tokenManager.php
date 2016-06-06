@@ -14,6 +14,7 @@ use mpcmf\system\token\exception\tokenManagerException;
  * @author Gregory Ostrovsky <greevex@gmail.com>
  */
 class tokenManager
+    implements tokenManagerInterface
 {
     use singleton, response;
 
@@ -44,5 +45,10 @@ class tokenManager
     public function decode($tokenString)
     {
         return $this->token_class->decode($tokenString);
+    }
+
+    public function encode($something)
+    {
+        return $this->token_class->encode($something);
     }
 }

@@ -45,6 +45,8 @@ class structureGenerator
 
     /**
      * Main generate method
+     *
+     * @throws structureGeneratorException
      */
     public function generate()
     {
@@ -71,6 +73,11 @@ class structureGenerator
         }
     }
 
+    /**
+     * @param $item
+     *
+     * @throws structureGeneratorException
+     */
     protected function processItemMeta($item)
     {
         if(!isset($item['meta'])) {

@@ -142,7 +142,7 @@ class progressBar
             (str_repeat('=', $done - 1) . '>' . str_repeat(' ', $this->pb_width - ($done - 1))),
             $data['done'],
             $data['speed'],
-            date('i:s', $data['time_estimated']),
+            gmdate($data['time_estimated'] >=3600 ? 'H:i:s' :'i:s', $data['time_estimated']),
             round(memory_get_usage(true)/1024/1024, 4)
         );
         $string = str_replace($search, $replace, $this->output_format);

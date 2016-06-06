@@ -16,8 +16,8 @@ use mpcmf\modules\moduleBase\models\modelCursor;
  * @date: 2/27/15 1:41 PM
  *
  * @method string getGeoPointField()
- * @method remove()
- * @method modelCursor getAllBy()
+ * @method remove($point)
+ * @method modelCursor getAllBy(array $criteria)
  */
 trait geoMapperHelper
 {
@@ -36,7 +36,8 @@ trait geoMapperHelper
     /**
      * @param mixed $areaId
      *
-     * @return \mpcmf\modules\moduleBase\models\modelCursor
+     * @return modelCursor
+     * @throws mapperException
      */
     public function getGeoByAreaId($areaId)
     {

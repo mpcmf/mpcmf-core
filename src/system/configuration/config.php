@@ -124,13 +124,18 @@ class config
 
     public static function getConfig($name, $environment = null)
     {
-        static $currentEnvironment;
+        static $currentEnvironment, $baseEnvironment;
 
         profiler::addStack('config::get');
 
         if($currentEnvironment === null) {
             $currentEnvironment = environment::getCurrentEnvironment();
             MPCMF_LL_DEBUG && error_log("Initialize config current environment: {$currentEnvironment}");
+        }
+
+        if($baseEnvironment === null) {
+            $baseEnvironment = environment::getBaseEnvironment();
+            MPCMF_LL_DEBUG && error_log("Initialize config base environment: {$baseEnvironment}");
         }
 
         if($environment === null) {
@@ -153,6 +158,9 @@ class config
             if(isset(self::$loaded[$packageName][$currentEnvironment])) {
                 MPCMF_LL_DEBUG && error_log("Return requested config [{$packageName}] {$currentEnvironment}");
                 return self::$loaded[$packageName][$currentEnvironment];
+            } elseif ($baseEnvironment !== environment::ENV_DEFAULT && isset(self::$loaded[$packageName][$baseEnvironment])) {
+                MPCMF_LL_DEBUG && error_log("Use base config [{$packageName}] {$baseEnvironment}");
+                return self::$loaded[$packageName][$baseEnvironment];
             } else {
                 MPCMF_LL_DEBUG && error_log("Return default config [{$packageName}] {$currentEnvironment}");
                 return self::$loaded[$packageName][environment::ENV_DEFAULT];

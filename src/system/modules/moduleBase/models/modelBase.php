@@ -22,6 +22,10 @@ abstract class modelBase
 {
     use modulePartsHelper;
 
+    const UPDATE__MODE_ERROR_ON_MISSED = false;
+    const UPDATE__MODE_DEFAULT_ON_MISSED = true;
+    const UPDATE__MODE_CHANGES_ONLY = 2;
+
     private $primaryKey;
     private $titleKey;
     private $geoAreaKey;
@@ -331,7 +335,7 @@ abstract class modelBase
      * @throws modelException
      * @throws mapperException
      */
-    public function updateFields($fields, $force = false)
+    public function updateFields($fields, $force = self::UPDATE__MODE_ERROR_ON_MISSED)
     {
         $isEmpty = empty($fields);
         try {
@@ -356,8 +360,11 @@ abstract class modelBase
                             /** @noinspection NotOptimalIfConditionsInspection */
                             if($fieldData['options']['required']) {
                                 throw new modelException('Field error: expected array, but given ' . gettype($fields[$field]));
-                            } elseif($force) {
+                            }
+                            /** @noinspection NotOptimalIfConditionsInspection */
+                            elseif($force === self::UPDATE__MODE_DEFAULT_ON_MISSED) {
                                 $this->data[$field] = $mapper->defaultValue($field);
+                                $this->changes[$field] = true;
                             }
                         } else {
                             foreach ($fields[$field] as $fieldItem) {
@@ -369,10 +376,12 @@ abstract class modelBase
                     }
                 }
                 $this->data[$field] = $fields[$field];
-            } elseif(!$force && !$isEmpty && $fieldData['options']['required']) {
+                $this->changes[$field] = true;
+            } elseif($force === self::UPDATE__MODE_ERROR_ON_MISSED && !$isEmpty && $fieldData['options']['required']) {
                 throw new modelException("Required field missed: {$field}");
-            } elseif($force) {
+            } elseif($force === self::UPDATE__MODE_DEFAULT_ON_MISSED) {
                 $this->data[$field] = $mapper->defaultValue($field);
+                $this->changes[$field] = true;
             }
         }
     }
@@ -432,15 +441,23 @@ abstract class modelBase
      * @param bool $changesOnly
      *
      * @return array
+     * @throws \mpcmf\modules\moduleBase\exceptions\modelException
      */
     public function &export($changesOnly = false)
     {
-        $result = $this->data;
-
         if($changesOnly) {
+            $result = [];
             foreach($this->getChangedFields() as $field => $value) {
-                unset($result[$field]);
+                if(!$value) {
+                    continue;
+                }
+                $result[$field] = $this->data[$field];
             }
+            if(!isset($result[$this->primaryKey])) {
+                $result[$this->primaryKey] = $this->getIdValue();
+            }
+        } else {
+            $result = $this->data;
         }
 
         return $result;

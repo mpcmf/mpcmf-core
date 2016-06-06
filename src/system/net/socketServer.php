@@ -187,7 +187,7 @@ class socketServer
             );
         }
         $string .= '</bg=green>';
-        if(isset($this->output)) {
+        if($this->output !== null) {
             $this->output->writeln($string);
         } else {
             error_log(strip_tags($string));

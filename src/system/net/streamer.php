@@ -59,7 +59,7 @@ class streamer
      */
     protected function socketStreamer()
     {
-        if(!isset($this->server)) {
+        if($this->server === null) {
             $this->server = new socketStreamer();
             $this->server->setOutput($this->output);
             $this->server->setBindHost($this->config['server']['host']);
@@ -104,7 +104,7 @@ class streamer
                 }
             }
             $string = "<error>PAUSE: {$this->pause} microseconds</error>";
-            if(isset($this->output)) {
+            if($this->output !== null) {
                 $this->output->writeln($string);
             } else {
                 echo strip_tags($string);
@@ -119,7 +119,7 @@ class streamer
     {
         pcntl_signal_dispatch();
         static $doublesCheck = true, $doubles = [], $cleanerCount = 0, $cleanerLimit = 10000;
-        if(!isset($doublesCheck)) {
+        if($doublesCheck === null) {
             $doublesCheck = $this->config['doubles_check']['enabled'];
             $cleanerLimit = $this->config['doubles_check']['limit'];
         }

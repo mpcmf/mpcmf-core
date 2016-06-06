@@ -22,7 +22,9 @@ class moduleClassGenerator
      * Generate php string
      *
      * @param array $structureItem
+     *
      * @return string
+     * @throws exception\mpcmfClassGeneratorException
      */
     public function generate($structureItem)
     {

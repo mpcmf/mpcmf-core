@@ -68,6 +68,7 @@ class threadPool
      * Refresh threads in pool
      *
      * @return bool
+     * @throws \Exception
      */
     public function refresh()
     {
