@@ -2,8 +2,6 @@
 
 namespace mpcmf\system\token;
 
-use mpcmf\modules\moduleBase\models\modelBase;
-
 /**
  * Token manager class
  *
@@ -13,7 +11,7 @@ interface tokenManagerInterface
 {
     public function validateToken($tokenString, $checkLimits = true);
 
-    public function generateToken(modelBase $tokenModel);
+    public function generateToken($tokenModel);
 
     public function decode($tokenString);
 
