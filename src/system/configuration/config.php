@@ -220,7 +220,7 @@ class config
         $filename = self::getModuleBasePath($packageName) . DIRECTORY_SEPARATOR . "{$packageName}.php";
 
         if(!file_exists($filename) || !is_readable($filename)) {
-            throw new configurationException("Configuration not found for package: {$packageName}! Please, fix it.");
+            throw new configurationException("Configuration not found for package: {$packageName}! Please, fix it in {$filename}");
         }
 
         MPCMF_LL_DEBUG && error_log("Loading config [{$packageName}] {$filename} ...");
