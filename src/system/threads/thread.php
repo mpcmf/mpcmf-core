@@ -169,12 +169,19 @@ class thread
     public function isAlive()
     {
         if($this->pid === null) {
+            
             return false;
         }
-        $pid = pcntl_waitpid( $this->pid, $status, WNOHANG );
-        $alive = ( $pid === 0 );
+        $pid = pcntl_waitpid($this->pid, $status, WNOHANG);
+        $alive = ($pid === 0);
         if(!$alive) {
-            $alive = trim(shell_exec("ps -p {$this->pid} | grep {$this->pid} -c")) != '0';
+            $alive = posix_kill($this->pid, 0);
+        }
+        if(!$alive) {
+            $alive = posix_getpgid($this->pid) !== false;
+        }
+        if(!$alive) {
+            $alive = file_exists("/proc/{$this->pid}");
         }
 
         return $alive;
