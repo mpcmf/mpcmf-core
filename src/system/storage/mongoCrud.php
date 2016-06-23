@@ -52,6 +52,21 @@ trait mongoCrud
     }
 
     /**
+     * Get native mongo collection object
+     *
+     * @return \MongoCollection
+     * @throws configurationException
+     * @throws \MongoConnectionException
+     * @throws \InvalidArgumentException
+     * @throws \Exception
+     * @throws storageException
+     */
+    public function getMongoCollection()
+    {
+        return $this->storage()->getCollection($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection']);
+    }
+
+    /**
      * Create new item in the storage
      *
      * @param mixed $input
