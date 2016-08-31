@@ -35,6 +35,14 @@ trait mongoCrud
     }
 
     /**
+     * @return mixed
+     */
+    public function getMongoCrudStorageConfig()
+    {
+        return $this->mongoCrudStorageConfig;
+    }
+
+    /**
      * @param $storageInstance
      * @param array $storageConfig
      *
