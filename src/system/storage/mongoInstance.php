@@ -3,6 +3,7 @@
 namespace mpcmf\system\storage;
 
 use mpcmf\system\configuration\exception\configurationException;
+use mpcmf\system\helper\cache\cache;
 use mpcmf\system\helper\io\log;
 use mpcmf\system\helper\system\profiler;
 use mpcmf\system\pattern\factory;
@@ -15,7 +16,7 @@ use mpcmf\system\pattern\factory;
  */
 class mongoInstance
 {
-    use factory, log;
+    use factory, log, cache;
 
     /**
      * @var \MongoClient
@@ -31,7 +32,7 @@ class mongoInstance
      */
     public function getMongo()
     {
-        if($this->mongo === null) {
+        if ($this->mongo === null) {
             $config = $this->getPackageConfig();
             MPCMF_LL_DEBUG && self::log()->addDebug("Connecting to {$config['uri']}", [__METHOD__]);
             $this->mongo = new \MongoClient($config['uri'], $config['options']);
@@ -278,10 +279,10 @@ class mongoInstance
     /**
      * Insert new items to storage in single request (batch)
      *
-     * @param string $db
-     * @param string $collection
-     * @param array[]  $objects
-     * @param array  $options
+     * @param string  $db
+     * @param string  $collection
+     * @param array[] $objects
+     * @param array   $options
      *
      * @return mixed
      *
@@ -383,26 +384,26 @@ class mongoInstance
         $indexCount = count($dbIndexes);
         $needCreateAllIndexes = $indexCount <= 1;
 
-        foreach($indexes as $key => $index) {
+        foreach ($indexes as $key => $index) {
             $log->addDebug('Checking index ' . json_encode($index));
-            if($needCreateAllIndexes) {
+            if ($needCreateAllIndexes) {
                 $log->addInfo('NOT found index ' . json_encode($index));
                 $needToCreate[$key] = true;
             } else {
-                foreach($dbIndexes as $dbIndex) {
-                    if(json_encode($dbIndex['key']) === json_encode($index['keys'])) {
+                foreach ($dbIndexes as $dbIndex) {
+                    if (json_encode($dbIndex['key']) === json_encode($index['keys'])) {
                         $log->addDebug('Found index ' . json_encode($index['keys']) . ', checking options...');
-                        if(!empty($index['options'])) {
+                        if (!empty($index['options'])) {
                             $log->addDebug('Options in cfg found');
                             $ok = true;
-                            foreach($index['options'] as $option => $optionValue) {
-                                if(!isset($dbIndex[$option]) || $dbIndex[$option] !== $optionValue) {
+                            foreach ($index['options'] as $option => $optionValue) {
+                                if (!isset($dbIndex[$option]) || $dbIndex[$option] !== $optionValue) {
                                     $log->addInfo('Option not found in dbIndex, need to create!');
                                     $ok = false;
                                     $needToCreate[$key] = true;
                                 }
                             }
-                            if($ok) {
+                            if ($ok) {
                                 $log->addDebug('Index OK, skipping...');
                                 unset($needToCreate[$key]);
                                 break;
@@ -420,15 +421,54 @@ class mongoInstance
             }
         }
         $log->addInfo('Need to create indexes: ' . count($needToCreate));
-        foreach($needToCreate as $key => $v) {
+        foreach ($needToCreate as $key => $v) {
             profiler::addStack('mongo::i');
             $log->addInfo('Creating index ' . json_encode($indexes[$key]) . '...');
-            if(array_key_exists('options', $indexes[$key])) {
+            if (array_key_exists('options', $indexes[$key])) {
                 $collectionObject->ensureIndex($indexes[$key]['keys'], $indexes[$key]['options']);
             } else {
                 $collectionObject->ensureIndex($indexes[$key]['keys']);
             }
             $log->addInfo('Index created ' . json_encode($indexes[$key]));
         }
+    }
+
+    /**
+     * Periodically check and create indexes by params
+     *
+     * @param array $config ['db', 'collection', 'indices']
+     *
+     * @return bool
+     * @throws \MongoConnectionException
+     * @throws configurationException
+     * @throws \InvalidArgumentException
+     * @throws \Exception
+     */
+    public function checkIndicesAuto($config)
+    {
+        static $cache, $instancePeriod;
+
+        if ($cache === null || $instancePeriod === null) {
+            $cache = self::cache();
+            $instancePeriod = [];
+        }
+        $cacheKey = __METHOD__ . ":{$this->configSection}:" . md5(json_encode($config));
+        if (!isset($instancePeriod[$cacheKey])) {
+            $packageConfig = $this->getPackageConfig();
+            $instancePeriod[$cacheKey] = 60;
+            if (isset($packageConfig['auto_index_check_period']) && $packageConfig['auto_index_check_period']) {
+                $instancePeriod[$cacheKey] = (int)$packageConfig['auto_index_check_period'];
+            }
+        }
+
+        if (!$cache->add($cacheKey, true, $instancePeriod[$cacheKey])) {
+
+            return false;
+        }
+
+        self::log()->addDebug("Need to check indexes for `{$config['db']}.{$config['collection']}`");
+        $this->checkIndexes($config['db'], $config['collection'], $config['indices']);
+
+        return true;
     }
 }

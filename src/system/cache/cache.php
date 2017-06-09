@@ -33,7 +33,7 @@ class cache
      */
     public static function getCached($key)
     {
-        profiler::addStack('file_cache');
+        profiler::addStack('file_cache::read');
 
         $cachePath = self::getPath($key);
         if(!file_exists($cachePath)) {
@@ -42,9 +42,13 @@ class cache
 
         $expired = false;
 
-        $storedData = unserialize(file_get_contents($cachePath));
-        $now = time();
-        if(($storedData['e'] > 0 && $storedData['e'] < $now) || ($now - filemtime($cachePath) > self::$expire)) {
+        try {
+            $storedData = unserialize(file_get_contents($cachePath));
+            $now = time();
+            if(($storedData['e'] > 0 && $storedData['e'] < $now) || ($now - filemtime($cachePath) > self::$expire)) {
+                $expired = true;
+            }
+        } catch (\ErrorException $errorException) {
             $expired = true;
         }
 
@@ -59,7 +63,7 @@ class cache
 
     public static function setCached($key, $value, $expire = 0)
     {
-        profiler::addStack('file_cache');
+        profiler::addStack('file_cache::write');
 
         $cachePath = self::getPath($key);
         $dirname = dirname($cachePath);

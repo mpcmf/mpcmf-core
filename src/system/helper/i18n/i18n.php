@@ -42,7 +42,7 @@ class i18n
         }
         array_shift($args);
         if(count($args)) {
-            
+
             return call_user_func_array('sprintf', array_merge([$this->dictionary[$code]], $args));
         }
 

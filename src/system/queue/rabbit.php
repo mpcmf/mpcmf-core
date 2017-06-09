@@ -13,6 +13,7 @@ use mpcmf\system\pattern\factory;
  * @package rabbitMq\lib
  * @author Borovikov Maxim <maxim.mahi@gmail.com>
  * @author Ostrovsky Gregory <greevex@gmail.com>
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class rabbit
 {
@@ -24,10 +25,14 @@ class rabbit
     const DEFAULT_PASSWORD = 'guest';
 
     const EXCHANGE_POINT = 'amq.direct';
-    const EXCHANGE_TYPE_DIRECT = 'direct';
-    //@todo add fanout etc.
 
-    const URL_LIST_QUEUES = 'http://%s:15672/api/queues';
+    const EXCHANGE_TYPE_DIRECT = 'direct';
+    const EXCHANGE_TYPE_FANOUT = 'fanout';
+    const EXCHANGE_TYPE_DELAYED = 'x-delayed-message';
+    const EXCHANGE_TYPE_DEAD_LETTER = 'dead-letter';
+
+    const URL_LIST_QUEUES = 'queues';
+    const URL_API_BASE = 'http://%s:15672/api/';
 
     const MESSAGE_DELIVERY_PERSISTENT = 2;
 
@@ -74,14 +79,24 @@ class rabbit
         return $this->connection;
     }
 
-    public function sendToBackground($queueName, $body = null, $start = true, $persistent = true)
+    /**
+     * @param string $queueName
+     * @param mixed $body
+     * @param bool $start
+     * @param bool $persistent
+     * @param string $queueType
+     * @param int $delay In seconds
+     *
+     * @return bool
+     */
+    public function sendToBackground($queueName, $body = null, $start = true, $persistent = true, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0)
     {
         if (!$start && !$this->transactionStarted) {
             $this->getChannel()->startTransaction();
             $this->transactionStarted = true;
         }
 
-        $result = $this->publishMessage($body, $queueName, $persistent);
+        $result = $this->publishMessage($body, $queueName, $persistent, $queueType, $delay);
 
         if ($start && $this->transactionStarted) {
             $this->runTasks();
@@ -90,12 +105,16 @@ class rabbit
         return $result;
     }
 
-    protected function publishMessage($body, $queueName, $persistent = false)
+    protected function publishMessage($body, $queueName, $persistent = false, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0)
     {
+        if ($queueType === self::EXCHANGE_TYPE_DEAD_LETTER) {
+            return $this->deadLetterPublish($body, $queueName, $persistent, $delay);
+        }
+
         $key = "{$this->configSection}:{$queueName}";
         if(!isset($this->declaredQueues[$key])) {
             $this->declaredQueues[$key] = true;
-            $this->getQueue($queueName);
+            $this->getQueue($queueName, $queueType);
         }
 
         $options = [];
@@ -104,7 +123,35 @@ class rabbit
             $options['delivery_mode'] = self::MESSAGE_DELIVERY_PERSISTENT;
         }
 
-        return $this->getExchange($queueName)->publish(json_encode($body), $queueName, AMQP_NOPARAM, $options);
+        if ($queueType === self::EXCHANGE_TYPE_DELAYED) {
+            $options['x-delay'] = $delay;
+        }
+
+        return $this->getExchange($queueName, $queueType)->publish(json_encode($body), $queueName, AMQP_NOPARAM, $options);
+    }
+
+    protected function deadLetterPublish($body, $queueName, $persistent = false, $delay = 0)
+    {
+        $delayQueueName = "{$queueName}_{$delay}";
+
+        $key = "{$this->configSection}:{$delayQueueName}";
+        if(!isset($this->declaredQueues[$key])) {
+            $this->declaredQueues[$key] = true;
+            $this->getQueue($delayQueueName, self::EXCHANGE_TYPE_FANOUT, ['x-dead-letter-exchange' => $this->getExchangeName($queueName)]);
+        }
+
+        $key = "{$this->configSection}:{$queueName}";
+        if(!isset($this->declaredQueues[$key])) {
+            $this->declaredQueues[$key] = true;
+            $this->getQueue($queueName);
+        }
+
+        $options = ['expiration' => $delay * 1000];
+        if($persistent) {
+            $options['delivery_mode'] = self::MESSAGE_DELIVERY_PERSISTENT;
+        }
+
+        return $this->getExchange($delayQueueName, self::EXCHANGE_TYPE_FANOUT)->publish(json_encode($body), $queueName, AMQP_NOPARAM, $options);
     }
 
     public function runTasks()
@@ -120,6 +167,11 @@ class rabbit
 
     public function getQueuesList()
     {
+        return $this->callApi(self::URL_LIST_QUEUES);
+    }
+
+    public function callApi($path, $params = [], $method = 'GET')
+    {
         static $curl;
         if ($curl === null) {
             $curl = new curl();
@@ -128,28 +180,31 @@ class rabbit
         $connectionData = $this->getConnectionData();
 
         try {
-            $url = sprintf(self::URL_LIST_QUEUES, $connectionData['host']);
+            $url = sprintf(self::URL_API_BASE, $connectionData['host']) . $path;
             $curl->reset();
             $curl->addOptions([
                 CURLOPT_USERPWD => "{$connectionData['login']}:{$connectionData['password']}"
             ]);
-            $curl->prepare($url);
+            $curl->prepare($url, $params, $method);
             $content = $curl->execute();
             $result = json_decode($content, true);
         } catch (curlException $e) {
-            MPCMF_DEBUG && self::log()->addDebug('[ERROR] Requesting rabbitmq queues list failed!', [__METHOD__]);
+            MPCMF_DEBUG && self::log()->addDebug('[ERROR] Requesting rabbitmq API failed!', [__METHOD__]);
             MPCMF_DEBUG && self::log()->addDebug("[ERROR] ({$e->getCode()}) {$e->getMessage()}", [__METHOD__]);
             $result = [];
         }
 
         return $result;
+
     }
 
     /**
-     * @param string|null $queueName
+     * @param string $queueName
      * @param string $queueType
      *
      * @return \AMQPExchange
+     * @throws \AMQPExchangeException
+     * @throws \AMQPConnectionException
      */
     protected function getExchange($queueName = null, $queueType = self::EXCHANGE_TYPE_DIRECT)
     {
@@ -166,10 +221,13 @@ class rabbit
         if (!isset($exchanges[$key])) {
             MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize exchange...", [__METHOD__]);
             $exchanges[$key] = new \AMQPExchange($this->getChannel());
-            $exchanges[$key]->setName(self::getExchangeName($queueName));
+            $exchanges[$key]->setName($this->getExchangeName($queueName, $queueType));
             $exchanges[$key]->setFlags(AMQP_DURABLE);
 
             $exchanges[$key]->setType($queueType);
+            if ($queueType === self::EXCHANGE_TYPE_DELAYED) {
+                $exchanges[$key]->setArgument('x-delayed-type', 'direct');
+            }
 
             if($queueName !== self::EXCHANGE_POINT) {
                 $exchanges[$key]->declare();
@@ -186,6 +244,7 @@ class rabbit
 
     /**
      * @return \AMQPChannel
+     * @throws \AMQPConnectionException
      */
     protected function getChannel()
     {
@@ -197,16 +256,20 @@ class rabbit
         return $this->channel;
     }
 
-    public function getQueue($queueName)
+    public function getQueue($queueName, $queueType = self::EXCHANGE_TYPE_DIRECT, $arguments = [])
     {
         if (!isset($this->queues[$queueName])) {
             MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
             $this->queues[$queueName] = new \AMQPQueue($this->getChannel());
             $this->queues[$queueName]->setName($queueName);
             $this->queues[$queueName]->setFlags(AMQP_DURABLE);
+            if (count($arguments) > 0) {
+                $this->queues[$queueName]->setArguments($arguments);
+            }
+
             $this->queues[$queueName]->declare();
-            $this->getExchange($queueName);
-            $this->queues[$queueName]->bind(self::getExchangeName($queueName), $queueName);
+            $this->getExchange($queueName, $queueType);
+            $this->queues[$queueName]->bind($this->getExchangeName($queueName, $queueType), $queueName);
         }
 
         return $this->queues[$queueName];

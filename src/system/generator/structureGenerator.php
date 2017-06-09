@@ -162,7 +162,7 @@ class structureGenerator
     protected function processItemContent($item)
     {
         $filePath = $this->getFilePath($item);
-        
+
         $metaContent = $item['meta']['content'];
 
         switch($metaContent['type']) {
@@ -199,7 +199,7 @@ class structureGenerator
 
     /**
      * Check structure item correctness
-     * 
+     *
      * @param array $item
      * @throws structureGeneratorException
      */
