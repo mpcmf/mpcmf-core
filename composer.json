@@ -25,7 +25,7 @@
     "phpmailer/phpmailer": "dev-master",
     "monolog/monolog": "~1.12",
     "khr/react-curl": "dev-master",
-    "react/http": "^0.4",
+    "react/http": "dev-master#cd15204bd15d106d7832c680e4fb0ca0ce2f5e30",
     "infostars/net-curl": "dev-master",
     "smarty/smarty": "3.1.27"
   },

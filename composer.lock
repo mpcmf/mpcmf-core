@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "content-hash": "0e0855413fa642ae6605c19878eaff02",
+    "content-hash": "11d4ee7eeda045cb460914562bf71dc0",
     "packages": [
         {
             "name": "evenement/evenement",
@@ -313,12 +313,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPMailer/PHPMailer.git",
-                "reference": "699d57dc01914d3b16ea3a2dbeee87b2e08e3377"
+                "reference": "29b2042fd1a5cbb987a26f0db1b0ba5af302f920"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/699d57dc01914d3b16ea3a2dbeee87b2e08e3377",
-                "reference": "699d57dc01914d3b16ea3a2dbeee87b2e08e3377",
+                "url": "https://api.github.com/repos/PHPMailer/PHPMailer/zipball/29b2042fd1a5cbb987a26f0db1b0ba5af302f920",
+                "reference": "29b2042fd1a5cbb987a26f0db1b0ba5af302f920",
                 "shasum": ""
             },
             "require": {
@@ -382,7 +382,7 @@
                 }
             ],
             "description": "PHPMailer is a full-featured email creation and transfer class for PHP",
-            "time": "2017-05-31 05:26:14"
+            "time": "2017-06-13 11:59:32"
         },
         {
             "name": "psr/http-message",
@@ -601,27 +601,31 @@
         },
         {
             "name": "react/http",
-            "version": "0.4.x-dev",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/reactphp/http.git",
-                "reference": "aac319bd789cbc7b478d42cde2d03596e97e3222"
+                "reference": "cd15204bd15d106d7832c680e4fb0ca0ce2f5e30"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/http/zipball/aac319bd789cbc7b478d42cde2d03596e97e3222",
-                "reference": "aac319bd789cbc7b478d42cde2d03596e97e3222",
+                "url": "https://api.github.com/repos/reactphp/http/zipball/cd15204bd15d106d7832c680e4fb0ca0ce2f5e30",
+                "reference": "cd15204bd15d106d7832c680e4fb0ca0ce2f5e30",
                 "shasum": ""
             },
             "require": {
                 "evenement/evenement": "^2.0 || ^1.0",
                 "php": ">=5.3.0",
-                "react/socket": "^0.4",
-                "react/stream": "^0.4.4",
+                "react/promise": "^2.1 || ^1.2.1",
+                "react/socket": "^1.0 || ^0.8 || ^0.7 || ^0.6 || ^0.5",
+                "react/stream": "^1.0 || ^0.7 || ^0.6 || ^0.5 || ^0.4.6",
                 "ringcentral/psr7": "^1.2"
             },
             "require-dev": {
-                "phpunit/phpunit": "^4.8.10||^5.0"
+                "clue/block-react": "^1.1",
+                "phpunit/phpunit": "^4.8.10||^5.0",
+                "react/promise-stream": "^0.1.1",
+                "react/socket": "^1.0 || ^0.8 || ^0.7"
             },
             "type": "library",
             "autoload": {
@@ -633,11 +637,16 @@
             "license": [
                 "MIT"
             ],
-            "description": "Library for building an evented http server.",
+            "description": "Event-driven, streaming plaintext HTTP and secure HTTPS server for ReactPHP",
             "keywords": [
-                "http"
+                "event-driven",
+                "http",
+                "https",
+                "reactphp",
+                "server",
+                "streaming"
             ],
-            "time": "2017-02-13 14:12:50"
+            "time": "2016-07-06 23:51:32"
         },
         {
             "name": "react/promise",
@@ -737,33 +746,33 @@
         },
         {
             "name": "react/socket",
-            "version": "dev-master",
+            "version": "v0.8.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/reactphp/socket.git",
-                "reference": "9b3eba6e4983d27a81bce429d69145b4f632d53f"
+                "reference": "8f880ab1a9e1b2eb236a836aa5e1326da3647bcd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/socket/zipball/9b3eba6e4983d27a81bce429d69145b4f632d53f",
-                "reference": "9b3eba6e4983d27a81bce429d69145b4f632d53f",
+                "url": "https://api.github.com/repos/reactphp/socket/zipball/8f880ab1a9e1b2eb236a836aa5e1326da3647bcd",
+                "reference": "8f880ab1a9e1b2eb236a836aa5e1326da3647bcd",
                 "shasum": ""
             },
             "require": {
                 "evenement/evenement": "~2.0|~1.0",
                 "php": ">=5.3.0",
                 "react/dns": "0.4.*|0.3.*",
-                "react/event-loop": "^1.0 || ^0.5 || ^0.4 || ^0.3.5",
+                "react/event-loop": "0.4.*|0.3.*",
                 "react/promise": "^2.1 || ^1.2",
                 "react/promise-timer": "~1.0",
                 "react/stream": "^1.0 || ^0.7 || ^0.6 || ^0.5 || ^0.4.5"
             },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "0.4-dev"
-                }
+            "require-dev": {
+                "clue/block-react": "^1.1",
+                "phpunit/phpunit": "~4.8",
+                "react/stream": "^1.0 || ^0.7 || ^0.6"
             },
+            "type": "library",
             "autoload": {
                 "psr-4": {
                     "React\\Socket\\": "src"
@@ -773,38 +782,41 @@
             "license": [
                 "MIT"
             ],
-            "description": "Library for building an evented socket server.",
+            "description": "Async, streaming plaintext TCP/IP and secure TLS socket server and client connections for ReactPHP",
             "keywords": [
-                "Socket"
+                "Connection",
+                "Socket",
+                "async",
+                "reactphp",
+                "stream"
             ],
-            "time": "2015-08-07 19:59:11"
+            "time": "2017-05-09T11:27:38+00:00"
         },
         {
             "name": "react/stream",
-            "version": "0.4.x-dev",
+            "version": "v0.7.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/reactphp/stream.git",
-                "reference": "44dc7f51ea48624110136b535b9ba44fd7d0c1ee"
+                "reference": "bd19f2f66de70afa8a065bbfdb07def24af8f63c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/stream/zipball/44dc7f51ea48624110136b535b9ba44fd7d0c1ee",
-                "reference": "44dc7f51ea48624110136b535b9ba44fd7d0c1ee",
+                "url": "https://api.github.com/repos/reactphp/stream/zipball/bd19f2f66de70afa8a065bbfdb07def24af8f63c",
+                "reference": "bd19f2f66de70afa8a065bbfdb07def24af8f63c",
                 "shasum": ""
             },
             "require": {
                 "evenement/evenement": "^2.0|^1.0",
-                "php": ">=5.3.8"
+                "php": ">=5.3.8",
+                "react/event-loop": "^1.0 || ^0.5 || ^0.4 || ^0.3"
             },
             "require-dev": {
                 "clue/stream-filter": "~1.2",
-                "react/event-loop": "^0.4|^0.3",
-                "react/promise": "^2.0|^1.0"
+                "phpunit/phpunit": "^5.0 || ^4.8.10"
             },
             "suggest": {
-                "react/event-loop": "^0.4",
-                "react/promise": "^2.0"
+                "react/event-loop": "^0.4"
             },
             "type": "library",
             "autoload": {
@@ -816,12 +828,18 @@
             "license": [
                 "MIT"
             ],
-            "description": "Basic readable and writable stream interfaces that support piping.",
+            "description": "Event-driven readable and writable streams for non-blocking I/O in ReactPHP",
             "keywords": [
+                "event-driven",
+                "io",
+                "non-blocking",
                 "pipe",
-                "stream"
+                "reactphp",
+                "readable",
+                "stream",
+                "writable"
             ],
-            "time": "2017-01-25 14:44:14"
+            "time": "2017-05-20T17:29:18+00:00"
         },
         {
             "name": "ringcentral/psr7",
@@ -1156,12 +1174,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/polyfill-mbstring.git",
-                "reference": "adebc086600bc93b45d8d6721c8f21088a2be4dc"
+                "reference": "f29dca382a6485c3cbe6379f0c61230167681937"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/adebc086600bc93b45d8d6721c8f21088a2be4dc",
-                "reference": "adebc086600bc93b45d8d6721c8f21088a2be4dc",
+                "url": "https://api.github.com/repos/symfony/polyfill-mbstring/zipball/f29dca382a6485c3cbe6379f0c61230167681937",
+                "reference": "f29dca382a6485c3cbe6379f0c61230167681937",
                 "shasum": ""
             },
             "require": {
@@ -1173,7 +1191,7 @@
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-master": "1.3-dev"
+                    "dev-master": "1.4-dev"
                 }
             },
             "autoload": {
@@ -1207,7 +1225,7 @@
                 "portable",
                 "shim"
             ],
-            "time": "2017-05-29 15:51:17"
+            "time": "2017-06-09 14:24:12"
         },
         {
             "name": "wingu/code-generator",
@@ -2182,12 +2200,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "5f6b55e907b65fdb1cefe25b82604049f1d40e81"
+                "reference": "02878ee742708dd663c129a1bd3ad1b628098b00"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/5f6b55e907b65fdb1cefe25b82604049f1d40e81",
-                "reference": "5f6b55e907b65fdb1cefe25b82604049f1d40e81",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/02878ee742708dd663c129a1bd3ad1b628098b00",
+                "reference": "02878ee742708dd663c129a1bd3ad1b628098b00",
                 "shasum": ""
             },
             "require": {
@@ -2229,7 +2247,7 @@
             ],
             "description": "Symfony Yaml Component",
             "homepage": "https://symfony.com",
-            "time": "2017-06-02T22:30:16+00:00"
+            "time": "2017-06-12T16:03:21+00:00"
         }
     ],
     "aliases": [],
@@ -2237,6 +2255,7 @@
     "stability-flags": {
         "phpmailer/phpmailer": 20,
         "khr/react-curl": 20,
+        "react/http": 20,
         "infostars/net-curl": 20,
         "phpunit/phpunit": 20
     },
