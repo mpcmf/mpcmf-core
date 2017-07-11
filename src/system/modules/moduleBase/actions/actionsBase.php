@@ -261,6 +261,26 @@ abstract class actionsBase
                         aclManager::ACL__GROUP_API_WRITE,
                     ],
                 ], $this),
+                'api.remove.multi' => new action([
+                    'name' => 'API: мультиудаление',
+                    'method' => 'api_remove_multi',
+                    'http' => [
+                        'GET',
+                        'POST',
+                    ],
+                    'required' => [
+
+                    ],
+                    'path' => '(/)',
+                    'useBase' => false,
+                    'template' => 'crud/api.json.tpl',
+                    'type' => action::TYPE__DEFAULT,
+                    'acl' => [
+                        aclManager::ACL__GROUP_ADMIN,
+                        aclManager::ACL__GROUP_API_FULL,
+                        aclManager::ACL__GROUP_API_WRITE,
+                    ],
+                ], $this),
                 'api.list' => new action([
                     'name' => 'API: все объекты',
                     'method' => 'api_list',

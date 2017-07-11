@@ -648,6 +648,54 @@ abstract class controllerBase
     }
 
     /**
+     * @return array|null
+     *
+     * @throws mapperException
+     * @throws modelException
+     * @throws controllerException
+     * @throws modulePartsHelperException
+     * @throws webApplicationException
+     */
+    public function api_remove_multi()
+    {
+        $request = $this->getSlim()->request();
+
+        if (!$request->isPost()) {
+            return [
+                'response' => self::nothing([
+
+                ])
+            ];
+        }
+
+        $items = $request->post('items');
+        if (!is_array($items) || count($items) === 0) {
+            return [
+                'response' => self::error([
+                    'errors' => [
+                        'Required field `items` missed!'
+                    ]
+                ])
+            ];
+        }
+
+        try {
+            $result = $this->getMapper()->removeAllByIds($items);
+        } catch (mapperException $mapperException) {
+
+            return [
+                'response' => self::errorByException($mapperException, codes::RESPONSE_CODE_FAIL)
+            ];
+        }
+
+        return [
+            'response' => self::success([
+                'result' => $result
+            ], codes::RESPONSE_CODE_REMOVED)
+        ];
+    }
+
+    /**
      *
      * @param int $limit
      * @param int $offset
