@@ -87,7 +87,7 @@ class loader
             cache::setCached($cacheKey, $paths);
         }
 
-        $loader->addPsr4('mpcmf\\modules\\', $paths['modules'], false);
+        $loader->addPsr4('mpcmf\\modules\\', $paths['modules'], true);
         $loader->register(false);
 
         $loader->addPsr4('mpcmf\\system\\', $paths['system'], true);
