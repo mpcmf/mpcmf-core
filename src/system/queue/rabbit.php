@@ -86,17 +86,18 @@ class rabbit
      * @param bool $persistent
      * @param string $queueType
      * @param int $delay In seconds
+     * @param array $options
      *
      * @return bool
      */
-    public function sendToBackground($queueName, $body = null, $start = true, $persistent = true, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0)
+    public function sendToBackground($queueName, $body = null, $start = true, $persistent = true, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0, $options = [])
     {
         if (!$start && !$this->transactionStarted) {
             $this->getChannel()->startTransaction();
             $this->transactionStarted = true;
         }
 
-        $result = $this->publishMessage($body, $queueName, $persistent, $queueType, $delay);
+        $result = $this->publishMessage($body, $queueName, $persistent, $queueType, $delay, $options);
 
         if ($start && $this->transactionStarted) {
             $this->runTasks();
@@ -105,7 +106,7 @@ class rabbit
         return $result;
     }
 
-    protected function publishMessage($body, $queueName, $persistent = false, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0)
+    protected function publishMessage($body, $queueName, $persistent = false, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0, $options = [])
     {
         if ($queueType === self::EXCHANGE_TYPE_DEAD_LETTER) {
             return $this->deadLetterPublish($body, $queueName, $persistent, $delay);
@@ -116,9 +117,7 @@ class rabbit
             $this->declaredQueues[$key] = true;
             $this->getQueue($queueName, $queueType);
         }
-
-        $options = [];
-
+        
         if($persistent) {
             $options['delivery_mode'] = self::MESSAGE_DELIVERY_PERSISTENT;
         }
