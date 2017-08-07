@@ -70,7 +70,7 @@ class rabbit
         return $this->connectionData[$this->configSection];
     }
 
-    protected function getConnection()
+    public function getConnection()
     {
         $connectionData = $this->getConnectionData();
         $this->connection = new \AMQPConnection($connectionData);
