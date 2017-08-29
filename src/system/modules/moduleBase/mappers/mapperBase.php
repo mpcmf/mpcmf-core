@@ -535,15 +535,15 @@ abstract class mapperBase
         }
 
         try {
-        $found = $this->storage()
-             ->selectOne($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $fields);
+            $found = $this->storage()
+                          ->selectOne($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $fields);
         } catch(storageException $storageException) {
             throw new mapperException('Some error in storage, request failed', $storageException->getCode(), $storageException);
         }
 
         if($found === null) {
             MPCMF_DEBUG && self::log()->addInfo("Item not found in storage: {$this->getEntityName()}", [__METHOD__]);
-            throw new mapperException("Item not found in storage: {$this->getEntityName()}");
+            throw new mapperException("Item not found in storage: {$this->getEntityName()} by criteria: " . json_encode($criteria));
         }
 
         return $class::fromArray($found);
@@ -561,8 +561,8 @@ abstract class mapperBase
      */
     public function updateById($id, $newData, $createIfNotExists = false)
     {
-        MPCMF_DEBUG && self::log()->addDebug("id:{$id}", [__METHOD__]);
-        MPCMF_LL_DEBUG && self::log()->addDebug("id:{$id} data:" . json_encode($newData), [__METHOD__]);
+        MPCMF_DEBUG && self::log()->addDebug('id:' . json_encode($id), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('id:' . json_encode($id) . " data:" . json_encode($newData), [__METHOD__]);
         $criteria = [
             $this->getKey() => $id
         ];
@@ -597,8 +597,6 @@ abstract class mapperBase
     public function updateAllByIds($ids, $newData)
     {
         MPCMF_DEBUG && self::log()->addDebug('ids:' . json_encode($ids) . ' data:' . json_encode($newData), [__METHOD__]);
-
-
 
         $key = $this->getKey();
         foreach($ids as $k => $id) {
@@ -636,7 +634,7 @@ abstract class mapperBase
      */
     public function getById($id)
     {
-        MPCMF_DEBUG && self::log()->addDebug("id:{$id}", [__METHOD__]);
+        MPCMF_DEBUG && self::log()->addDebug('id:' . json_encode($id), [__METHOD__]);
         $criteria = [
             $this->getKey() => $id
         ];
@@ -670,11 +668,36 @@ abstract class mapperBase
      */
     public function removeById($id)
     {
-        MPCMF_DEBUG && self::log()->addDebug("id:{$id}", [__METHOD__]);
+        MPCMF_DEBUG && self::log()->addDebug('id:' . json_encode($id), [__METHOD__]);
         $criteria = [
             $this->getKey() => $id
         ];
         $criteria = $this->convertDataFromForm($criteria);
+
+        try {
+            return $this->_remove($criteria);
+        } catch(storageException $storageException) {
+            throw new mapperException('Some error in storage, request failed', $storageException->getCode(), $storageException);
+        }
+    }
+
+    /**
+     * Remove all by criteria
+     *
+     * @param array $criteria
+     *
+     * @return mixed
+     * @throws \mpcmf\system\configuration\exception\configurationException
+     * @throws \MongoCursorTimeoutException
+     * @throws \MongoCursorException
+     * @throws \MongoConnectionException
+     * @throws \InvalidArgumentException
+     * @throws \Exception
+     * @throws mapperException
+     */
+    public function removeAllBy($criteria)
+    {
+        MPCMF_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
 
         try {
             return $this->_remove($criteria);
@@ -775,7 +798,14 @@ abstract class mapperBase
             throw new mapperException('Model error, unable to get model class', $modelException->getCode(), $modelException);
         }
 
-        return $class::fromArray($this->_findAndModify($criteria, $updateData, $fields, $options));
+        $savedItem = $this->_findAndModify($criteria, $updateData, $fields, $options);
+
+        if(!$savedItem) {
+            MPCMF_DEBUG && self::log()->addInfo("Item not found in storage: {$this->getEntityName()}", [__METHOD__]);
+            throw new mapperException("Item not found in storage: {$this->getEntityName()}");
+        }
+
+        return $class::fromArray($savedItem);
     }
 
     /**
