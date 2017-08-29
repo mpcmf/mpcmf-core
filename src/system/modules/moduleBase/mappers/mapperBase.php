@@ -763,7 +763,7 @@ abstract class mapperBase
      * @param array $fields
      * @param array $options
      *
-     * @return static
+     * @return modelBase
      * @throws mapperException
      */
     public function findAndModify($criteria, $updateData, $fields = [], $options = [])
