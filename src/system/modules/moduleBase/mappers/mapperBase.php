@@ -953,7 +953,7 @@ abstract class mapperBase
                 throw new mapperException('Key field doesn\'t exists!');
             }
             if(!isset($this->titleField)) {
-                $this->titleField =& $this->key;
+                $this->titleField = $this->key;
             }
             $this->isSearchable = count($this->searchFields) > 0 || count($this->fulltextSearchFields) > 0;
             $this->isSortable = count($this->sortFields) > 0;
