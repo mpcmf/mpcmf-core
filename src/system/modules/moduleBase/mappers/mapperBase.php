@@ -136,7 +136,8 @@ abstract class mapperBase
      */
     public function getNormalizedMap()
     {
-        if(!isset($this->normalizedMap)) {
+        if($this->normalizedMap === null) {
+            $this->normalizedMap = [];
             $map = $this->getMap();
             foreach ($map as $field => $mapData) {
                 if (isset($mapData['relations'])) {
@@ -953,7 +954,7 @@ abstract class mapperBase
                 throw new mapperException('Key field doesn\'t exists!');
             }
             if(!isset($this->titleField)) {
-                $this->titleField =& $this->key;
+                $this->titleField = $this->key;
             }
             $this->isSearchable = count($this->searchFields) > 0 || count($this->fulltextSearchFields) > 0;
             $this->isSortable = count($this->sortFields) > 0;
