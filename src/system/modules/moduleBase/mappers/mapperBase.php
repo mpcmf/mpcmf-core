@@ -924,7 +924,7 @@ abstract class mapperBase
             $this->searchFields = [];
             $this->fulltextSearchFields = [];
             $this->sortFields = [];
-            foreach ($this->getNormalizedMap() as $field => $mapData) {
+            foreach ($this->getMap() as $field => $mapData) {
                 if (isset($mapData['role'][self::ROLE__PRIMARY_KEY]) && $mapData['role'][self::ROLE__PRIMARY_KEY]) {
                     $this->key = $field;
                     $this->keyType = $mapData['type'];
@@ -953,7 +953,7 @@ abstract class mapperBase
                 throw new mapperException('Key field doesn\'t exists!');
             }
             if(!isset($this->titleField)) {
-                $this->titleField = $this->key;
+                $this->titleField =& $this->key;
             }
             $this->isSearchable = count($this->searchFields) > 0 || count($this->fulltextSearchFields) > 0;
             $this->isSortable = count($this->sortFields) > 0;
