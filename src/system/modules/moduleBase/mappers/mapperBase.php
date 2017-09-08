@@ -924,7 +924,7 @@ abstract class mapperBase
             $this->searchFields = [];
             $this->fulltextSearchFields = [];
             $this->sortFields = [];
-            foreach ($this->getNormalizedMap() as $field => $mapData) {
+            foreach ($this->getMap() as $field => $mapData) {
                 if (isset($mapData['role'][self::ROLE__PRIMARY_KEY]) && $mapData['role'][self::ROLE__PRIMARY_KEY]) {
                     $this->key = $field;
                     $this->keyType = $mapData['type'];
