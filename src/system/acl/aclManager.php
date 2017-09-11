@@ -6,6 +6,7 @@ use mpcmf\modules\moduleBase\actions\action;
 use mpcmf\modules\moduleBase\exceptions\mapperException;
 use mpcmf\modules\moduleBase\exceptions\modelException;
 use mpcmf\modules\moduleBase\models\modelBase;
+use mpcmf\modules\moduleBase\models\modelCursor;
 use mpcmf\system\acl\exception\aclException;
 use mpcmf\system\configuration\config;
 use mpcmf\system\configuration\environment;
@@ -159,5 +160,18 @@ class aclManager
     public function removeUserCookie()
     {
         Slim::getInstance()->deleteCookie($this->cookie['name']);
+    }
+
+    /**
+     * Get all expanded group ids
+     *
+     * @param $cursor
+     *
+     * @return mixed
+     * @throws \mpcmf\modules\moduleBase\exceptions\modelException
+     */
+    public function expandGroupsByCursor(modelCursor $cursor)
+    {
+        return $this->aclManager->expandGroupsByCursor($cursor);
     }
 }
