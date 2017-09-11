@@ -4,6 +4,7 @@ namespace mpcmf\system\acl;
 
 use mpcmf\modules\moduleBase\actions\action;
 use mpcmf\modules\moduleBase\models\modelBase;
+use mpcmf\modules\moduleBase\models\modelCursor;
 
 /**
  * Base system ACL manager
@@ -59,4 +60,14 @@ interface aclManagerInterface
      * @return array
      */
     public function buildCookieDataByUser(modelBase $user);
+
+    /**
+     * Get all expanded group ids
+     *
+     * @param $cursor
+     *
+     * @return mixed
+     * @throws \mpcmf\modules\moduleBase\exceptions\modelException
+     */
+    public function expandGroupsByCursor(modelCursor $cursor);
 }
