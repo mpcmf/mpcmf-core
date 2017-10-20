@@ -14,6 +14,11 @@ trait mongoCrud
      */
     private $storageInstance;
 
+    /**
+     * @var \MongoCollection
+     */
+    private $collection;
+
     private $mongoCrudStorageConfig;
 
     /**
@@ -57,6 +62,27 @@ trait mongoCrud
             $this->mongoCrudStorageConfig = $storageConfig;
         }
         $this->storageInstance = $storageInstance;
+    }
+
+    /**
+     * @return \MongoCollection
+     *
+     * @throws storageException
+     * @throws \mpcmf\system\configuration\exception\configurationException
+     * @throws \MongoConnectionException
+     * @throws \InvalidArgumentException
+     * @throws \Exception
+     */
+    public function collection()
+    {
+        if ($this->collection === null) {
+            $storage = $this->storage();
+            $config = $this->getMongoCrudStorageConfig();
+
+            $this->collection = $storage->getCollection($config['db'], $config['collection']);
+        }
+
+        return $this->collection;
     }
 
     /**

@@ -274,7 +274,7 @@ abstract class actionsBase
                     'path' => '(/)',
                     'useBase' => false,
                     'template' => 'crud/api.json.tpl',
-                    'type' => action::TYPE__DEFAULT,
+                    'type' => action::TYPE__API_GLOBAL,
                     'acl' => [
                         aclManager::ACL__GROUP_ADMIN,
                         aclManager::ACL__GROUP_API_FULL,
