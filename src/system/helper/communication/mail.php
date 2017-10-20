@@ -2,7 +2,7 @@
 
 namespace mpcmf\system\helper\communication;
 
-use PHPMailer;
+use PHPMailer\PHPMailer\PHPMailer;
 
 class mail
 {
