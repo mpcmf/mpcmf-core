@@ -169,7 +169,7 @@ class thread
     public function isAlive()
     {
         if($this->pid === null) {
-            
+
             return false;
         }
         $pid = pcntl_waitpid($this->pid, $status, WNOHANG);
@@ -214,7 +214,7 @@ class thread
                 call_user_func_array($this->runnable, $arguments);
             } catch (\Exception $exception) {
                 self::log()->addError("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}");
-                MPCMF_DEBUG && error_log("Stack trace:\n{$exception->getTraceAsString()}");
+                MPCMF_DEBUG && error_log("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}\nStack trace:\n{$exception->getTraceAsString()}");
             }
             exit(0);
         }
