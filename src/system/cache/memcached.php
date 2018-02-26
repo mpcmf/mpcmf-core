@@ -25,6 +25,8 @@ class memcached
      */
     protected $memcached;
 
+    protected $pid;
+
     /**
      * Commit changes
      *
@@ -77,6 +79,24 @@ class memcached
         }
     }
 
+    protected function reconnect()
+    {
+        $config = config::getConfig(__CLASS__)[$this->configSection];
+        $this->memcached = new \Memcached();
+        foreach ($config['servers'] as $server) {
+            $this->memcached->addServer($server['host'], $server['port']);
+        }
+    }
+
+    protected function checkConnection()
+    {
+        $currentPid = getmypid();
+        if($currentPid !== $this->pid) {
+            $this->pid = $currentPid;
+            $this->reconnect();
+        }
+    }
+
     /**
      * Set value by key
      *
@@ -90,7 +110,43 @@ class memcached
     {
         profiler::addStack('memcached::w');
 
+        $this->checkConnection();
+
         return $this->memcached->set($key, $value, $expire);
+    }
+
+    /**
+     * Set value by items
+     *
+     * @param array $items
+     * @param int $expire
+     *
+     * @return bool|mixed
+     */
+    public function setMulti($items, $expire = 60)
+    {
+        profiler::addStack('memcached::w');
+
+        $this->checkConnection();
+
+        return $this->memcached->setMulti($items, $expire);
+    }
+
+    /**
+     * Update expiration time
+     *
+     * @param string $key
+     * @param int $expire
+     *
+     * @return bool|mixed
+     */
+    public function touch($key, $expire = 60)
+    {
+        profiler::addStack('memcached::w');
+
+        $this->checkConnection();
+
+        return $this->memcached->touch($key, $expire);
     }
 
     /**
@@ -106,6 +162,8 @@ class memcached
     {
         profiler::addStack('memcached::w');
 
+        $this->checkConnection();
+
         return $this->memcached->add($key, $value, $expire);
     }
 
@@ -118,6 +176,8 @@ class memcached
     public function get($key)
     {
         profiler::addStack('memcached::r');
+
+        $this->checkConnection();
 
         return $this->memcached->get($key);
     }
@@ -137,6 +197,8 @@ class memcached
     {
 //        return $this->memcached->increment($key, $howMany, $initial, $expire);
         profiler::addStack('memcached::rw');
+
+        $this->checkConnection();
 
         $value = $this->memcached->get($key);
         if($value === false) {
@@ -165,6 +227,8 @@ class memcached
 //        return $this->memcached->decrement($key, $howMany, $initial, $expire);
         profiler::addStack('memcached::rw');
 
+        $this->checkConnection();
+
         $value = $this->memcached->get($key);
         if($value === false) {
             $value = $initial;
@@ -187,6 +251,8 @@ class memcached
     {
         profiler::addStack('memcached::r');
 
+        $this->checkConnection();
+
         $data = $this->memcached->get($key);
         return !($data === false || $data === null);
     }
@@ -201,6 +267,8 @@ class memcached
     {
         profiler::addStack('memcached::w');
 
+        $this->checkConnection();
+
         return $this->memcached->delete($key);
     }
 
@@ -213,6 +281,8 @@ class memcached
     {
         profiler::addStack('memcached::w');
 
+        $this->checkConnection();
+
         return $this->memcached->flush();
     }
 
@@ -223,6 +293,8 @@ class memcached
      */
     public function getResultCode()
     {
+        $this->checkConnection();
+
         return $this->memcached->getResultCode();
     }
 
@@ -233,6 +305,8 @@ class memcached
      */
     public function getBackend()
     {
+        $this->checkConnection();
+
         return $this->memcached;
     }
 }
