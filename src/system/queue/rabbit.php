@@ -229,7 +229,11 @@ class rabbit
             }
 
             if($queueName !== self::EXCHANGE_POINT) {
-                $exchanges[$key]->declare();
+                if (method_exists($exchanges[$key], 'declareExchange')) {
+                    $exchanges[$key]->declareExchange();
+                } else {
+                    $exchanges[$key]->declare();
+                }
             }
         }
 
@@ -266,7 +270,11 @@ class rabbit
                 $this->queues[$queueName]->setArguments($arguments);
             }
 
-            $this->queues[$queueName]->declare();
+            if (method_exists($this->queues[$queueName], 'declareQueue')) {
+                $this->queues[$queueName]->declareQueue();
+            } else {
+                $this->queues[$queueName]->declare();
+            }
             $this->getExchange($queueName, $queueType);
             $this->queues[$queueName]->bind($this->getExchangeName($queueName, $queueType), $queueName);
         }
