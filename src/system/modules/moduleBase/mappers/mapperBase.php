@@ -765,7 +765,7 @@ abstract class mapperBase
      *
      * @param $criteria
      *
-     * @return array|mixed|null
+     * @return int
      * @throws mapperException
      */
     public function getCountBy($criteria)
@@ -773,7 +773,7 @@ abstract class mapperBase
         MPCMF_DEBUG && self::log()->addDebug('criteria: ' . json_encode($criteria), [__METHOD__]);
 
         try {
-            return $this->_getBy($criteria);
+            return $this->_getAllBy($criteria)->count();
         } catch(storageException $storageException) {
             throw new mapperException('Some error in storage, request failed', $storageException->getCode(), $storageException);
         }
