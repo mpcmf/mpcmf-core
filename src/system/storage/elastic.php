@@ -57,6 +57,7 @@ class elastic
 
             $this->es[$this->elasticCurrent] = Client::connection($esConfig);
         }
+
         return $this->es[$this->elasticCurrent];
     }
 }
