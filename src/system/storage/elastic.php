@@ -18,26 +18,45 @@ class elastic
 
     protected $elasticCurrent = 0;
 
+    protected $config;
+
+    /** @var Client[] $es */
+    protected $es = [];
+
+    protected $timeout;
+
+    public function setTimeout($timeout = 300)
+    {
+        $this->timeout = $timeout;
+
+        return $this;
+    }
+
+    /**
+     * @return Client
+     * @throws \mpcmf\system\configuration\exception\configurationException
+     * @throws \Exception
+     */
     public function getElastic()
     {
-        /** @var Client[] $es */
-        static $config, $es = [];
-
-        if ($config === null) {
-            $config = $this->getPackageConfig();
-            $this->elasticCurrent = $config['elastic.current'];
+        if ($this->config === null) {
+            $this->config = $this->getPackageConfig();
+            $this->elasticCurrent = $this->config['elastic.current'];
         }
 
         $this->elasticCurrent++;
-        if (!isset($config['elastic'][$this->elasticCurrent])) {
+        if (!isset($this->config['elastic'][$this->elasticCurrent])) {
             $this->elasticCurrent = 0;
         }
 
         if (!isset($es[$this->elasticCurrent])) {
-            $esConfig = $config['elastic'][$this->elasticCurrent];
+            $esConfig = $this->config['elastic'][$this->elasticCurrent];
+            if ($this->timeout !== null) {
+                $esConfig['timeout'] = $this->timeout;
+            }
 
-            $es[$this->elasticCurrent] = Client::connection($esConfig);
+            $this->es[$this->elasticCurrent] = Client::connection($esConfig);
         }
-        return $es[$this->elasticCurrent];
+        return $this->es[$this->elasticCurrent];
     }
 }
