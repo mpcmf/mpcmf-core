@@ -1,5 +1,7 @@
 <?php
 
+declare(ticks=100);
+
 namespace mpcmf\system\threads;
 
 use mpcmf\system\helper\service\signalHandler;
