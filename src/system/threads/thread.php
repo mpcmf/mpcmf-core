@@ -1,6 +1,6 @@
 <?php
 
-declare(ticks=100);
+declare(ticks=10000);
 
 namespace mpcmf\system\threads;
 
