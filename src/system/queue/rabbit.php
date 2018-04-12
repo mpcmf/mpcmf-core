@@ -49,7 +49,11 @@ class rabbit
      * @var \AMQPQueue[]
      */
     private $queues = [];
-    private $connection;
+
+    /**
+     * @var \AMQPConnection[]
+     */
+    private $connections;
     /**
      * @var \AMQPChannel
      */
@@ -70,13 +74,37 @@ class rabbit
         return $this->connectionData[$this->configSection];
     }
 
-    public function getConnection()
+    public function getConnection($force = false, $init = true)
     {
-        $connectionData = $this->getConnectionData();
-        $this->connection = new \AMQPConnection($connectionData);
-        $this->connection->connect();
+        if(function_exists('posix_getpid')) {
+            $pid = posix_getpid();
+        } else {
+            $pid = getmypid();
+        }
 
-        return $this->connection;
+        $key = "{$pid}:{$this->configSection}";
+        if ($init === false) {
+            if (!isset($this->connections[$key])) {
+
+                return null;
+            }
+            return $this->connections[$key];
+        }
+
+
+        if ($force || !isset($this->connections[$key])) {
+            $connectionData = $this->getConnectionData();
+            MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize connection: " . json_encode($connectionData), __METHOD__);
+            $this->connections[$key] = new \AMQPConnection($connectionData);
+            $this->connections[$key]->connect();
+        }
+
+        return $this->connections[$key];
+    }
+
+    public function reconnect()
+    {
+        $this->getConnection()->reconnect();
     }
 
     /**
@@ -246,13 +274,15 @@ class rabbit
     }
 
     /**
+     * @param bool $force
+     *
      * @return \AMQPChannel
      * @throws \AMQPConnectionException
      */
-    protected function getChannel()
+    protected function getChannel($force = false)
     {
-        if ($this->channel === null) {
-            $this->channel = new \AMQPChannel($this->getConnection());
+        if ($force || $this->channel === null) {
+            $this->channel = new \AMQPChannel($this->getConnection($force));
             $this->channel->setPrefetchCount(1);
         }
 
@@ -285,6 +315,9 @@ class rabbit
     public function __destruct()
     {
         $this->runTasks();
-        $this->getConnection()->disconnect();
+        $connection  = $this->getConnection(false, false);
+        if ($connection !== null) {
+            $connection->disconnect();
+        }
     }
 }
