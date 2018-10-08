@@ -17,6 +17,16 @@
   "type": "library",
   "require": {
     "php": ">=5.5.10",
+    "ext-json":  "*",
+    "ext-intl":  "*",
+    "ext-posix":  "*",
+    "ext-memcached":  "*",
+    "ext-amqp":  "*",
+    "ext-sockets":  "*",
+    "ext-zlib":  "*",
+    "ext-pcntl":  "*",
+    "ext-pthreads":  "*",
+    "ext-mbstring":  "*",
     "slim/slim": "2.*",
     "symfony/console": "~2.6",
     "phpdocumentor/reflection-docblock": "~2.0",
@@ -27,7 +37,7 @@
     "khr/react-curl": "dev-master",
     "infostars/net-curl": "dev-master",
     "smarty/smarty": "3.1.27",
-    "alcaeus/mongo-php-adapter": "^1.1@dev"
+    "alcaeus/mongo-php-adapter": "^1.1@dev",
     "nervetattoo/elasticsearch": "dev-master",
     "mpcmf/mpcmf-signal-handler": "dev-master"
   },
@@ -60,10 +70,5 @@
       "src/loader.php"
     ]
   },
-  "minimum-stability": "dev",
-  "config": {
-    "platform": {
-      "ext-mongo": "1.6.16"
-    }
-  }
+  "minimum-stability": "dev"
 }
