@@ -67,7 +67,7 @@ class environment
     public static function getBaseEnvironment()
     {
         if (self::$baseEnvironment === null) {
-            self::$environment = self::ENV_DEFAULT;
+            self::$baseEnvironment = self::ENV_DEFAULT;
         }
 
         return self::$baseEnvironment;

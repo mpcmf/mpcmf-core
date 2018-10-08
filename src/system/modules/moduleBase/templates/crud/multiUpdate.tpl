@@ -2,7 +2,7 @@
 
 {include file="index/catchResponse.tpl"}
 
-<form method="post">
+<form method="post" name="multiupdate_form">
     <input type="hidden" name="confirm" value="yes">
     {foreach from=$data.items item="receivedItem"}
         <input type="hidden" name="items[]" value="{$receivedItem}">
@@ -20,18 +20,44 @@
             <tr>
                 <label>
                     <td>
-                        <input type="checkbox" name="update[{$fieldName}]" value="1">
+                        <input class="update_checkbox" type="checkbox" name="update[{$fieldName}]" value="1">
                     </td>
                     <td>{$field.name}</td>
                 </label>
                 <td>{include file="forms/generate/type_{$field.formType}.tpl" fieldName=$fieldName field=$field}</td>
             </tr>
         {/foreach}
-            <tr>
-                <td colspan="3">
-                    {include file="forms/generate/type_submit.tpl"}
-                </td>
-            </tr>
+        <tr>
+            <td colspan="3">
+                <div id="submit_form" class="btn btn-success">Подтвердить</div>
+            </td>
+        </tr>
         </tbody>
     </table>
 </form>
+
+
+<script>
+    var UI = {
+        form: document.forms['multiupdate_form'],
+        boxes: $('form input.update_checkbox'),
+        submit_form: $('#submit_form')
+    };
+    var Input = {
+        checkRequired: function(){
+            var boxes = UI.boxes;
+            var item = null, input = null;
+            for (var i = 0; i < boxes.length; i++) {
+                item = boxes[i].parentNode.nextElementSibling.nextElementSibling;
+                item = $(item).find('input').filter('[required]:visible');
+                if(!boxes[i].checked && item.required) item.required = false;
+            }
+        }
+    };
+    window.onload = function () {
+        UI.submit_form.on('click', function(e){
+            Input.checkRequired();
+            UI.form.submit();
+        });
+    };
+</script>

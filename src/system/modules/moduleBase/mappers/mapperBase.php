@@ -399,8 +399,9 @@ abstract class mapperBase
 
         if(count($this->searchFields)) {
             foreach ($this->searchFields as $field) {
+                $converted = $this->convert($field, $query);
                 $criteria['$or'][] = [
-                    $field => $this->convert($field, $query)
+                    $field => is_array($converted) ? ['$in' => $converted] : $converted
                 ];
             }
         }
@@ -765,7 +766,7 @@ abstract class mapperBase
      *
      * @param $criteria
      *
-     * @return array|mixed|null
+     * @return int
      * @throws mapperException
      */
     public function getCountBy($criteria)
@@ -773,7 +774,7 @@ abstract class mapperBase
         MPCMF_DEBUG && self::log()->addDebug('criteria: ' . json_encode($criteria), [__METHOD__]);
 
         try {
-            return $this->_getBy($criteria);
+            return $this->_getAllBy($criteria)->count();
         } catch(storageException $storageException) {
             throw new mapperException('Some error in storage, request failed', $storageException->getCode(), $storageException);
         }
@@ -1034,8 +1035,11 @@ abstract class mapperBase
             case 'multitext':
             case 'searcheblemultiselect':
             case 'multiselect':
-                if(!is_array($value)) {
+                if ($value === null) {
                     throw new mapperException("Unable to convert value of field `{$field}`");
+                }
+                if(!is_array($value)) {
+                    $value = [$value];
                 }
                 $result = [];
                 if(substr($map[$field]['type'], -2) !== '[]') {

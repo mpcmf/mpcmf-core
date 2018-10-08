@@ -11,13 +11,17 @@
 <script src="/bower_components/chosen/chosen.jquery.min.js" type="text/javascript"></script>
 {if !isset($chosenSelect)}
     {assign var="chosenSelect" value=true}
-<script type="text/javascript">
-    {literal}
-    $(document).ready(function () {
-        $('.chosen-select').chosen({allow_single_deselect:true, width: '100%'});
-    });
-    {/literal}
-</script>
+    <script type="text/javascript">
+        {literal}
+        $(document).ready(function () {
+            $('.chosen-select').chosen({
+                allow_single_deselect:true,
+                search_contains:true,
+                width: '100%'
+            });
+        });
+        {/literal}
+    </script>
 {/if}
 
 {assign var="options" value=[]}
@@ -26,9 +30,10 @@
 {else}
     {assign var="fieldValue" value=$item->getFieldValue($fieldName)}
 {/if}
-{assign var="remainValues" value=count($fieldValue)}
+{assign var="relatedModels" value=$_entity->getMapper()->getAllRelatedModels($fieldName, $item)}
+{assign var="remainValues" value=($relatedModels->count())}
 
-{foreach from=$_entity->getMapper()->getAllRelatedModels($fieldName, $item) item='optionItem'}
+{foreach from=$relatedModels item='optionItem'}
     {assign var="itemValue" value=$optionItem->getFieldValue($_entity->getMapper()->getRelationField($fieldName))}
     {if $item === null}
         {assign var="selected" value=false}
@@ -53,28 +58,20 @@
     {/if}
 {/foreach}
 
-<select data-placeholder="Make your choice..."
+
+<select data-placeholder="Выберите значение..."
         {if $isMultiple}multiple{/if}
         id="item-{$fieldName}"
         name="item[{$fieldName}]{if $isMultiple}[]{/if}"
         class="form-control chosen-select"
         {if isset($field.options.required) && $field.options.required} required{/if}
         {if isset($field.role.key, $field.role['generate-key']) && $field.role.key && $field.role['generate-key']} disabled{/if}
-        {if ($isMultiple && $remainValues > 0 || isset($readonly) && $readonly)} disabled{/if}
-        >
+        {if (isset($readonly) && $readonly)} readonly{/if}>
     {if !$isMultiple}<option value="">Выбрать значение...</option>{/if}
 
-    {if $isMultiple && $remainValues > 0}
-        {foreach from=$fieldValue item="groupId"}
-            <option value="{$groupId}" selected="selected">
-                {$groupId}
-            </option>
-        {/foreach}
-    {else}
-        {foreach from=$options item="option"}
-            <option value="{$option['value']}" {if $option['selected']} selected="selected"{/if}>
-                {$option['title']}
-            </option>
-        {/foreach}
-    {/if}
+    {foreach from=$options item="option"}
+        <option value="{$option['value']}" {if $option['selected']} selected="selected"{/if}>
+            {$option['title']}
+        </option>
+    {/foreach}
 </select>

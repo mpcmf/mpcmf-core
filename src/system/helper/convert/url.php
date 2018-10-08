@@ -113,6 +113,23 @@ class url
     }
 
     /**
+     * @param string $url
+     *
+     * @return string
+     */
+    public static function urlEncode($url)
+    {
+        $parsedUrl = parse_url($url);
+        if (!isset($parsedUrl['path'])) {
+            return $url;
+        }
+        //http://php.net/manual/en/function.urlencode.php#97969
+        $parsedUrl['path'] = str_replace(['%21', '%2A', '%27', '%28', '%29', '%3B', '%3A', '%40', '%26', '%3D', '%2B', '%24', '%2C', '%2F', '%3F', '%25', '%23', '%5B', '%5D'], ['!', '*', "'", '(', ')', ';', ':', '@', '&', '=', '+', '$', ',', '/', '?', '%', '#', '[', ']'], urlencode($parsedUrl['path']));
+
+        return self::unParseUrl($parsedUrl);
+    }
+
+    /**
      * @param        $url
      * @param null|array   $params
      * @param string $method
