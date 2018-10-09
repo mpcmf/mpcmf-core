@@ -43,7 +43,7 @@ class emailValidator
 
             return false;
         }
-        $preparedDomain = idn_to_utf8($explodedEmail[1]);
+        $preparedDomain = idn_to_utf8($explodedEmail[1], IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
 
         return stringValidator::byRegex($preparedDomain, $regexData);
     }
