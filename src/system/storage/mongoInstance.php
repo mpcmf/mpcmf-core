@@ -23,6 +23,8 @@ class mongoInstance
      */
     private $mongo;
 
+    private $pid;
+
     /**
      * Return \MongoClient instance for current configuration
      *
@@ -32,10 +34,12 @@ class mongoInstance
      */
     public function getMongo()
     {
-        if ($this->mongo === null) {
+        $currentPid = getmypid();
+        if ($this->mongo === null || $this->pid !== $currentPid) {
             $config = $this->getPackageConfig();
             MPCMF_LL_DEBUG && self::log()->addDebug("Connecting to {$config['uri']}", [__METHOD__]);
             $this->mongo = new \MongoClient($config['uri'], $config['options']);
+            $this->pid = $currentPid;
         }
 
         return $this->mongo;
