@@ -173,27 +173,31 @@ class modelCursor
     }
 
     /**
-     * @param $num
+     * @param int $num
      *
      * @return \MongoCursor
+     *
+     * @throws \MongoCursorException
      */
     public function skip($num)
     {
-        $this->skip = $num;
+        $this->skip = (int) $num;
 
-        return $this->cursor->skip($num);
+        return $this->cursor->skip($this->skip);
     }
 
     /**
-     * @param $num
+     * @param int $num
      *
      * @return \MongoCursor
+     *
+     * @throws \MongoCursorException
      */
     public function limit($num)
     {
-        $this->limit = $num;
+        $this->limit = (int) $num;
 
-        return $this->cursor->limit($num);
+        return $this->cursor->limit($this->limit);
     }
 
     /**
