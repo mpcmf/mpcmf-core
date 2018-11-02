@@ -134,7 +134,7 @@ class rabbit
         return $result;
     }
 
-    protected function publishMessage($body, $queueName, $persistent = false, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0, $options = [])
+    protected function publishMessage($body, $queueName, $persistent = false, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0, $queueOptions = [])
     {
         if ($queueType === self::EXCHANGE_TYPE_DEAD_LETTER) {
             return $this->deadLetterPublish($body, $queueName, $persistent, $delay);
@@ -143,9 +143,10 @@ class rabbit
         $key = "{$this->configSection}:{$queueName}";
         if(!isset($this->declaredQueues[$key])) {
             $this->declaredQueues[$key] = true;
-            $this->getQueue($queueName, $queueType);
+            $this->getQueue($queueName, $queueType, $queueOptions);
         }
-        
+
+        $options = [];
         if($persistent) {
             $options['delivery_mode'] = self::MESSAGE_DELIVERY_PERSISTENT;
         }
@@ -291,25 +292,33 @@ class rabbit
 
     public function getQueue($queueName, $queueType = self::EXCHANGE_TYPE_DIRECT, $arguments = [])
     {
-        if (!isset($this->queues[$queueName])) {
-            MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
-            $this->queues[$queueName] = new \AMQPQueue($this->getChannel());
-            $this->queues[$queueName]->setName($queueName);
-            $this->queues[$queueName]->setFlags(AMQP_DURABLE);
-            if (count($arguments) > 0) {
-                $this->queues[$queueName]->setArguments($arguments);
-            }
-
-            if (method_exists($this->queues[$queueName], 'declareQueue')) {
-                $this->queues[$queueName]->declareQueue();
-            } else {
-                $this->queues[$queueName]->declare();
-            }
-            $this->getExchange($queueName, $queueType);
-            $this->queues[$queueName]->bind($this->getExchangeName($queueName, $queueType), $queueName);
+        if(function_exists('posix_getpid')) {
+            $pid = posix_getpid();
+        } else {
+            $pid = getmypid();
         }
 
-        return $this->queues[$queueName];
+        $queueKey = "{$pid}:{$this->configSection}:{$queueName}:{$queueType}";
+
+        if (!isset($this->queues[$queueKey])) {
+            MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
+            $this->queues[$queueKey] = new \AMQPQueue($this->getChannel());
+            $this->queues[$queueKey]->setName($queueName);
+            $this->queues[$queueKey]->setFlags(AMQP_DURABLE);
+            if (count($arguments) > 0) {
+                $this->queues[$queueKey]->setArguments($arguments);
+            }
+
+            if (method_exists($this->queues[$queueKey], 'declareQueue')) {
+                $this->queues[$queueKey]->declareQueue();
+            } else {
+                $this->queues[$queueKey]->declare();
+            }
+            $this->getExchange($queueName, $queueType);
+            $this->queues[$queueKey]->bind($this->getExchangeName($queueName, $queueType), $queueName);
+        }
+
+        return $this->queues[$queueKey];
     }
 
     public function __destruct()
