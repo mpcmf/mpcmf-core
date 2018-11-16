@@ -31,6 +31,14 @@ class rabbit
     const EXCHANGE_TYPE_DELAYED = 'x-delayed-message';
     const EXCHANGE_TYPE_DEAD_LETTER = 'dead-letter';
 
+    const COMPRESSION_TYPE__GZIP = 'gzip';
+    const COMPRESSION_TYPE__RAW = 'raw';
+
+    const CONTENT_TYPE__JSON = 'json';
+    const CONTENT_TYPE__PLAIN = 'text';
+
+    const HEADER_CONTENT_TYPE = 'content-type';
+
     const URL_LIST_QUEUES = 'queues';
     const URL_API_BASE = 'http://%s:15672/api/';
 
@@ -42,6 +50,11 @@ class rabbit
      * @var bool
      */
     protected $transactionStarted = false;
+
+    protected $compressionType = self::COMPRESSION_TYPE__RAW;
+    protected $compressionLevel = -1;
+
+    protected $contentType = self::CONTENT_TYPE__JSON;
 
     private $connectionData = [];
     private $declaredQueues = [];
@@ -58,6 +71,21 @@ class rabbit
      * @var \AMQPChannel
      */
     private $channel;
+
+    public function setCompressionType($compressionType)
+    {
+        $this->compressionType = $compressionType;
+    }
+
+    public function setCompressionLevel($compressionLevel)
+    {
+        $this->compressionLevel = $compressionLevel;
+    }
+
+    public function setContentType($contentType)
+    {
+        $this->contentType = $contentType;
+    }
 
     protected function getConnectionData()
     {
@@ -146,7 +174,11 @@ class rabbit
             $this->getQueue($queueName, $queueType, $queueOptions);
         }
 
-        $options = [];
+        $options = [
+            'headers' => [
+                self::HEADER_CONTENT_TYPE => "{$this->contentType}/{$this->compressionType}"
+            ]
+        ];
         if($persistent) {
             $options['delivery_mode'] = self::MESSAGE_DELIVERY_PERSISTENT;
         }
@@ -155,7 +187,61 @@ class rabbit
             $options['x-delay'] = $delay;
         }
 
-        return $this->getExchange($queueName, $queueType)->publish(json_encode($body), $queueName, AMQP_NOPARAM, $options);
+        return $this->getExchange($queueName, $queueType)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
+    }
+
+    protected function prepareBody($body)
+    {
+        switch ($this->contentType) {
+            case self::CONTENT_TYPE__JSON:
+                $body = json_encode($body);
+                break;
+            case self::CONTENT_TYPE__PLAIN:
+            default:
+                break;
+        }
+
+        switch ($this->compressionType) {
+            case self::COMPRESSION_TYPE__GZIP:
+                $body = gzcompress($body, $this->compressionLevel);
+                break;
+            case self::COMPRESSION_TYPE__RAW:
+            default:
+                break;
+        }
+
+        return $body;
+    }
+
+    public static function getBody(\AMQPEnvelope $envelope)
+    {
+        $contentTypeHeader = $envelope->getHeader(self::HEADER_CONTENT_TYPE);
+        if ($contentTypeHeader === false) {
+            return $envelope->getBody();
+        }
+
+        $body = $envelope->getBody();
+        list($contentType, $compressionType) = explode('/', $contentTypeHeader);
+
+        switch ($compressionType) {
+            case self::COMPRESSION_TYPE__GZIP:
+                $body = gzuncompress($body);
+                break;
+            case self::COMPRESSION_TYPE__RAW:
+            default:
+                break;
+        }
+
+        switch ($contentType) {
+            case self::CONTENT_TYPE__JSON:
+                $body = json_decode($body, true);
+                break;
+            case self::CONTENT_TYPE__PLAIN:
+            default:
+                break;
+        }
+
+        return $body;
     }
 
     protected function deadLetterPublish($body, $queueName, $persistent = false, $delay = 0)
