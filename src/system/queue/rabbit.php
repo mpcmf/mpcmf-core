@@ -68,9 +68,9 @@ class rabbit
      */
     private $connections;
     /**
-     * @var \AMQPChannel
+     * @var \AMQPChannel[]
      */
-    private $channel;
+    private $channels;
 
     public function setCompressionType($compressionType)
     {
@@ -145,6 +145,11 @@ class rabbit
      * @param array $options
      *
      * @return bool
+     *
+     * @throws \AMQPChannelException
+     * @throws \AMQPConnectionException
+     * @throws \AMQPExchangeException
+     * @throws \AMQPQueueException
      */
     public function sendToBackground($queueName, $body = null, $start = true, $persistent = true, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0, $options = [])
     {
@@ -162,6 +167,21 @@ class rabbit
         return $result;
     }
 
+    /**
+     * @param $body
+     * @param $queueName
+     * @param bool $persistent
+     * @param string $queueType
+     * @param int $delay
+     * @param array $queueOptions
+     *
+     * @return bool
+     *
+     * @throws \AMQPChannelException
+     * @throws \AMQPConnectionException
+     * @throws \AMQPExchangeException
+     * @throws \AMQPQueueException
+     */
     protected function publishMessage($body, $queueName, $persistent = false, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0, $queueOptions = [])
     {
         if ($queueType === self::EXCHANGE_TYPE_DEAD_LETTER) {
@@ -244,6 +264,19 @@ class rabbit
         return $body;
     }
 
+    /**
+     * @param $body
+     * @param $queueName
+     * @param bool $persistent
+     * @param int $delay
+     *
+     * @return bool
+     *
+     * @throws \AMQPChannelException
+     * @throws \AMQPConnectionException
+     * @throws \AMQPExchangeException
+     * @throws \AMQPQueueException
+     */
     protected function deadLetterPublish($body, $queueName, $persistent = false, $delay = 0)
     {
         $delayQueueName = "{$queueName}_{$delay}";
@@ -268,6 +301,12 @@ class rabbit
         return $this->getExchange($delayQueueName, self::EXCHANGE_TYPE_FANOUT)->publish(json_encode($body), $queueName, AMQP_NOPARAM, $options);
     }
 
+    /**
+     * @return bool
+     *
+     * @throws \AMQPChannelException
+     * @throws \AMQPConnectionException
+     */
     public function runTasks()
     {
         $status = false;
@@ -319,6 +358,7 @@ class rabbit
      * @return \AMQPExchange
      * @throws \AMQPExchangeException
      * @throws \AMQPConnectionException
+     * @throws \AMQPChannelException
      */
     protected function getExchange($queueName = null, $queueType = self::EXCHANGE_TYPE_DIRECT)
     {
@@ -368,14 +408,34 @@ class rabbit
      */
     protected function getChannel($force = false)
     {
-        if ($force || $this->channel === null) {
-            $this->channel = new \AMQPChannel($this->getConnection($force));
-            $this->channel->setPrefetchCount(1);
+        if(function_exists('posix_getpid')) {
+            $pid = posix_getpid();
+        } else {
+            $pid = getmypid();
         }
 
-        return $this->channel;
+        $key = "{$pid}";
+
+        if ($force || isset($this->channels[$key])) {
+            $this->channels[$key] = new \AMQPChannel($this->getConnection($force));
+            $this->channels[$key]->setPrefetchCount(1);
+        }
+
+        return $this->channels[$key];
     }
 
+    /**
+     * @param $queueName
+     * @param string $queueType
+     * @param array $arguments
+     *
+     * @return \AMQPQueue
+     *
+     * @throws \AMQPChannelException
+     * @throws \AMQPConnectionException
+     * @throws \AMQPExchangeException
+     * @throws \AMQPQueueException
+     */
     public function getQueue($queueName, $queueType = self::EXCHANGE_TYPE_DIRECT, $arguments = [])
     {
         if(function_exists('posix_getpid')) {
