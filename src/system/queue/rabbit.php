@@ -416,7 +416,7 @@ class rabbit
 
         $key = "{$pid}";
 
-        if ($force || isset($this->channels[$key])) {
+        if ($force || !isset($this->channels[$key])) {
             $this->channels[$key] = new \AMQPChannel($this->getConnection($force));
             $this->channels[$key]->setPrefetchCount(1);
         }
