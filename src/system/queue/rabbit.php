@@ -239,7 +239,7 @@ class rabbit
         $contentTypeHeader = $envelope->getHeader(self::HEADER_CONTENT_TYPE);
 
         if ($contentTypeHeader === false) {
-            return $envelope->getHeader('content-type');
+            $contentTypeHeader = $envelope->getHeader('content-type');
         }
 
         if ($contentTypeHeader === 'text/plain' || $contentTypeHeader === false) {
