@@ -37,7 +37,7 @@ class rabbit
     const CONTENT_TYPE__JSON = 'json';
     const CONTENT_TYPE__PLAIN = 'text';
 
-    const HEADER_CONTENT_TYPE = 'content-type';
+    const HEADER_CONTENT_TYPE = 'content_type';
 
     const URL_LIST_QUEUES = 'queues';
     const URL_API_BASE = 'http://%s:15672/api/';
@@ -196,8 +196,9 @@ class rabbit
 
         $options = [
             'headers' => [
+                'content-type' => "{$this->contentType}/{$this->compressionType}", // Todo: remove this, after implement right header in all subsystems
                 self::HEADER_CONTENT_TYPE => "{$this->contentType}/{$this->compressionType}"
-            ]
+            ],
         ];
         if($persistent) {
             $options['delivery_mode'] = self::MESSAGE_DELIVERY_PERSISTENT;
@@ -236,7 +237,13 @@ class rabbit
     public static function getBody(\AMQPEnvelope $envelope)
     {
         $contentTypeHeader = $envelope->getHeader(self::HEADER_CONTENT_TYPE);
+
         if ($contentTypeHeader === false) {
+            return $envelope->getHeader('content-type');
+        }
+
+        if ($contentTypeHeader === 'text/plain' || $contentTypeHeader === false) {
+            // TODO: Remove this
             return $envelope->getBody();
         }
 
