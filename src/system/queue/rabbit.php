@@ -421,7 +421,7 @@ class rabbit
             $pid = getmypid();
         }
 
-        $key = "{$pid}";
+        $key = "{$pid}:{$this->configSection}";
 
         if ($force || !isset($this->channels[$key])) {
             $this->channels[$key] = new \AMQPChannel($this->getConnection($force));
