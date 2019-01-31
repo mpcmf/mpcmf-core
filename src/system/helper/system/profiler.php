@@ -109,7 +109,8 @@ class profiler
                 'calls' => 0,
                 'memTotal' => 0,
                 'memAvg' => 0,
-                'timeAvg' => 0
+                'timeAvg' => 0,
+                'timeTotal' => 0
             ];
             foreach($result as $keyCounter => $keyData) {
                 $results[$key]['calls']++;
