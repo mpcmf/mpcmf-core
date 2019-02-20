@@ -43,7 +43,11 @@ class emailValidator
 
             return false;
         }
-        $preparedDomain = idn_to_utf8($explodedEmail[1], IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+        if(defined('INTL_IDNA_VARIANT_UTS46')) {
+            $preparedDomain = idn_to_utf8($explodedEmail[1], IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
+        } else {
+            $preparedDomain = idn_to_utf8($explodedEmail[1]);
+        }
 
         return stringValidator::byRegex($preparedDomain, $regexData);
     }
