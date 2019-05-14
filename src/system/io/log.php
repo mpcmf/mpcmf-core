@@ -30,7 +30,7 @@ class log
                 $config['path'] = sys_get_temp_dir() . '/mpcmf.' . posix_getpid() .'.log';
                 $this->addCritical("Log directory creation failed, use new path instead of original. New path: {$config['path']}");
             }
-        } elseif(is_writable($directory)) {
+        } elseif(!is_writable($directory)) {
             @chmod($directory, 0777);
         }
         $this->pushHandler(new StreamHandler($config['path'], $config['level']));
