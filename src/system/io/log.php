@@ -23,7 +23,7 @@ class log
         self::factoryConstruct($configSection);
         $config = $this->getPackageConfig();
         parent::__construct($config['name']);
-        $directory = dirname($config['path']);
+        $directory = parse_url($config['path'], PHP_URL_PATH);
         if(!file_exists($directory)) {
             $status = @mkdir($directory, 0777, true);
             if($status === false) {
