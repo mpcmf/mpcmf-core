@@ -2,6 +2,7 @@
 
 namespace mpcmf\system\io;
 
+use Bramus\Monolog\Formatter\ColoredLineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use mpcmf\system\pattern\factory;
@@ -37,7 +38,13 @@ class log
             }
         }
         
-        $this->pushHandler(new StreamHandler($config['path'], $config['level']));
+        $handler = new StreamHandler($config['path'], $config['level']);
+
+        if (isset($config['colorOutput']) && $config['colorOutput'] === true)
+            $handler->setFormatter(new ColoredLineFormatter());
+
+        $this->pushHandler($handler);
+
         MPCMF_DEBUG && $this->addDebug("New log created: {$this->configSection}");
     }
 }
