@@ -34,6 +34,7 @@
     "wingu/code-generator": "1.0.5",
     "phpmailer/phpmailer": "~6.0",
     "monolog/monolog": "~1.12",
+    "bramus/monolog-colored-line-formatter": "~2.0",
     "khr/react-curl": "dev-master",
     "infostars/net-curl": "dev-master",
     "smarty/smarty": "3.1.27",
