@@ -120,14 +120,14 @@ class smartyDriver
      *
      * Append data to view
      *
-     * @param  array $data
+     * @param array|object $data
      *
      * @throws \InvalidArgumentException
      */
     public function appendData($data)
     {
-        if (!is_array($data)) {
-            throw new \InvalidArgumentException('Cannot append view data. Expected array argument.');
+        if (!is_array($data) && !$data instanceof \Traversable) {
+            throw new \InvalidArgumentException('Cannot append view data. Expected array or traversable argument.');
         }
 
         foreach ($data as $key => $value) {
