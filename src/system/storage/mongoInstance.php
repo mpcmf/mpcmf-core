@@ -25,6 +25,12 @@ class mongoInstance
 
     private $pid;
 
+    public function setMongo(\MongoClient $mongoClient)
+    {
+        $this->pid = getmypid();
+        $this->mongo = $mongoClient;
+    }
+
     /**
      * Return \MongoClient instance for current configuration
      *
