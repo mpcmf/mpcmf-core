@@ -70,7 +70,13 @@ trait moduleHelper
         if($this->moduleRoutesInstance === null) {
             /** @var moduleRoutesBase $class */
             $class = $this->getModuleNamespace() . '\routes';
-            $this->moduleRoutesInstance = $class::getInstance();
+            try {
+                $this->moduleRoutesInstance = $class::getInstance();
+            } catch (\Error $e) {
+                // to support https://github.com/pulyavin/PHP-Coding-Style-Guide, Именование сущностей
+                $class = $this->getModuleNamespace() . '\Routes';
+                $this->moduleRoutesInstance = $class::getInstance();
+            }
         }
 
         return $this->moduleRoutesInstance;
@@ -82,7 +88,13 @@ trait moduleHelper
             /** @var moduleBase $class */
             $class = $this->getModuleNamespace() . '\module';
             MPCMF_DEBUG && self::log()->addDebug("Add module class: {$class}");
-            $this->moduleInstance = $class::getInstance();
+            try {
+                $this->moduleInstance = $class::getInstance();
+            } catch (\Error $e) {
+                // to support https://github.com/pulyavin/PHP-Coding-Style-Guide, Именование сущностей
+                $class = $this->getModuleNamespace() . '\Module';
+                $this->moduleInstance = $class::getInstance();
+            }
         }
 
         return $this->moduleInstance;
