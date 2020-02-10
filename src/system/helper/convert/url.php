@@ -370,9 +370,11 @@ class url
         parse_str($parsed['query'], $query);
         foreach ($query as $paramName => $value) {
             $strUppedParam = strtoupper($paramName);
-            if(strpos($strUppedParam, 'UTM_') === 0) {
-                unset($query[$paramName]);
-                continue;
+            foreach (self::$utmTags as $tag) {
+                if(strpos($strUppedParam, $tag) === 0) {
+                    unset($query[$paramName]);
+                    continue 2;
+                }
             }
             switch ($strUppedParam) {
                 case 'SPLIT_NG':
@@ -410,6 +412,34 @@ class url
                 case 'SECUREID':
                 case 'PRINT':
                 case 'LIMITED':
+                case 'OE':
+                case 'OH':
+                case 'TKN':
+                case 'AID':
+                case 'PLC':
+                case 'CFS':
+                case 'FEATURE':
+                case 'SUB_CONFIRMATION':
+                case 'VIEW_AS':
+                case 'FBCLID':
+                case 'IGSHID':
+                case 'REF':
+                case 'USP':
+                case 'TS':
+                case 'RID':
+                case 'SSL':
+                case 'SIGN':
+                case 'PARTNER':
+                case 'SOCIAL':
+                case 'SECDATA':
+                case 'SMID':
+                case 'SMTYP':
+                case '_UNIQUE_ID':
+                case 'CMP':
+                case 'REFERRER':
+                case 'OCID':
+                case 'CLID':
+                case 'STID':
                     unset($query[$paramName]);
                     break;
                 default:
@@ -1869,5 +1899,15 @@ class url
         '.zt.ua' => true,
         '.zw' => true,
         '.рф' => true,
+    ];
+
+    protected static $utmTags = [
+        'UTM_',
+        '_NC',
+        'AFF_',
+        'ONELINK_',
+        'APPSEARCH_',
+        '_SHORTURL',
+        'REF_',
     ];
 }
