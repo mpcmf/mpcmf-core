@@ -115,8 +115,7 @@ class config
         static $classNamesCached = [];
 
         if(!isset($classNamesCached[$packageName])) {
-            $classNamesCached[$packageName] = self::NAMESPACE_SEPARATOR
-                . str_replace(self::CONFIG_SEPARATOR, self::NAMESPACE_SEPARATOR, $packageName);
+            $classNamesCached[$packageName] = str_replace(self::CONFIG_SEPARATOR, self::NAMESPACE_SEPARATOR, $packageName);
         }
 
         return $classNamesCached[$packageName];
