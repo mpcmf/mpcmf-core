@@ -2,6 +2,7 @@
 
 namespace mpcmf\system\cache;
 
+use mpcmf\system\configuration\environment;
 use mpcmf\system\helper\system\profiler;
 
 /**
@@ -16,14 +17,26 @@ class cache
     protected static $cacheBasePath = '/tmp/mpcmf';
     protected static $expire = 172800;
 
+    /**
+     * @param string $baseCachePath Base cache path (Default: "/tmp/mpcmf")
+     */
+    public static function setBaseCachePath($baseCachePath)
+    {
+        self::$cacheBasePath = $baseCachePath;
+    }
+
     public static function getBaseCachePath()
     {
+        if (defined('MPCMF_MULTI_ENV') && MPCMF_MULTI_ENV) {
+            return self::$cacheBasePath . DIRECTORY_SEPARATOR . environment::getCurrentEnvironment();
+        }
+
         return self::$cacheBasePath;
     }
 
     protected static function getPath($key)
     {
-        return self::$cacheBasePath . "/{$key}.cache";
+        return self::getBaseCachePath() . "/{$key}.cache";
     }
 
     /**
