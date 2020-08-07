@@ -2,6 +2,7 @@
 
 namespace mpcmf\system\cache;
 
+use mpcmf\system\configuration\environment;
 use mpcmf\system\helper\system\profiler;
 
 /**
@@ -13,17 +14,51 @@ use mpcmf\system\helper\system\profiler;
  */
 class cache
 {
-    protected static $cacheBasePath = '/tmp/mpcmf';
+    const CACHE_BASE_PATH = '/tmp/mpcmf';
+
+    protected static $cacheBasePath = self::CACHE_BASE_PATH;
+    protected static $cachePath;
     protected static $expire = 172800;
 
-    public static function getBaseCachePath()
+    /**
+     * @param string $baseCachePath Base cache path
+     */
+    public static function setBaseCachePath($baseCachePath = self::CACHE_BASE_PATH)
+    {
+        self::$cacheBasePath = $baseCachePath;
+        self::updateCachePath();
+    }
+
+    public static function getCacheBasePath()
     {
         return self::$cacheBasePath;
     }
 
+    public static function getCachePath()
+    {
+        if (self::$cachePath === null) {
+            self::updateCachePath();
+        }
+
+        return self::$cachePath;
+    }
+
     protected static function getPath($key)
     {
-        return self::$cacheBasePath . "/{$key}.cache";
+        if (self::$cachePath === null) {
+            self::updateCachePath();
+        }
+
+        return self::$cachePath . "/{$key}.cache";
+    }
+
+    protected static function updateCachePath()
+    {
+        if (defined('MPCMF_MULTI_ENV') && MPCMF_MULTI_ENV) {
+            self::$cachePath = self::$cacheBasePath . DIRECTORY_SEPARATOR . environment::getCurrentEnvironment();
+        } else {
+            self::$cachePath = self::$cacheBasePath;
+        }
     }
 
     /**
