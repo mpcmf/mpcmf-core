@@ -204,4 +204,21 @@ class smartyDriver
             return true;
         }
     }
+
+    /**
+     * displays a Smarty template
+     *
+     * @param string $template   the resource handle of the template file or template object
+     * @param mixed  $cache_id   cache id to be used with this template
+     * @param mixed  $compile_id compile id to be used with this template
+     * @param object $parent     next higher level of Smarty variables
+     */
+    public function display($template = null, $cache_id = null, $compile_id = null, $parent = null)
+    {
+        if ($cache_id === null) {
+            $cache_id = md5(json_encode($this->getData()));
+        }
+
+        parent::display($template, $cache_id, $compile_id, $parent);
+    }
 }
