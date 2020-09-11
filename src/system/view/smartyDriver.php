@@ -216,7 +216,7 @@ class smartyDriver
     public function display($template = null, $cache_id = null, $compile_id = null, $parent = null)
     {
         if ($cache_id === null) {
-            $cache_id = md5(json_encode($this->getData()));
+            $cache_id = md5(json_encode([$template, $this->getData()]));
         }
 
         parent::display($template, $cache_id, $compile_id, $parent);
