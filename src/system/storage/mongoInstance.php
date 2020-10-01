@@ -390,7 +390,7 @@ class mongoInstance
             $log->addDebug('Checking index ' . json_encode($index));
             $needToCreate[$key] = true;
             foreach ($dbIndexes as $dbIndex) {
-                if (json_encode($dbIndex['key']) === json_encode($index['keys'])) {
+                if ($dbIndex['key'] === $index['keys']) {
                     $log->addDebug('Found index ' . json_encode($index['keys']) . ', checking options...');
                     if (!empty($index['options'])) {
                         $log->addDebug('Options in cfg found');
