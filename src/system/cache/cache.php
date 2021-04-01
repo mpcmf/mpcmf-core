@@ -14,16 +14,16 @@ use mpcmf\system\helper\system\profiler;
  */
 class cache
 {
-    const CACHE_BASE_PATH = '/tmp/mpcmf';
+    const CACHE_PATH = '/.cache';
 
-    protected static $cacheBasePath = self::CACHE_BASE_PATH;
+    protected static $cacheBasePath;
     protected static $cachePath;
     protected static $expire = 172800;
 
     /**
      * @param string $baseCachePath Base cache path
      */
-    public static function setBaseCachePath($baseCachePath = self::CACHE_BASE_PATH)
+    public static function setBaseCachePath($baseCachePath)
     {
         self::$cacheBasePath = $baseCachePath;
         self::updateCachePath();
@@ -54,6 +54,9 @@ class cache
 
     protected static function updateCachePath()
     {
+        if (self::$cacheBasePath === null) {
+            self::$cacheBasePath = APP_ROOT . self::CACHE_PATH;
+        }
         if (defined('MPCMF_MULTI_ENV') && MPCMF_MULTI_ENV) {
             self::$cachePath = self::$cacheBasePath . DIRECTORY_SEPARATOR . environment::getCurrentEnvironment();
         } else {
