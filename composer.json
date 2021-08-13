@@ -41,6 +41,12 @@
     "nervetattoo/elasticsearch": "dev-master",
     "mpcmf/mpcmf-signal-handler": "dev-master"
   },
+    "repositories":[
+        {
+            "type": "vcs",
+            "url": "http://github.com/pltrm/elasticsearch"
+        }
+    ],
   "require-dev": {
     "phpunit/phpunit": "^4.0@dev"
   },

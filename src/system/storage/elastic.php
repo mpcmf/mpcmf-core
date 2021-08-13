@@ -49,7 +49,7 @@ class elastic
             $this->elasticCurrent = 0;
         }
 
-        if (!isset($es[$this->elasticCurrent])) {
+        if (!isset($this->es[$this->elasticCurrent])) {
             $esConfig = $this->config['elastic'][$this->elasticCurrent];
             if ($this->timeout !== null) {
                 $esConfig['timeout'] = $this->timeout;
