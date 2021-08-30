@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6f90bc0649e1691f8404d7d383243076",
+    "content-hash": "dfac551d4f1b4db3443207ddea2e83d6",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -458,12 +458,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/nervetattoo/elasticsearch.git",
-                "reference": "668d029f2a16fc31722eeeabb048fc3d95fea7b5"
+                "reference": "6a7603d6820812c25b0d0a4f102aedb3b662e250"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nervetattoo/elasticsearch/zipball/668d029f2a16fc31722eeeabb048fc3d95fea7b5",
-                "reference": "668d029f2a16fc31722eeeabb048fc3d95fea7b5",
+                "url": "https://api.github.com/repos/nervetattoo/elasticsearch/zipball/6a7603d6820812c25b0d0a4f102aedb3b662e250",
+                "reference": "6a7603d6820812c25b0d0a4f102aedb3b662e250",
                 "shasum": ""
             },
             "require": {
@@ -472,6 +472,7 @@
             "require-dev": {
                 "atoum/atoum": "^2.9"
             },
+            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-0": {
@@ -495,7 +496,11 @@
                 "client",
                 "elasticsearch"
             ],
-            "time": "2017-10-15T21:07:24+00:00"
+            "support": {
+                "issues": "https://github.com/nervetattoo/elasticsearch/issues",
+                "source": "https://github.com/nervetattoo/elasticsearch/tree/master"
+            },
+            "time": "2021-08-13T19:28:20+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
