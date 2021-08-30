@@ -385,41 +385,32 @@ class mongoInstance
         $collectionObject = $this->getMongo()->selectDB($db)->selectCollection($collection);
         $dbIndexes = $collectionObject->getIndexInfo();
         $needToCreate = [];
-        $indexCount = count($dbIndexes);
-        $needCreateAllIndexes = $indexCount <= 1;
 
         foreach ($indexes as $key => $index) {
             $log->addDebug('Checking index ' . json_encode($index));
-            if ($needCreateAllIndexes) {
-                $log->addInfo('NOT found index ' . json_encode($index));
-                $needToCreate[$key] = true;
-            } else {
-                foreach ($dbIndexes as $dbIndex) {
-                    if (json_encode($dbIndex['key']) === json_encode($index['keys'])) {
-                        $log->addDebug('Found index ' . json_encode($index['keys']) . ', checking options...');
-                        if (!empty($index['options'])) {
-                            $log->addDebug('Options in cfg found');
-                            $ok = true;
-                            foreach ($index['options'] as $option => $optionValue) {
-                                if (!isset($dbIndex[$option]) || $dbIndex[$option] !== $optionValue) {
-                                    $log->addInfo('Option not found in dbIndex, need to create!');
-                                    $ok = false;
-                                    $needToCreate[$key] = true;
-                                }
+            $needToCreate[$key] = true;
+            foreach ($dbIndexes as $dbIndex) {
+                if (json_encode($dbIndex['key']) === json_encode($index['keys'])) {
+                    $log->addDebug('Found index ' . json_encode($index['keys']) . ', checking options...');
+                    if (!empty($index['options'])) {
+                        $log->addDebug('Options in cfg found');
+                        $ok = true;
+                        foreach ($index['options'] as $option => $optionValue) {
+                            if (!isset($dbIndex[$option]) || $dbIndex[$option] !== $optionValue) {
+                                $log->addInfo('Option not found in dbIndex, need to create!');
+                                $ok = false;
+                                $needToCreate[$key] = true;
                             }
-                            if ($ok) {
-                                $log->addDebug('Index OK, skipping...');
-                                unset($needToCreate[$key]);
-                                break;
-                            }
-                        } else {
-                            $log->addDebug('Options in cfg not found, Index OK, skipping...');
+                        }
+                        if ($ok) {
+                            $log->addDebug('Index OK, skipping...');
                             unset($needToCreate[$key]);
                             break;
                         }
                     } else {
-                        $log->addInfo('Not found index ' . json_encode($index));
-                        $needToCreate[$key] = true;
+                        $log->addDebug('Options in cfg not found, Index OK, skipping...');
+                        unset($needToCreate[$key]);
+                        break;
                     }
                 }
             }
