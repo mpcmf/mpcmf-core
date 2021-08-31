@@ -68,7 +68,7 @@
         {if isset($field.role.key, $field.role['generate-key']) && $field.role.key && $field.role['generate-key']} disabled{/if}
         {if (isset($readonly) && $readonly)} readonly{/if}
 >
-    {stripe}
+    {strip}
     {if !$isMultiple}
         <option value="">Выбрать значение...</option>
     {/if}
@@ -78,5 +78,5 @@
             {$option['title']}
         </option>
     {/foreach}
-    {/stripe}
+    {/strip}
 </select>

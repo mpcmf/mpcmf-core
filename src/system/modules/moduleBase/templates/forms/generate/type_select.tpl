@@ -12,7 +12,7 @@
         {if isset($field.role.key, $field.role['generate-key']) && $field.role.key && $field.role['generate-key']} disabled{/if}
         {if isset($readonly) && $readonly} disabled{/if}
 >
-    {stripe}
+    {strip}
     {if !$isMultiple}
         <option value="">Выбрать значение...</option>
     {/if}
@@ -40,5 +40,5 @@
             <option value="{$item->getFieldValue($fieldName)|htmlspecialchars}" selected="selected">{$item->getFieldValue($fieldName)}</option>
         {/if}
     {/foreach}
-    {/stripe}
+    {/strip}
 </select>
