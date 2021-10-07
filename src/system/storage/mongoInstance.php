@@ -26,6 +26,17 @@ class mongoInstance
     private $pid;
 
     /**
+     * Sets custom \MongoClient
+     *
+     * @param \MongoClient $mongoClient
+     */
+    public function setMongo(\MongoClient $mongoClient)
+    {
+        $this->pid = getmypid();
+        $this->mongo = $mongoClient;
+    }
+
+    /**
      * Return \MongoClient instance for current configuration
      *
      * @return \MongoClient
