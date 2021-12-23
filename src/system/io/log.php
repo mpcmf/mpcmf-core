@@ -5,6 +5,7 @@ namespace mpcmf\system\io;
 use Bramus\Monolog\Formatter\ColoredLineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use mpcmf\system\io\monolog\customProcessors\mpcmfPidProcessor;
 use mpcmf\system\pattern\factory;
 
 /**
@@ -18,6 +19,8 @@ class log
     use factory {
         __construct as factoryConstruct;
     }
+
+    protected const MPCMF_DEFAULT_LOG_FORMAT = "[%datetime%] [%pid%] %channel%.%level_name%: %message% %context% %extra%\n";
 
     public function __construct($configSection)
     {
@@ -39,9 +42,10 @@ class log
         }
         
         $handler = new StreamHandler($config['path'], $config['level']);
+        $handler->pushProcessor(new mpcmfPidProcessor());
 
         if (isset($config['colorOutput']) && $config['colorOutput'] === true)
-            $handler->setFormatter(new ColoredLineFormatter());
+            $handler->setFormatter(new ColoredLineFormatter(null, static::MPCMF_DEFAULT_LOG_FORMAT));
 
         $this->pushHandler($handler);
 
