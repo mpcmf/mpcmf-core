@@ -52,7 +52,7 @@ class config
      * @return string
      * @throws configurationException
      */
-    protected static function getProjectRoot()
+    public static function getProjectRoot()
     {
         static $projectRoot;
 
