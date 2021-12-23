@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "dfac551d4f1b4db3443207ddea2e83d6",
+    "content-hash": "a9a638623e42f92c34c1acda0f3ed426",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -457,13 +457,13 @@
             "version": "dev-master",
             "source": {
                 "type": "git",
-                "url": "https://github.com/nervetattoo/elasticsearch.git",
-                "reference": "6a7603d6820812c25b0d0a4f102aedb3b662e250"
+                "url": "https://github.com/pltrm/elasticsearch.git",
+                "reference": "09f41b4e05d1b578db40d75553767c5480124da4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/nervetattoo/elasticsearch/zipball/6a7603d6820812c25b0d0a4f102aedb3b662e250",
-                "reference": "6a7603d6820812c25b0d0a4f102aedb3b662e250",
+                "url": "https://api.github.com/repos/pltrm/elasticsearch/zipball/09f41b4e05d1b578db40d75553767c5480124da4",
+                "reference": "09f41b4e05d1b578db40d75553767c5480124da4",
                 "shasum": ""
             },
             "require": {
@@ -479,7 +479,6 @@
                     "ElasticSearch": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -497,10 +496,9 @@
                 "elasticsearch"
             ],
             "support": {
-                "issues": "https://github.com/nervetattoo/elasticsearch/issues",
-                "source": "https://github.com/nervetattoo/elasticsearch/tree/master"
+                "source": "https://github.com/pltrm/elasticsearch/tree/fix-throwing-exceptions-on-empty-response"
             },
-            "time": "2021-08-13T19:28:20+00:00"
+            "time": "2021-12-20T15:37:09+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
