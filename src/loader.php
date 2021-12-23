@@ -33,6 +33,10 @@ class loader
 
         $loader = self::getLoader();
 
+        if (!defined('APP_ROOT')) {
+            define('APP_ROOT', realpath(__DIR__ . '/../../../../'));
+        }
+
         $map = require APP_ROOT . '/vendor/composer/autoload_namespaces.php';
         foreach ($map as $namespace => $path) {
             $loader->set($namespace, $path);
