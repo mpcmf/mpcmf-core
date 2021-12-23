@@ -11,6 +11,7 @@ namespace mpcmf;
 
 use Composer\Autoload\ClassLoader;
 use mpcmf\system\cache\cache;
+use mpcmf\system\configuration\config;
 
 class loader
 {
@@ -34,7 +35,7 @@ class loader
         $loader = self::getLoader();
 
         if (!defined('APP_ROOT')) {
-            define('APP_ROOT', realpath(__DIR__ . '/../../../../'));
+            define('APP_ROOT', config::getProjectRoot());
         }
 
         $map = require APP_ROOT . '/vendor/composer/autoload_namespaces.php';
