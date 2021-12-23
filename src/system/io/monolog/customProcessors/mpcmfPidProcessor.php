@@ -7,7 +7,7 @@ class mpcmfPidProcessor
 
     private $placeholder;
 
-    public function __construct(string $placeholder = '%pid%')
+    public function __construct(string $placeholder = 'pid')
     {
         $this->placeholder = $placeholder;
     }
