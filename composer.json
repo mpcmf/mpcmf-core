@@ -41,7 +41,7 @@
     "infostars/net-curl": "dev-master",
     "smarty/smarty": "~3.1",
     "alcaeus/mongo-php-adapter": "^1.1@dev",
-    "nervetattoo/elasticsearch": "dev-master",
+    "nervetattoo/elasticsearch": "dev-es-test",
     "mpcmf/mpcmf-signal-handler": "dev-master"
   },
   "require-dev": {

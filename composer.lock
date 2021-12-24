@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a9a638623e42f92c34c1acda0f3ed426",
+    "content-hash": "c8f6f5eb4a42d58a66606fffecfc64b3",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -454,7 +454,7 @@
         },
         {
             "name": "nervetattoo/elasticsearch",
-            "version": "dev-master",
+            "version": "dev-es-test",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pltrm/elasticsearch.git",
@@ -472,7 +472,6 @@
             "require-dev": {
                 "atoum/atoum": "^2.9"
             },
-            "default-branch": true,
             "type": "library",
             "autoload": {
                 "psr-0": {
@@ -496,7 +495,7 @@
                 "elasticsearch"
             ],
             "support": {
-                "source": "https://github.com/pltrm/elasticsearch/tree/fix-throwing-exceptions-on-empty-response"
+                "source": "https://github.com/pltrm/elasticsearch/tree/es-test"
             },
             "time": "2021-12-20T15:37:09+00:00"
         },
@@ -1231,52 +1230,6 @@
                 "instantiate"
             ],
             "time": "2017-02-16T16:15:51+00:00"
-        },
-        {
-            "name": "evenement/evenement",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/igorw/evenement.git",
-                "reference": "35e87541d4b53c22201519fce3caaa5b38ac8164"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/igorw/evenement/zipball/35e87541d4b53c22201519fce3caaa5b38ac8164",
-                "reference": "35e87541d4b53c22201519fce3caaa5b38ac8164",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "type": "library",
-            "extra": {
-                "branch-alias": {
-                    "dev-master": "2.0-dev"
-                }
-            },
-            "autoload": {
-                "psr-0": {
-                    "Evenement": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Igor Wiedler",
-                    "email": "igor@wiedler.ch",
-                    "homepage": "http://wiedler.ch/igor/"
-                }
-            ],
-            "description": "Événement is a very simple event dispatching library for PHP",
-            "keywords": [
-                "event-dispatcher",
-                "event-emitter"
-            ],
-            "time": "2014-07-09T21:08:03+00:00"
         },
         {
             "name": "phpspec/prophecy",
