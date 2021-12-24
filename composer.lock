@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c8f6f5eb4a42d58a66606fffecfc64b3",
+    "content-hash": "a9a638623e42f92c34c1acda0f3ed426",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -454,16 +454,16 @@
         },
         {
             "name": "nervetattoo/elasticsearch",
-            "version": "dev-es-test",
+            "version": "dev-master",
             "source": {
                 "type": "git",
                 "url": "https://github.com/pltrm/elasticsearch.git",
-                "reference": "09f41b4e05d1b578db40d75553767c5480124da4"
+                "reference": "1087188a5a0572c8e32a32ab1bb08c9aa9354a42"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pltrm/elasticsearch/zipball/09f41b4e05d1b578db40d75553767c5480124da4",
-                "reference": "09f41b4e05d1b578db40d75553767c5480124da4",
+                "url": "https://api.github.com/repos/pltrm/elasticsearch/zipball/1087188a5a0572c8e32a32ab1bb08c9aa9354a42",
+                "reference": "1087188a5a0572c8e32a32ab1bb08c9aa9354a42",
                 "shasum": ""
             },
             "require": {
@@ -472,7 +472,13 @@
             "require-dev": {
                 "atoum/atoum": "^2.9"
             },
+            "default-branch": true,
             "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "dev-es-test"
+                }
+            },
             "autoload": {
                 "psr-0": {
                     "ElasticSearch": "src/"
@@ -495,9 +501,9 @@
                 "elasticsearch"
             ],
             "support": {
-                "source": "https://github.com/pltrm/elasticsearch/tree/es-test"
+                "source": "https://github.com/pltrm/elasticsearch/tree/master"
             },
-            "time": "2021-12-20T15:37:09+00:00"
+            "time": "2021-12-24T09:35:13+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
