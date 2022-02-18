@@ -21,9 +21,9 @@ class memcached
     /**
      * Memcached native driver instance
      *
-     * @var \Memcached
+     * @var \Memcached[]
      */
-    protected $memcached;
+    protected $memcached = [];
 
     protected $pid;
 
@@ -60,6 +60,11 @@ class memcached
         throw new cacheException('Transactions not implemented');
     }
 
+    private function getInstance(): \Memcached
+    {
+        return $this->memcached[$this->pid];
+    }
+
     /**
      * Initialize driver and connect to host
      *
@@ -73,18 +78,18 @@ class memcached
         if(!isset($config[$configSection])) {
             throw new cacheException("Config section {$configSection} not found!");
         }
-        $this->memcached = new \Memcached();
+        $this->memcached[$this->pid] = new \Memcached();
         foreach($config[$configSection]['servers'] as $server) {
-            $this->memcached->addServer($server['host'], $server['port']);
+            $this->memcached[$this->pid]->addServer($server['host'], $server['port']);
         }
     }
 
     protected function reconnect()
     {
         $config = config::getConfig(__CLASS__)[$this->configSection];
-        $this->memcached = new \Memcached();
-        foreach ($config['servers'] as $server) {
-            $this->memcached->addServer($server['host'], $server['port']);
+        $this->memcached[$this->pid] = new \Memcached();
+        foreach($config['servers'] as $server) {
+            $this->memcached[$this->pid]->addServer($server['host'], $server['port']);
         }
     }
 
@@ -112,7 +117,7 @@ class memcached
 
         $this->checkConnection();
 
-        return $this->memcached->set($key, $value, $expire);
+        return $this->getInstance()->set($key, $value, $expire);
     }
 
     /**
@@ -129,7 +134,7 @@ class memcached
 
         $this->checkConnection();
 
-        return $this->memcached->setMulti($items, $expire);
+        return $this->getInstance()->setMulti($items, $expire);
     }
 
     /**
@@ -146,7 +151,7 @@ class memcached
 
         $this->checkConnection();
 
-        return $this->memcached->touch($key, $expire);
+        return $this->getInstance()->touch($key, $expire);
     }
 
     /**
@@ -164,7 +169,7 @@ class memcached
 
         $this->checkConnection();
 
-        return $this->memcached->add($key, $value, $expire);
+        return $this->getInstance()->add($key, $value, $expire);
     }
 
     /**
@@ -179,7 +184,7 @@ class memcached
 
         $this->checkConnection();
 
-        return $this->memcached->get($key);
+        return $this->getInstance()->get($key);
     }
 
     /**
@@ -200,14 +205,14 @@ class memcached
 
         $this->checkConnection();
 
-        $value = $this->memcached->get($key);
+        $value = $this->getInstance()->get($key);
         if($value === false) {
             $value = $initial;
         } else {
             $value += $howMany;
         }
 
-        $this->memcached->set($key, $value, $expire);
+        $this->getInstance()->set($key, $value, $expire);
 
         return $value;
     }
@@ -229,14 +234,14 @@ class memcached
 
         $this->checkConnection();
 
-        $value = $this->memcached->get($key);
+        $value = $this->getInstance()->get($key);
         if($value === false) {
             $value = $initial;
         } else {
             $value -= $howMany;
         }
 
-        $this->memcached->set($key, $value, $expire);
+        $this->getInstance()->set($key, $value, $expire);
 
         return $value;
     }
@@ -253,7 +258,7 @@ class memcached
 
         $this->checkConnection();
 
-        $data = $this->memcached->get($key);
+        $data = $this->getInstance()->get($key);
         return !($data === false || $data === null);
     }
 
@@ -269,7 +274,7 @@ class memcached
 
         $this->checkConnection();
 
-        return $this->memcached->delete($key);
+        return $this->getInstance()->delete($key);
     }
 
     /**
@@ -283,7 +288,7 @@ class memcached
 
         $this->checkConnection();
 
-        return $this->memcached->flush();
+        return $this->getInstance()->flush();
     }
 
     /**
@@ -295,7 +300,7 @@ class memcached
     {
         $this->checkConnection();
 
-        return $this->memcached->getResultCode();
+        return $this->getInstance()->getResultCode();
     }
 
     /**
@@ -307,6 +312,6 @@ class memcached
     {
         $this->checkConnection();
 
-        return $this->memcached;
+        return $this->getInstance();
     }
 }
