@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fe29029cc1ec8c789ee7106aabd469db",
+    "content-hash": "617ee66af6c42e8bf90efd4213048529",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -1075,97 +1075,6 @@
                 "shim"
             ],
             "time": "2017-06-09T14:24:12+00:00"
-        },
-        {
-            "name": "wingu/code-generator",
-            "version": "1.0.5",
-            "source": {
-                "type": "git",
-                "url": "ssh://git@bitbucket.pltrm.net:7999/libs/code-generator.git",
-                "reference": "f872cbe7260c9c1398613277605bcea7ab1d5823"
-            },
-            "require": {
-                "php": ">=5.4",
-                "wingu/reflection": "1.*"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "4.1.*"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-0": {
-                    "Wingu\\OctopusCore\\CodeGenerator\\": "src/",
-                    "Wingu\\OctopusCore\\CodeGenerator\\Tests": "tests/"
-                }
-            },
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Dragos Protung",
-                    "email": "dragos.protung@speicher210.com",
-                    "role": "Developer"
-                },
-                {
-                    "name": "Antoine Verger",
-                    "email": "antoine.verger@speicher210.com",
-                    "role": "Developer"
-                }
-            ],
-            "description": "Wingu OctopusCore CoreGenerator",
-            "keywords": [
-                "code generator",
-                "generation",
-                "generator",
-                "php code generator"
-            ],
-            "time": "2022-03-05T11:03:48+00:00"
-        },
-        {
-            "name": "wingu/reflection",
-            "version": "v1.0.5",
-            "source": {
-                "type": "git",
-                "url": "ssh://git@bitbucket.pltrm.net:7999/libs/reflection.git",
-                "reference": "b9667ed4c4459746d776cf1dd9c8a93d4f52e81e"
-            },
-            "require": {
-                "php": ">=5.4"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "4.*",
-                "scrutinizer/ocular": "~1.1"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "Wingu\\OctopusCore\\Reflection\\": "src"
-                }
-            },
-            "autoload-dev": {
-                "psr-4": {
-                    "Wingu\\OctopusCore\\Reflection\\Tests\\": "tests"
-                }
-            },
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Dragos Protung",
-                    "email": "dragos@protung.ro",
-                    "role": "Developer"
-                }
-            ],
-            "description": "Library on top of PHP Reflection with some extra helper methods and a more powerful PHP DocBlock and annotation tags reflection",
-            "homepage": "https://github.com/Speicher210/Reflection",
-            "keywords": [
-                "annotations",
-                "php reflection",
-                "reflection"
-            ],
-            "time": "2022-03-05T11:05:09+00:00"
         }
     ],
     "packages-dev": [
