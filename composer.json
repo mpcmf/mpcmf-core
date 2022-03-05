@@ -16,7 +16,9 @@
   ],
   "type": "library",
   "repositories": [
-      {"type": "vcs", "url": "https://github.com/pltrm/elasticsearch"}
+      {"type": "vcs", "url": "https://github.com/pltrm/elasticsearch"},
+      {"type": "vcs", "url": "ssh://git@bitbucket.pltrm.net:7999/libs/code-generator.git"},
+      {"type": "vcs", "url": "ssh://git@bitbucket.pltrm.net:7999/libs/reflection.git"}
   ],
   "require": {
     "php": ">=5.5.10",
