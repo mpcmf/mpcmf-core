@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3dfa30578fc939afce267df51445820d",
+    "content-hash": "1b93418760d5cf72d411fbd1d81a26db",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -427,6 +427,58 @@
                 "psr-3"
             ],
             "time": "2017-05-03T13:17:21+00:00"
+        },
+        {
+            "name": "morris/lessql",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/morris/lessql.git",
+                "reference": "86eff1d9faef067bd6682f5d291ee08a4b61e7b8"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/morris/lessql/zipball/86eff1d9faef067bd6682f5d291ee08a4b61e7b8",
+                "reference": "86eff1d9faef067bd6682f5d291ee08a4b61e7b8",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.4"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^2.16",
+                "phpunit/phpunit": "~4.6|~5|~6|~7"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "LessQL\\": "src/LessQL"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Morris Brodersen",
+                    "homepage": "https://morrisbrodersen.de"
+                }
+            ],
+            "description": "LessQL: A lightweight and performant PHP ORM alternative",
+            "homepage": "https://github.com/morris/lessql",
+            "keywords": [
+                "database",
+                "notorm",
+                "orm",
+                "pdo",
+                "sql"
+            ],
+            "support": {
+                "issues": "https://github.com/morris/lessql/issues",
+                "source": "https://github.com/morris/lessql/tree/1.0.0"
+            },
+            "time": "2020-05-09T16:42:12+00:00"
         },
         {
             "name": "mpcmf/mpcmf-signal-handler",

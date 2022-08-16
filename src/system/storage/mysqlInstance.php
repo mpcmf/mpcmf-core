@@ -2,14 +2,46 @@
 
 namespace mpcmf\system\storage;
 
+use LessQL\Database;
+use LessQL\Result;
 use mpcmf\system\configuration\exception\configurationException;
+use mpcmf\system\pattern\factory;
+use mpcmf\system\storage\exception\storageException;
+use PDO;
 
 class mysqlInstance implements storageInterface
 {
+    use factory;
+
+    /** @var PDO */
+    private $storageInstance;
+
+    public function getMongo(): PDO
+    {
+        if ($this->storageInstance === null) {
+            $config = $this->getPackageConfig();
+
+            $config['sql_type'] = $config['sql_type'] ?: 'mysql';
+            switch ($config['sql_type']) {
+                case 'sqlite':
+                    $this->storageInstance = new PDO("{$config['sql_type']}:{$config['db']}.sqlite3");
+                    break;
+                case 'mysql':
+                    $this->storageInstance = new PDO("{$config['sql_type']}:host={$config['host']}", $config['username'], $config['password'], $config['options'] ?? null);
+                    break;
+                default:
+                    throw new storageException("Invalid SQL storage type: {$config['sql_type']}");
+            }
+            
+            $this->storageInstance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        }
+
+        return $this->storageInstance;
+    }
 
     public function select($db, $collection, $criteria = [], $fields = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        return new storageCursor($this->getCollection($db, $collection)->select(mongo2sql::getInstance()->translateCriteria($criteria)));
     }
 
     public function selectOne($db, $collection, $criteria = [], $fields = [])
@@ -62,14 +94,23 @@ class mysqlInstance implements storageInterface
         throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
     }
 
-    public function getCollection($db, $collection)
+    public function getCollection($db, $collection):Result
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        return $this->getDb($db)->table($collection);
     }
 
-    public function getDb($db)
+    public function getDb($db):Database
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        static $databases = [];
+        $config = $this->getPackageConfig();
+        if(isset($config['sql_type']) && $config['sql_type'] === 'sqlite' && $db !== $config['db']) {
+            throw new \Exception('cannot change database for sqlite');
+        }
+        if(!isset($databases[$db])) {
+            $databases[$db] = new Database($this->getMongo());
+        }
+        
+        return $databases[$db];
     }
 
     public function checkIndexes($db, $collection, $indexes)

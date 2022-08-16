@@ -10,7 +10,7 @@ trait mongoCrud
 {
 
     /**
-     * @var mongoInstance
+     * @var mongoInstance|mysqlInstance
      */
     private $storageInstance;
 
@@ -33,7 +33,13 @@ trait mongoCrud
             if(!array_key_exists('configSection', $this->mongoCrudStorageConfig)) {
                 throw new storageException('Unable to find config[storage][configSection] in case of mongoCrud usage');
             }
-            $this->storageInstance = mongoInstance::factory($this->mongoCrudStorageConfig['configSection']);
+            $type = $this->mongoCrudStorageConfig['storageType'] ?? 'mongoInstance';
+            $typeNs = __NAMESPACE__ . '\\' . $type;
+            
+            if(!class_exists($typeNs)) {
+                throw new storageException("Invalid storage type: {$type}");
+            }
+            $this->storageInstance = $typeNs::factory($this->mongoCrudStorageConfig['configSection']);
         }
 
         return $this->storageInstance;
@@ -150,7 +156,7 @@ trait mongoCrud
      * @param array $criteria
      * @param array $fields
      *
-     * @return \MongoCursor
+     * @return storageCursor
      *
      * @throws storageException
      * @throws \MongoConnectionException

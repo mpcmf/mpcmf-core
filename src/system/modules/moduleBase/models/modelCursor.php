@@ -2,6 +2,8 @@
 
 namespace mpcmf\modules\moduleBase\models;
 
+use mpcmf\system\storage\storageCursor;
+
 /**
  * Model cursor abstraction class
  *
@@ -18,7 +20,7 @@ class modelCursor
     private $limit = 0;
 
     /**
-     * @var \MongoCursor
+     * @var storageCursor
      */
     private $cursor;
     /**
@@ -28,24 +30,24 @@ class modelCursor
 
     /**
      * @param string|modelBase  $modelClass
-     * @param \MongoCursor      $cursor
+     * @param storageCursor     $cursor
      */
-    public function __construct($modelClass, \MongoCursor $cursor = null)
+    public function __construct($modelClass, storageCursor $cursor = null)
     {
         $this->setCursor($cursor);
         $this->modelClass = $modelClass;
     }
 
     /**
-     * @param \MongoCursor $cursor
+     * @param storageCursor $cursor
      */
-    public function setCursor(\MongoCursor $cursor)
+    public function setCursor(storageCursor $cursor)
     {
         $this->cursor = $cursor;
     }
 
     /**
-     * @return \MongoCursor
+     * @return storageCursor
      */
     public function getCursor()
     {

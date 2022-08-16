@@ -25,13 +25,6 @@ class mongoInstance implements storageInterface
 
     private $pid;
 
-    /**
-     * Return \MongoClient instance for current configuration
-     *
-     * @return \MongoClient
-     * @throws configurationException
-     * @throws \MongoConnectionException
-     */
     public function getMongo()
     {
         $currentPid = getmypid();
@@ -49,8 +42,8 @@ class mongoInstance implements storageInterface
     {
         profiler::addStack('mongo::r');
 
-        return $this->getMongo()->selectDB($db)->selectCollection($collection)
-                    ->find($criteria, $fields);
+        return ((new storageCursor($this->getMongo()->selectDB($db)->selectCollection($collection)
+                                        ->find($criteria, $fields))));
     }
 
     public function selectOne($db, $collection, $criteria = [], $fields = [])

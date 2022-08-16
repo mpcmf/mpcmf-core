@@ -7,6 +7,15 @@ use mpcmf\system\configuration\exception\configurationException;
 interface storageInterface 
 {
     /**
+     * Return \MongoClient instance for current configuration
+     *
+     * @return \MongoClient
+     * @throws configurationException
+     * @throws \MongoConnectionException
+     */
+    public function getMongo();
+    
+    /**
      * Get mongo cursor by params
      *
      * @param string $db
