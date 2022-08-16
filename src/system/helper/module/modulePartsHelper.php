@@ -52,7 +52,7 @@ trait modulePartsHelper
             $currentClass = get_called_class();
             if (!isset(modulePartsStorage::$namespaces[$currentClass])) {
                 modulePartsStorage::$namespaces[$currentClass] = (new \ReflectionClass($currentClass))->getNamespaceName();
-                MPCMF_DEBUG && self::log()->addDebug('Initializing namespace: ' . modulePartsStorage::$namespaces[$currentClass], [$currentClass]);
+                MPCMF_LL_DEBUG && self::log()->addDebug('Initializing namespace: ' . modulePartsStorage::$namespaces[$currentClass], [$currentClass]);
             }
 
             $this->currentNamespace = modulePartsStorage::$namespaces[$currentClass];
@@ -124,16 +124,16 @@ trait modulePartsHelper
         if($this->entityName === null) {
             $currentClass = get_called_class();
             if(!isset(modulePartsStorage::$entityNames[$currentClass])) {
-                MPCMF_DEBUG && self::log()->addDebug(json_encode(modulePartsStorage::$entityNames, 384));
-                MPCMF_DEBUG && self::log()->addDebug(">>>> {$currentClass} <<<<");
+                MPCMF_LL_DEBUG && self::log()->addDebug('Entity names: ', (array)modulePartsStorage::$entityNames);
+                MPCMF_LL_DEBUG && self::log()->addDebug(">>>> {$currentClass} <<<<");
                 modulePartsStorage::$entityNames[$currentClass] = trim(str_replace($this->getCurrentNamespace(), '', $currentClass), " \t/\\");
                 modulePartsStorage::$entityNames[$currentClass] = preg_replace('/(?:' . implode('|', modulePartsStorage::$entityTypes) . ')?$/u', '', modulePartsStorage::$entityNames[$currentClass]);
-                MPCMF_DEBUG && self::log()->addDebug('Entity found: ' . modulePartsStorage::$entityNames[$currentClass], [__METHOD__, $currentClass]);
+                MPCMF_LL_DEBUG && self::log()->addDebug('Entity found: ' . modulePartsStorage::$entityNames[$currentClass], [__METHOD__, $currentClass]);
 
                 foreach(modulePartsStorage::$entityTypes as $parentNamespace => $entityType) {
                     $class = preg_replace('/\\\\[^\\\\]+$/', '', $this->getCurrentNamespace()) . "\\{$parentNamespace}\\" . modulePartsStorage::$entityNames[$currentClass] . $entityType;
                     if(!isset(modulePartsStorage::$entityNames[$class])) {
-                        MPCMF_DEBUG && self::log()->addDebug("Also use this entity for: {$class}", [__METHOD__, $currentClass]);
+                        MPCMF_LL_DEBUG && self::log()->addDebug("Also use this entity for: {$class}", [__METHOD__, $currentClass]);
                         modulePartsStorage::$entityNames[$class] = modulePartsStorage::$entityNames[$currentClass];
                     }
                 }
@@ -162,7 +162,7 @@ trait modulePartsHelper
                 foreach(modulePartsStorage::$entityTypes as $parentNamespace => $entityType) {
                     $class = preg_replace('/\\\\[^\\\\]+$/', '', $this->getCurrentNamespace()) . "\\{$parentNamespace}\\" . $this->getEntityName() . $entityType;
                     if(!isset(modulePartsStorage::$entityPublicNames[$class])) {
-                        MPCMF_DEBUG && self::log()->addDebug("Also use this entity public name for: {$class}", [__METHOD__, $currentClass]);
+                        MPCMF_LL_DEBUG && self::log()->addDebug("Also use this entity public name for: {$class}", [__METHOD__, $currentClass]);
                         modulePartsStorage::$entityPublicNames[$class] = modulePartsStorage::$entityPublicNames[$currentClass];
                     }
                 }
