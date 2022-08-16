@@ -166,7 +166,9 @@ trait mongoCrud
      */
     public function getAllBy($criteria, array $fields = [])
     {
-        return $this->storage()->select($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $fields);
+        $cursor = $this->storage()->select($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $fields);
+        
+        return new storageCursor($cursor);
     }
 
     /**

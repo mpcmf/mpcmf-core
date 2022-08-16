@@ -2,9 +2,12 @@
 
 namespace mpcmf\system\storage;
 
-class storageCursor implements \Iterator
+class storageCursor implements mpcmfCursor
 {
-    /** @var \MongoCursor */
+
+    /**
+     * @var \Iterator
+     */
     protected $cursor;
     
     public function __construct($cursor) 

@@ -41,7 +41,10 @@ class mysqlInstance implements storageInterface
 
     public function select($db, $collection, $criteria = [], $fields = [])
     {
-        return new storageCursor($this->getCollection($db, $collection)->select(mongo2sql::getInstance()->translateCriteria($criteria)));
+        $where = mongo2sql::getInstance()->translateCriteria($criteria);
+        $mysqlResult = $this->getCollection($db, $collection)->select($where);
+
+        return new mysqlCursor($mysqlResult);
     }
 
     public function selectOne($db, $collection, $criteria = [], $fields = [])

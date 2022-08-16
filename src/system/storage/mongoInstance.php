@@ -42,8 +42,8 @@ class mongoInstance implements storageInterface
     {
         profiler::addStack('mongo::r');
 
-        return ((new storageCursor($this->getMongo()->selectDB($db)->selectCollection($collection)
-                                        ->find($criteria, $fields))));
+        return $this->getMongo()->selectDB($db)->selectCollection($collection)
+                    ->find($criteria, $fields);
     }
 
     public function selectOne($db, $collection, $criteria = [], $fields = [])
