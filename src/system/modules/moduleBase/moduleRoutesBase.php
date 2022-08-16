@@ -31,7 +31,7 @@ abstract class moduleRoutesBase
     public function __construct()
     {
         $moduleName = $this->getModuleName();
-        MPCMF_DEBUG && self::log()->addDebug("Setting up routes for module {$moduleName}");
+        MPCMF_LL_DEBUG && self::log()->addDebug("Setting up routes for module {$moduleName}");
         try {
             foreach ($this->getEntities() as $entityName => $entity) {
                 $key = $entity->getEntityUniqueName();
@@ -41,8 +41,8 @@ abstract class moduleRoutesBase
                         'actions' => []
                     ];
                 }
-                MPCMF_DEBUG && self::log()->addDebug('[Routes] Class: ' . get_called_class() . " / uniq: {$key}");
-                MPCMF_DEBUG && self::log()->addDebug("Processing routes for entity {$entityName}...");
+                MPCMF_LL_DEBUG && self::log()->addDebug('[Routes] Class: ' . get_called_class() . " / uniq: {$key}");
+                MPCMF_LL_DEBUG && self::log()->addDebug("Processing routes for entity {$entityName}...");
                 foreach ($entity->getEntityActions()->getActions() as $actionName => $action) {
                     $defaultPath = "{$key}/{$actionName}";
                     if (!isset($this->structure[$key]['actions'][$defaultPath])) {
@@ -51,8 +51,8 @@ abstract class moduleRoutesBase
 
                     $fullRoutePath = $action->isRelative() ? "{$defaultPath}{$action->getPath()}" : $action->getPath();
 
-                    MPCMF_DEBUG && self::log()->addDebug("Registering route action {$defaultPath}...");
-                    MPCMF_DEBUG && self::log()->addDebug("Path: {$fullRoutePath}");
+                    MPCMF_LL_DEBUG && self::log()->addDebug("Registering route action {$defaultPath}...");
+                    MPCMF_LL_DEBUG && self::log()->addDebug("Path: {$fullRoutePath}");
 
                     $this->register($defaultPath, [
                         'route' => $fullRoutePath,
