@@ -259,20 +259,20 @@ abstract class mapperBase
 
 //        $changedFields = [];
         if($itemData instanceof modelBase) {
-            MPCMF_DEBUG && self::log()->addDebug('Input data is instance of modelBase', [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug('Input data is instance of modelBase', [__METHOD__]);
             $data = $itemData->export($saveMode === self::SAVE__MODE_CHANGES_ONLY);
-            MPCMF_DEBUG && self::log()->addDebug('Data exported', [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug('Data exported', [__METHOD__]);
         } else {
-            MPCMF_DEBUG && self::log()->addDebug('Input data is an array', [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug('Input data is an array', [__METHOD__]);
             $data =& $itemData;
-            MPCMF_DEBUG && self::log()->addDebug('Variable linked', [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug('Variable linked', [__METHOD__]);
         }
-        MPCMF_DEBUG && self::log()->addDebug('Input data prepared', [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('Input data prepared', [__METHOD__]);
 
         $primaryKey = $this->getKey();
 
         if(isset($data['_id'])) {
-            MPCMF_DEBUG && self::log()->addDebug('Input data has _id field', [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug('Input data has _id field', [__METHOD__]);
             if(!($data['_id'] instanceof \MongoId)) {
                 if (is_string($data['_id'])) {
                     $data['_id'] = new \MongoId($data['_id']);
@@ -281,7 +281,7 @@ abstract class mapperBase
                 }
             }
 
-            MPCMF_DEBUG && self::log()->addDebug('Input data has _id field, saving...', [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug('Input data has _id field, saving...', [__METHOD__]);
 
             try {
                 if($saveMode === self::SAVE__MODE_INSERT_ONLY) {
@@ -300,7 +300,7 @@ abstract class mapperBase
             }
         } elseif($this->keyGenerate) {
             if (!empty($data[$primaryKey])) {
-                MPCMF_DEBUG && self::log()->addDebug('Input data has generated key field, updating...', [__METHOD__]);
+                MPCMF_LL_DEBUG && self::log()->addDebug('Input data has generated key field, updating...', [__METHOD__]);
 
                 return $this->updateById($data[$primaryKey], $data);
             }
@@ -321,7 +321,7 @@ abstract class mapperBase
                 throw new mapperException("Storage exception: {$e->getMessage()}", $e->getCode(), $e);
             }
         } elseif(isset($data[$primaryKey]) && !empty($data[$primaryKey])) {
-            MPCMF_DEBUG && self::log()->addDebug('Input data has manually typed key field, updating...', [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug('Input data has manually typed key field, updating...', [__METHOD__]);
 
             return $this->updateById($data[$primaryKey], $data, true);
         }
@@ -356,7 +356,7 @@ abstract class mapperBase
      */
     public function getAllBy($criteria = [], array $fields = [], array $sort = null)
     {
-        MPCMF_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
         try {
             $class = $this->getModelClass();
         } catch(modelException $modelException) {
@@ -413,7 +413,7 @@ abstract class mapperBase
             }
         }
 
-        MPCMF_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
 
         return $criteria;
     }
@@ -485,7 +485,7 @@ abstract class mapperBase
         if($notSearchableFields) {
             throw new mapperException('These fields are not searchable: ' . implode(', ', $notSearchableFields));
         }
-        MPCMF_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
 
         try {
             $class = $this->getModelClass();
@@ -529,7 +529,7 @@ abstract class mapperBase
      */
     public function getBy($criteria, $fields = [])
     {
-        MPCMF_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
         try {
             $class = $this->getModelClass();
         } catch(modelException $modelException) {
@@ -544,7 +544,7 @@ abstract class mapperBase
         }
 
         if($found === null) {
-            MPCMF_DEBUG && self::log()->addInfo("Item not found in storage: {$this->getEntityName()}", [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addInfo("Item not found in storage: {$this->getEntityName()}", [__METHOD__]);
             throw new mapperException("Item not found in storage: {$this->getEntityName()} by criteria: " . json_encode($criteria));
         }
 
@@ -563,7 +563,7 @@ abstract class mapperBase
      */
     public function updateById($id, $newData, $createIfNotExists = false)
     {
-        MPCMF_DEBUG && self::log()->addDebug('id:' . json_encode($id), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('id:' . json_encode($id), [__METHOD__]);
         MPCMF_LL_DEBUG && self::log()->addDebug('id:' . json_encode($id) . " data:" . json_encode($newData), [__METHOD__]);
         $criteria = [
             $this->getKey() => $id
@@ -598,7 +598,7 @@ abstract class mapperBase
      */
     public function updateAllByIds($ids, $newData)
     {
-        MPCMF_DEBUG && self::log()->addDebug('ids:' . json_encode($ids) . ' data:' . json_encode($newData), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('ids:' . json_encode($ids) . ' data:' . json_encode($newData), [__METHOD__]);
 
         $key = $this->getKey();
         foreach($ids as $k => $id) {
@@ -636,7 +636,7 @@ abstract class mapperBase
      */
     public function getById($id)
     {
-        MPCMF_DEBUG && self::log()->addDebug('id:' . json_encode($id), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('id:' . json_encode($id), [__METHOD__]);
         $criteria = [
             $this->getKey() => $id
         ];
@@ -670,7 +670,7 @@ abstract class mapperBase
      */
     public function removeById($id)
     {
-        MPCMF_DEBUG && self::log()->addDebug('id:' . json_encode($id), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('id:' . json_encode($id), [__METHOD__]);
         $criteria = [
             $this->getKey() => $id
         ];
@@ -699,7 +699,7 @@ abstract class mapperBase
      */
     public function removeAllBy($criteria)
     {
-        MPCMF_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
 
         try {
             return $this->_remove($criteria);
@@ -718,7 +718,7 @@ abstract class mapperBase
      */
     public function removeAllByIds($ids)
     {
-        MPCMF_DEBUG && self::log()->addDebug('ids:' . json_encode($ids), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('ids:' . json_encode($ids), [__METHOD__]);
         $key = $this->getKey();
         foreach($ids as $k => $id) {
             $converted = $this->convertDataFromForm([
@@ -750,7 +750,7 @@ abstract class mapperBase
      */
     public function remove($item)
     {
-        MPCMF_DEBUG && self::log()->addDebug('item:' . json_encode($item), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('item:' . json_encode($item), [__METHOD__]);
         if($item instanceof modelBase) {
 
             return $this->removeById($item->getIdValue());
@@ -771,7 +771,7 @@ abstract class mapperBase
      */
     public function getCountBy($criteria)
     {
-        MPCMF_DEBUG && self::log()->addDebug('criteria: ' . json_encode($criteria), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('criteria: ' . json_encode($criteria), [__METHOD__]);
 
         try {
             return $this->_getAllBy($criteria)->count();
@@ -793,7 +793,7 @@ abstract class mapperBase
      */
     public function findAndModify($criteria, $updateData, $fields = [], $options = [])
     {
-        MPCMF_DEBUG && self::log()->addDebug('criteria: ' . json_encode($criteria), [__METHOD__]);
+        MPCMF_LL_DEBUG && self::log()->addDebug('criteria: ' . json_encode($criteria), [__METHOD__]);
         try {
             $class = $this->getModelClass();
         } catch(modelException $modelException) {
@@ -803,7 +803,7 @@ abstract class mapperBase
         $savedItem = $this->_findAndModify($criteria, $updateData, $fields, $options);
 
         if(!$savedItem) {
-            MPCMF_DEBUG && self::log()->addInfo("Item not found in storage: {$this->getEntityName()}", [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addInfo("Item not found in storage: {$this->getEntityName()}", [__METHOD__]);
             throw new mapperException("Item not found in storage: {$this->getEntityName()}");
         }
 
@@ -922,7 +922,7 @@ abstract class mapperBase
     protected function initializeRoleFields()
     {
         if(!isset($this->key, $this->titleField, $this->searchFields, $this->fulltextSearchFields, $this->sortFields)) {
-            MPCMF_DEBUG && self::log()->addDebug('Initializing role keys...', [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug('Initializing role keys...', [__METHOD__]);
             $this->searchFields = [];
             $this->fulltextSearchFields = [];
             $this->sortFields = [];
@@ -960,7 +960,7 @@ abstract class mapperBase
             $this->isSearchable = count($this->searchFields) > 0 || count($this->fulltextSearchFields) > 0;
             $this->isSortable = count($this->sortFields) > 0;
 
-            MPCMF_DEBUG && self::log()->addDebug("Initialized base key: {$this->key}", [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug("Initialized base key: {$this->key}", [__METHOD__]);
         }
     }
 
@@ -984,7 +984,7 @@ abstract class mapperBase
         $map = $this->getMap();
 
         if($field === '_id') {
-            MPCMF_DEBUG && self::log()->addDebug('Input data has _id field', [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug('Input data has _id field', [__METHOD__]);
             $result = $value;
             if(!($result instanceof \MongoId)) {
                 if (is_string($value)) {
