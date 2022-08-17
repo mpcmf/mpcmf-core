@@ -88,12 +88,18 @@ class mysqlInstance implements storageInterface
 
     public function removeOne($db, $collection, $criteria = [], $options = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        $where = mongo2sql::getInstance()->translateCriteria($criteria);
+        $mysqlResult = $this->getCollection($db, $collection)->where($where)->limit(1)->delete();
+
+        return $mysqlResult->errorCode() === 0;
     }
 
     public function remove($db, $collection, $criteria = [], $options = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        $where = mongo2sql::getInstance()->translateCriteria($criteria);
+        $mysqlResult = $this->getCollection($db, $collection)->where($where)->delete();
+
+        return $mysqlResult->errorCode() === 0;
     }
 
     public function insert($db, $collection, $object, $options = [])
@@ -116,6 +122,7 @@ class mysqlInstance implements storageInterface
     {
         throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
     }
+
 
     public function getCollection($db, $collection):Result
     {

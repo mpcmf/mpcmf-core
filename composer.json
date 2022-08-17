@@ -42,7 +42,8 @@
     "alcaeus/mongo-php-adapter": "^1.1@dev",
     "nervetattoo/elasticsearch": "dev-master",
     "mpcmf/mpcmf-signal-handler": "dev-master",
-    "morris/lessql": "^1.0"
+    "morris/lessql": "^1.0",
+    "ext-pdo": "*"
   },
   "require-dev": {
     "phpunit/phpunit": "^4.0@dev"
