@@ -42,7 +42,7 @@ class mysqlInstance implements storageInterface
     public function select($db, $collection, $criteria = [], $fields = [])
     {
         $where = mongo2sql::getInstance()->translateCriteria($criteria);
-        $mysqlResult = $this->getCollection($db, $collection)->select($where);
+        $mysqlResult = $this->getCollection($db, $collection)->where($where);
 
         return new mysqlCursor($mysqlResult);
     }
@@ -84,7 +84,13 @@ class mysqlInstance implements storageInterface
 
     public function insert($db, $collection, $object, $options = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        try {
+            $this->getCollection($db, $collection)->insert($object);
+        } catch (\PDOException $e) {
+            throw new storageException($e->getMessage());
+        }
+        
+        return true;
     }
 
     public function insertBatch($db, $collection, $objects, $options = [])
@@ -124,5 +130,10 @@ class mysqlInstance implements storageInterface
     public function checkIndicesAuto($config)
     {
         throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+    }
+
+    public function setPrimary($db, $collection, $id)
+    {
+        $this->getCollection($db, $collection)->getDatabase()->setPrimary($collection, $id);
     }
 }

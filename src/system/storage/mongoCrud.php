@@ -40,6 +40,14 @@ trait mongoCrud
                 throw new storageException("Invalid storage type: {$type}");
             }
             $this->storageInstance = $typeNs::factory($this->mongoCrudStorageConfig['configSection']);
+
+            try {
+                $primary = $this->getKey();
+                //@TODO: use $this->storageInstance->setMap();
+                $this->storageInstance->setPrimary($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $primary);
+            } catch (configurationException $configurationException) {
+                //invalid mapper config, pass
+            }
         }
 
         return $this->storageInstance;

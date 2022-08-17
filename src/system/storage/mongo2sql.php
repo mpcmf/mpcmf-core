@@ -112,7 +112,7 @@ class mongo2sql
     public function translateCriteria($criteria, $glue = 'AND'): string
     {
         if ($criteria == null) {
-            return '';
+            return '1=1';
         }
 
         $sql = [];
@@ -140,6 +140,9 @@ class mongo2sql
         }
         array_pop($sql);
         $sql[] = ')';
+        if(!isset($sql[2])) {
+            return '1=1';
+        }
 
         return implode(' ', $sql);
     }

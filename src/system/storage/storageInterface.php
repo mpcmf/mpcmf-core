@@ -280,4 +280,11 @@ interface storageInterface
      * @throws \Exception
      */
     public function checkIndicesAuto($config);
+
+    /**
+     * @param array|string $id
+     *
+     * @return mixed
+     */
+    public function setPrimary($db, $collection, $id);
 }

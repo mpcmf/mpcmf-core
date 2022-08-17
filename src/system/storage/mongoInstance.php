@@ -224,4 +224,9 @@ class mongoInstance implements storageInterface
 
         return true;
     }
+    
+    public function setPrimary($db, $collection, $id)
+    {
+        // TODO: Implement setPrimary() method.
+    }
 }
