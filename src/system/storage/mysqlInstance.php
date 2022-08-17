@@ -72,7 +72,13 @@ class mysqlInstance implements storageInterface
 
     public function update($db, $collection, $criteria, $newObject, $options = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        $where = mongo2sql::getInstance()->translateCriteria($criteria);
+        //@TODO: what else can be except `$set`?
+        $newData = $newObject['$set'] ?? $newObject;
+        $mysqlResult = $this->getCollection($db, $collection)->where($where)->update($newData);
+        //@TODO: check mysql response for error?
+        
+        return true;
     }
 
     public function updateFields($db, $collection, $criteria, $fields, $options = [])
