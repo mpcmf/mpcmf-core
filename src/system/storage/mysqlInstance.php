@@ -49,7 +49,15 @@ class mysqlInstance implements storageInterface
 
     public function selectOne($db, $collection, $criteria = [], $fields = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        $where = mongo2sql::getInstance()->translateCriteria($criteria);
+        $mysqlResult = $this->getCollection($db, $collection)->where($where)->limit(1);
+        $row = $mysqlResult->fetch();
+        if($row === null) {
+            
+            return null;
+        }
+
+        return $row->getData();
     }
 
     public function selectAndModify($db, $collection, $criteria, $newObject, $selectFields = [], $options = [])
