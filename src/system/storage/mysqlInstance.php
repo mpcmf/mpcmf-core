@@ -4,7 +4,6 @@ namespace mpcmf\system\storage;
 
 use LessQL\Database;
 use LessQL\Result;
-use mpcmf\system\configuration\exception\configurationException;
 use mpcmf\system\pattern\factory;
 use mpcmf\system\storage\exception\storageException;
 use PDO;
@@ -24,7 +23,7 @@ class mysqlInstance implements storageInterface
             $config['sql_type'] = $config['sql_type'] ?: 'mysql';
             switch ($config['sql_type']) {
                 case 'sqlite':
-                    $this->storageInstance = new PDO("{$config['sql_type']}:{$config['db']}.sqlite3");
+                    $this->storageInstance = new PDO("{$config['sql_type']}:{$config['db_file']}.sqlite3");
                     break;
                 case 'mysql':
                     $this->storageInstance = new PDO("{$config['sql_type']}:host={$config['host']}", $config['username'], $config['password'], $config['options'] ?? null);
@@ -72,13 +71,17 @@ class mysqlInstance implements storageInterface
 
     public function update($db, $collection, $criteria, $newObject, $options = [])
     {
-        $where = mongo2sql::getInstance()->translateCriteria($criteria);
-        //@TODO: what else can be except `$set`?
-        $newData = $newObject['$set'] ?? $newObject;
+        $mongo2sql = mongo2sql::getInstance();
+        $where = $mongo2sql->translateCriteria($criteria);
+        $newData = $mongo2sql->translateUpdatePayload($newObject);
+        if(empty($newData)) {
+            
+            return false;
+        }
         $mysqlResult = $this->getCollection($db, $collection)->where($where)->update($newData);
-        //@TODO: check mysql response for error?
-        
-        return true;
+
+        /** @noinspection NullPointerExceptionInspection */
+        return $mysqlResult->errorCode() === 0;
     }
 
     public function updateFields($db, $collection, $criteria, $fields, $options = [])
@@ -120,12 +123,23 @@ class mysqlInstance implements storageInterface
 
     public function save($db, $collection, $object, $options = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
-    }
+        //@TODO: INSERT ... ON DUPLICATE KEY UPDATE
+        try {
+            $this->getCollection($db, $collection)->insert();
+        } catch (\PDOException $e) {
+            throw new storageException($e->getMessage());
+        }
 
+        return true;
+    }
 
     public function getCollection($db, $collection):Result
     {
+        if($this->getPackageConfig()['sql_type'] === 'sqlite') {
+            $collection = "{$db}_{$collection}";
+        }
+
+        //@TODO: need to validate somehow if table exists. Or dont need?
         return $this->getDb($db)->table($collection);
     }
 
@@ -133,8 +147,9 @@ class mysqlInstance implements storageInterface
     {
         static $databases = [];
         $config = $this->getPackageConfig();
-        if(isset($config['sql_type']) && $config['sql_type'] === 'sqlite' && $db !== $config['db']) {
-            throw new \Exception('cannot change database for sqlite');
+        if($config['sql_type'] === 'sqlite') {
+            //@NOTE: sqlite has only one db 
+            $db = $config['db_file'];
         }
         if(!isset($databases[$db])) {
             $databases[$db] = new Database($this->getMongo());

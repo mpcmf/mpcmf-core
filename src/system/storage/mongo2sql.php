@@ -146,6 +146,12 @@ class mongo2sql
 
         return implode(' ', $sql);
     }
+    
+    public function translateUpdatePayload($payload) 
+    {
+        //@TODO: add $inc, $push, etc
+        return $payload['$set'] ?? $payload;
+    }
 
     protected function translateValueToScalar($value): string
     {
