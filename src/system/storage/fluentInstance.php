@@ -13,7 +13,7 @@ class fluentInstance implements storageInterface
 
     /** @var PDO */
     private $storageInstance;
-    
+
     public function getStorageDriver(): PDO
     {
         if ($this->storageInstance === null) {
@@ -108,7 +108,13 @@ class fluentInstance implements storageInterface
 
     public function insert($db, $collection, $object, $options = [])
     {
-        return $this->getCollection($db, $collection)->insertInto(null, $object)->execute();
+        try {
+            $result = $this->getCollection($db, $collection)->insertInto(null, $object)->execute();
+        } catch (\PDOException $exception) {
+
+            throw new storageException("PDOException: {$exception->getMessage()}");
+        }
+        return $result;
     }
 
     public function insertBatch($db, $collection, $objects, $options = [])
@@ -118,11 +124,17 @@ class fluentInstance implements storageInterface
 
     public function save($db, $collection, $object, $options = [])
     {
-        return $this->getCollection($db, $collection)
-                    ->insertInto(null, $object)
-                    ->ignore()
-                    ->onDuplicateKeyUpdate($object)
-                    ->execute();
+        try {
+            $result = $this->getCollection($db, $collection)
+                           ->insertInto(null, $object)
+                           ->ignore()
+                           ->onDuplicateKeyUpdate($object)
+                           ->execute();
+        } catch (\PDOException $exception) {
+
+            throw new storageException("PDOException: {$exception->getMessage()}");
+        }
+        return $result;
     }
 
     public function getCollection($db, $collection):Query
