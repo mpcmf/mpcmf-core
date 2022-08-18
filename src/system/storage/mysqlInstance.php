@@ -14,8 +14,8 @@ class mysqlInstance implements storageInterface
 
     /** @var PDO */
     private $storageInstance;
-
-    public function getMongo(): PDO
+    
+    public function getStorageDriver(): PDO
     {
         if ($this->storageInstance === null) {
             $config = $this->getPackageConfig();
@@ -31,11 +31,16 @@ class mysqlInstance implements storageInterface
                 default:
                     throw new storageException("Invalid SQL storage type: {$config['sql_type']}");
             }
-            
+
             $this->storageInstance->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         }
 
         return $this->storageInstance;
+    }
+
+    public function getMongo(): PDO
+    {
+        return $this->getStorageDriver();
     }
 
     public function select($db, $collection, $criteria = [], $fields = [])
@@ -152,7 +157,7 @@ class mysqlInstance implements storageInterface
             $db = $config['db_file'];
         }
         if(!isset($databases[$db])) {
-            $databases[$db] = new Database($this->getMongo());
+            $databases[$db] = new Database($this->getStorageDriver());
         }
         
         return $databases[$db];

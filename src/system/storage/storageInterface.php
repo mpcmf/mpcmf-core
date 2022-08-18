@@ -9,11 +9,20 @@ interface storageInterface
     /**
      * Return \MongoClient instance for current configuration
      *
+     * @deprecated see getStorageDriver()
      * @return \MongoClient
      * @throws configurationException
      * @throws \MongoConnectionException
      */
     public function getMongo();
+
+    /**
+     * Return storage instance for current configuration
+     *
+     * @return mixed
+     * @throws configurationException
+     */
+    public function getStorageDriver();
     
     /**
      * Get mongo cursor by params

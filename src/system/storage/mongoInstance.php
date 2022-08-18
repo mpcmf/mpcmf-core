@@ -25,7 +25,7 @@ class mongoInstance implements storageInterface
 
     private $pid;
 
-    public function getMongo()
+    public function getMongo(): \MongoClient
     {
         $currentPid = getmypid();
         if ($this->mongo === null || $this->pid !== $currentPid) {
@@ -36,6 +36,11 @@ class mongoInstance implements storageInterface
         }
 
         return $this->mongo;
+    }
+
+    public function getStorageDriver(): \MongoClient
+    {
+        return $this->getMongo();
     }
 
     public function select($db, $collection, $criteria = [], $fields = [])
