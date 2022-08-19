@@ -153,7 +153,6 @@ class mongoInstance implements storageInterface
 
     public function checkIndexes($db, $collection, $indexes)
     {
-        return;
         $log = self::log();
         $log->addDebug("Checking indexes for `{$collection}`");
 
