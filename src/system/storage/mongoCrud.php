@@ -164,7 +164,7 @@ trait mongoCrud
      * @param array $criteria
      * @param array $fields
      *
-     * @return storageCursor
+     * @return storageCursorWrapper
      *
      * @throws storageException
      * @throws \MongoConnectionException
@@ -176,7 +176,7 @@ trait mongoCrud
     {
         $cursor = $this->storage()->select($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $fields);
         
-        return new storageCursor($cursor);
+        return new storageCursorWrapper($cursor);
     }
 
     /**

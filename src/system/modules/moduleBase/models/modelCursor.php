@@ -2,7 +2,7 @@
 
 namespace mpcmf\modules\moduleBase\models;
 
-use mpcmf\system\storage\storageCursor;
+use mpcmf\system\storage\storageCursorWrapper;
 
 /**
  * Model cursor abstraction class
@@ -20,7 +20,7 @@ class modelCursor
     private $limit = 0;
 
     /**
-     * @var storageCursor
+     * @var storageCursorWrapper
      */
     private $cursor;
     /**
@@ -29,25 +29,25 @@ class modelCursor
     private $modelClass;
 
     /**
-     * @param string|modelBase  $modelClass
-     * @param storageCursor     $cursor
+     * @param string|modelBase     $modelClass
+     * @param storageCursorWrapper $cursor
      */
-    public function __construct($modelClass, storageCursor $cursor = null)
+    public function __construct($modelClass, storageCursorWrapper $cursor = null)
     {
         $this->setCursor($cursor);
         $this->modelClass = $modelClass;
     }
 
     /**
-     * @param storageCursor $cursor
+     * @param storageCursorWrapper $cursor
      */
-    public function setCursor(storageCursor $cursor)
+    public function setCursor(storageCursorWrapper $cursor)
     {
         $this->cursor = $cursor;
     }
 
     /**
-     * @return storageCursor
+     * @return storageCursorWrapper
      */
     public function getCursor()
     {

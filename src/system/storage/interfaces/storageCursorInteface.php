@@ -2,7 +2,7 @@
 
 namespace mpcmf\system\storage\interfaces;
 
-interface mpcmfCursor extends \Iterator 
+interface storageCursorInteface extends \Iterator 
 {
     public function skip($num);
 

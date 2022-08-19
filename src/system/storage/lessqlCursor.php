@@ -4,9 +4,9 @@ namespace mpcmf\system\storage;
 
 use LessQL\Result;
 use LessQL\Row;
-use mpcmf\system\storage\interfaces\mpcmfCursor;
+use mpcmf\system\storage\interfaces\storageCursorInteface;
 
-class lessqlCursor implements mpcmfCursor 
+class lessqlCursor implements storageCursorInteface 
 {
     /**
      * @var Result

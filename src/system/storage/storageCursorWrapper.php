@@ -2,13 +2,13 @@
 
 namespace mpcmf\system\storage;
 
-use mpcmf\system\storage\interfaces\mpcmfCursor;
+use mpcmf\system\storage\interfaces\storageCursorInteface;
 
-class storageCursor implements mpcmfCursor
+class storageCursorWrapper implements storageCursorInteface
 {
 
     /**
-     * @var \Iterator
+     * @var storageCursorInteface
      */
     protected $cursor;
     

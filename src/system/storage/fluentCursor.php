@@ -3,9 +3,9 @@
 namespace mpcmf\system\storage;
 
 use Envms\FluentPDO\Queries\Common;
-use mpcmf\system\storage\interfaces\mpcmfCursor;
+use mpcmf\system\storage\interfaces\storageCursorInteface;
 
-class fluentCursor implements mpcmfCursor 
+class fluentCursor implements storageCursorInteface 
 {
     /**
      * @var Common
