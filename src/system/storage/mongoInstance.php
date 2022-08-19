@@ -2,11 +2,11 @@
 
 namespace mpcmf\system\storage;
 
-use mpcmf\system\configuration\exception\configurationException;
 use mpcmf\system\helper\cache\cache;
 use mpcmf\system\helper\io\log;
 use mpcmf\system\helper\system\profiler;
 use mpcmf\system\pattern\factory;
+use mpcmf\system\storage\interfaces\storageInterface;
 
 /**
  * MongoDB accessor class
@@ -153,6 +153,7 @@ class mongoInstance implements storageInterface
 
     public function checkIndexes($db, $collection, $indexes)
     {
+        return;
         $log = self::log();
         $log->addDebug("Checking indexes for `{$collection}`");
 

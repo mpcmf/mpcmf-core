@@ -3,6 +3,7 @@
 namespace mpcmf\system\storage;
 
 use Envms\FluentPDO\Queries\Common;
+use mpcmf\system\storage\interfaces\mpcmfCursor;
 
 class fluentCursor implements mpcmfCursor 
 {
@@ -18,7 +19,7 @@ class fluentCursor implements mpcmfCursor
     ];
 
     /**
-     * @var array{'requestOffset':int,'rows':Common}
+     * @var array{'rows':Common[]}
      */
     protected $session = [
         'requestOffset' => 0,

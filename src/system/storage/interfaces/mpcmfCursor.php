@@ -1,6 +1,6 @@
 <?php
 
-namespace mpcmf\system\storage;
+namespace mpcmf\system\storage\interfaces;
 
 interface mpcmfCursor extends \Iterator 
 {

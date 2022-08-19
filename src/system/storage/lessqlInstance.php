@@ -6,9 +6,10 @@ use LessQL\Database;
 use LessQL\Result;
 use mpcmf\system\pattern\factory;
 use mpcmf\system\storage\exception\storageException;
+use mpcmf\system\storage\interfaces\storageInterface;
 use PDO;
 
-class mysqlInstance implements storageInterface
+class lessqlInstance implements storageInterface
 {
     use factory;
 
@@ -48,7 +49,7 @@ class mysqlInstance implements storageInterface
         $where = mongo2sql::getInstance()->translateCriteria($criteria);
         $mysqlResult = $this->getCollection($db, $collection)->where($where);
 
-        return new mysqlCursor($mysqlResult);
+        return new lessqlCursor($mysqlResult);
     }
 
     public function selectOne($db, $collection, $criteria = [], $fields = [])

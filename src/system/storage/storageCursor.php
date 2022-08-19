@@ -2,6 +2,8 @@
 
 namespace mpcmf\system\storage;
 
+use mpcmf\system\storage\interfaces\mpcmfCursor;
+
 class storageCursor implements mpcmfCursor
 {
 
@@ -22,7 +24,7 @@ class storageCursor implements mpcmfCursor
 
     public function next()
     {
-        return $this->cursor->next();
+        $this->cursor->next();
     }
 
     public function key()

@@ -2,12 +2,16 @@
 
 namespace mpcmf\system\storage;
 
-class mysqlCursor implements mpcmfCursor 
+use LessQL\Result;
+use LessQL\Row;
+use mpcmf\system\storage\interfaces\mpcmfCursor;
+
+class lessqlCursor implements mpcmfCursor 
 {
     /**
-     * @var \LessQL\Result
+     * @var Result
      */
-    protected $mysqlResult;
+    protected $lessqlResult;
 
     protected $requestParams = [
         'batchSize' => 10,
@@ -16,7 +20,7 @@ class mysqlCursor implements mpcmfCursor
     ];
 
     /**
-     * @var \LessQL\Row[]
+     * @var array{'rows':Row[]}
      */
     protected $session = [
         'requestOffset' => 0,
@@ -25,9 +29,9 @@ class mysqlCursor implements mpcmfCursor
         'needNextRequest' => true,
     ];
 
-    public function __construct(\LessQL\Result $mysqlResult) 
+    public function __construct(Result $lessqlResult) 
     {
-        $this->mysqlResult = $mysqlResult;
+        $this->lessqlResult = $lessqlResult;
     }
 
     public function current()
@@ -73,7 +77,7 @@ class mysqlCursor implements mpcmfCursor
 
     public function count()
     {
-        return $this->mysqlResult->count();
+        return $this->lessqlResult->count();
     }
     
     protected function makeNextBatchRequest() 
@@ -86,8 +90,8 @@ class mysqlCursor implements mpcmfCursor
         
         $this->session['pos'] = 0;
 
-        $this->mysqlResult->limit($this->requestParams['batchSize'], $this->session['requestOffset']);
-        $this->session['rows'] = $this->mysqlResult->fetchAll();
+        $this->lessqlResult->limit($this->requestParams['batchSize'], $this->session['requestOffset']);
+        $this->session['rows'] = $this->lessqlResult->fetchAll();
         
         $this->session['requestOffset'] += $this->requestParams['batchSize'];
         if($this->session['requestOffset'] >= $this->requestParams['limit']) {

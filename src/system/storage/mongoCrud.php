@@ -10,7 +10,7 @@ trait mongoCrud
 {
 
     /**
-     * @var mongoInstance|mysqlInstance
+     * @var mongoInstance|lessqlInstance
      */
     private $storageInstance;
 

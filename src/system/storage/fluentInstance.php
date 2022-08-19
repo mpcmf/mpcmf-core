@@ -6,6 +6,7 @@ use Envms\FluentPDO\Query;
 use mpcmf\system\pattern\factory;
 use mpcmf\system\storage\exception\storageException;
 use PDO;
+use mpcmf\system\storage\interfaces\storageInterface;
 
 class fluentInstance implements storageInterface
 {
