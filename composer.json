@@ -43,7 +43,6 @@
     "alcaeus/mongo-php-adapter": "^1.1@dev",
     "nervetattoo/elasticsearch": "dev-master",
     "mpcmf/mpcmf-signal-handler": "dev-master",
-    "morris/lessql": "^1.0",
     "envms/fluentpdo": "^2.2"
   },
   "require-dev": {
