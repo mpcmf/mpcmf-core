@@ -5,12 +5,13 @@ namespace mpcmf\system\storage;
 use mpcmf\system\configuration\config;
 use mpcmf\system\configuration\exception\configurationException;
 use mpcmf\system\storage\exception\storageException;
+use mpcmf\system\storage\interfaces\storageInterface;
 
 trait mongoCrud
 {
 
     /**
-     * @var mongoInstance|lessqlInstance
+     * @var storageInterface
      */
     private $storageInstance;
 
@@ -33,13 +34,12 @@ trait mongoCrud
             if(!array_key_exists('configSection', $this->mongoCrudStorageConfig)) {
                 throw new storageException('Unable to find config[storage][configSection] in case of mongoCrud usage');
             }
-            $type = $this->mongoCrudStorageConfig['storageType'] ?? 'mongoInstance';
-            $typeNs = __NAMESPACE__ . '\\' . $type;
+            $storageClass = $this->mongoCrudStorageConfig['type'] ?? mongoInstance::class;
             
-            if(!class_exists($typeNs)) {
-                throw new storageException("Invalid storage type: {$type}");
+            if(!class_exists($storageClass)) {
+                throw new storageException("Invalid storage type: {$storageClass}");
             }
-            $this->storageInstance = $typeNs::factory($this->mongoCrudStorageConfig['configSection']);
+            $this->storageInstance = $storageClass::factory($this->mongoCrudStorageConfig['configSection']);
 
             try {
                 $primary = $this->getKey();
