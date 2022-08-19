@@ -234,4 +234,14 @@ class mongoInstance implements storageInterface
     {
         // TODO: Implement setPrimary() method.
     }
+
+    public function setMap($db, $collection, $map)
+    {
+        // TODO: Implement setMap() method.
+    }
+
+    public function generateSchema($db, $collection)
+    {
+        // TODO: Implement generateSchema() method.
+    }
 }

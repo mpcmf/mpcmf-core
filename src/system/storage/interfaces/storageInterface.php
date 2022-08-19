@@ -6,6 +6,7 @@ use mpcmf\system\configuration\exception\configurationException;
 
 interface storageInterface 
 {
+    
     /**
      * Return \MongoClient instance for current configuration
      *
@@ -32,7 +33,7 @@ interface storageInterface
      * @param array  $criteria
      * @param array  $fields
      *
-     * @return \MongoCursor
+     * @return storageCursorInteface
      *
      * @throws \MongoConnectionException
      * @throws configurationException
@@ -296,4 +297,16 @@ interface storageInterface
      * @return mixed
      */
     public function setPrimary($db, $collection, $id);
+
+    /**
+     * @param array $map
+     *
+     * @return void
+     */
+    public function setMap($db, $collection, $map);
+
+    /**
+     * @return void
+     */
+    public function generateSchema($db, $collection);
 }

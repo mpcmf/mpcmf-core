@@ -45,6 +45,7 @@ trait mongoCrud
                 $primary = $this->getKey();
                 //@TODO: use $this->storageInstance->setMap();
                 $this->storageInstance->setPrimary($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $primary);
+                $this->storageInstance->setMap($this->getNormalizedMap());
             } catch (configurationException $configurationException) {
                 //invalid mapper config, pass
             }
