@@ -83,7 +83,7 @@ class fluentInstance implements storageInterface
             return false;
         }
         
-        return $this->getCollection($db, $collection)->update(null, $newData)->execute();
+        return $this->getCollection($db, $collection)->update(null, $newData)->where($where)->execute();
     }
 
     public function updateFields($db, $collection, $criteria, $fields, $options = [])
