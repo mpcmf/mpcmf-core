@@ -183,7 +183,7 @@ class fluentInstance implements storageInterface
 
     public function setMap($db, $collection, $map)
     {
-        $this->map["{$db}_{$collection}"] = $map;
+        // TODO: Implement setMap() method.
     }
 
     public function generateSchema($db, $collection)
