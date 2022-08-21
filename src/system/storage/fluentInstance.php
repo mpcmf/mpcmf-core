@@ -188,52 +188,6 @@ class fluentInstance implements storageInterface
 
     public function generateSchema($db, $collection)
     {
-        if($this->getPackageConfig()['sql_type'] === 'sqlite') {
-            $collection = "{$db}_{$collection}";
-        }
-        
-        $fields = [];
-        $uniques = [];
-        foreach ($this->map as $field => $mapData) {
-            $colType = null;
-            $primary = null;
-            $notNull = null;
-            switch ($mapData['type']) {
-                case 'string':
-                    if($mapData['formType'] === 'text') {
-                        $colType = 'varchar(1024)';
-                    } elseif($mapData['formType'] === 'textarea') {
-                        $colType = 'string';
-                    } else {
-                        throw new storageException("unknown text field type: {$mapData['formType']}");
-                    }
-                    break;
-                case 'int':
-                    $colType = 'int';
-                    break;
-                case 'bool':
-                    $colType = 'bool';
-                    break;
-                case 'array':
-                    //@TODO: what to do with JSON?
-                    $colType = 'string';
-                default:
-                    throw new storageException("unknown column type: {$mapData['type']}");
-            }
-            if(isset($mapData['roles'][mapperBase::ROLE__PRIMARY_KEY])) {
-                $primary = 'PRIMARY KEY';
-            }
-            if(isset($mapData['options']['required'])) {
-                $notNull = 'NOT NULL';
-            }
-            $fields[] = "{$field} {$colType} {$colType} {$primary} {$notNull}";
-            if(isset($mapData['options']['unique'])) {
-                $uniques[] = "UNIQUE KEY uniq_{$field} ($field)";
-            }
-        }
-        
-        $statement = "CREATE TABLE IF NOT EXISTS {$collection} (" . implode(',', array_merge($fields, $uniques)) . ")";
-        
-        return $statement;
+        // TODO: Implement generateSchema() method.
     }
 }
