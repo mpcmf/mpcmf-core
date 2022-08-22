@@ -13,7 +13,14 @@
         <tbody>
         {foreach from=$_entity->getMapper()->getMap() key="fieldName" item="field"}
             <tr>
-                <td>{$field.name}</td>
+                <td>
+                    {if $field.formType=='select' || $field.formType=='searchebleselect'}
+                        {assign var="relationMapper" value=$_entity->getMapper()->getRelationMapper($fieldName)}
+                        <a href="{$_application->getUrl("/{$relationMapper->getModuleName()}/{$relationMapper->getEntityName()}/crud.list", [])}">{$field.name}</a>
+                    {else}
+                        {$field.name}
+                    {/if}
+                </td>
                 {if isset($data.item)}
                     <td>{include file="forms/generate/type_{$field.formType}.tpl" fieldName=$fieldName field=$field item=$data.item}</td>
                 {else}
@@ -21,11 +28,11 @@
                 {/if}
             </tr>
         {/foreach}
-            <tr>
-                <td colspan="2">
-                    {include file="forms/generate/type_submit.tpl"}
-                </td>
-            </tr>
+        <tr>
+            <td colspan="2">
+                {include file="forms/generate/type_submit.tpl"}
+            </td>
+        </tr>
         </tbody>
     </table>
 </form>
