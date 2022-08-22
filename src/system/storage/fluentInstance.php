@@ -29,7 +29,8 @@ class fluentInstance implements storageInterface
                     $this->storageInstance = new PDO("{$config['sql_type']}:{$config['db_file']}.sqlite3");
                     break;
                 case 'mysql':
-                    $this->storageInstance = new PDO("{$config['sql_type']}:host={$config['host']}", $config['username'], $config['password'], $config['options'] ?? null);
+                    $uri = "{$config['sql_type']}:host={$config['host']};port={$config['port']};charset=UTF8";
+                    $this->storageInstance = new PDO($uri, $config['username'], $config['password'], $config['options'] ?? null);
                     break;
                 default:
                     throw new storageException("Invalid SQL storage type: {$config['sql_type']}");
@@ -140,19 +141,27 @@ class fluentInstance implements storageInterface
         }
         return $result;
     }
+    
+    public function getCollectionName($db, $collection) 
+    {
+        $config = $this->getPackageConfig();
+        if($config['sql_type'] === 'sqlite') {
+            return "{$db}_{$collection}";
+        }
+        
+        return $collection;
+    }
 
     public function getCollection($db, $collection):Query
     {
-        if($this->getPackageConfig()['sql_type'] === 'sqlite') {
-            $collection = "{$db}_{$collection}";
-        }
-
+        $collection = $this->getCollectionName($db, $collection);
         //@TODO: need to validate somehow if table exists. Or dont need?
-        return $this->getDb($db)->setTableName($collection);
+        return $this->getDb($db)->setTableName($collection, $db, '.');
     }
 
     public function getDb($db):Query
     {
+        /** @var []Query $databases */
         static $databases = [];
         $config = $this->getPackageConfig();
         if($config['sql_type'] === 'sqlite') {
