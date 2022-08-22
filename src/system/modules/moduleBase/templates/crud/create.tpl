@@ -28,11 +28,11 @@
                 {/if}
             </tr>
         {/foreach}
-        <tr>
-            <td colspan="2">
-                {include file="forms/generate/type_submit.tpl"}
-            </td>
-        </tr>
+            <tr>
+                <td colspan="2">
+                    {include file="forms/generate/type_submit.tpl"}
+                </td>
+            </tr>
         </tbody>
     </table>
 </form>
