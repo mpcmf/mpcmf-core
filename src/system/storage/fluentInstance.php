@@ -15,7 +15,7 @@ class fluentInstance implements storageInterface
 
     /** @var PDO */
     private $storageInstance;
-    
+
     private $map = [];
 
     public function getStorageDriver(): PDO
@@ -61,7 +61,7 @@ class fluentInstance implements storageInterface
         $mysqlResult = $this->getCollection($db, $collection)->from()->where($where)->limit(1);
         $row = $mysqlResult->fetch();
         if($row === null) {
-            
+
             return null;
         }
 
@@ -84,10 +84,11 @@ class fluentInstance implements storageInterface
         $where = $mongo2sql->translateCriteria($criteria);
         $newData = $mongo2sql->translateUpdatePayload($newObject);
         if(empty($newData)) {
-            
+
             return false;
         }
-        
+        $newData = $this->castTypes($this->map[$db][$collection], $newData);
+
         return $this->getCollection($db, $collection)->update(null, $newData)->where($where)->execute();
     }
 
@@ -111,13 +112,41 @@ class fluentInstance implements storageInterface
         return $this->getCollection($db, $collection)->delete()->where($where)->execute();
     }
 
+    protected function castTypes($map, $object)
+    {
+        foreach ($object as $field => &$value) {
+            if($field === '_id') {
+                continue;
+            }
+            $fieldMap = $map[$field];
+            $value = $this->castType($fieldMap['type'], $value);
+        }
+        unset($value);
+
+        return $object;
+    }
+    protected function castType($mapperType, $value)
+    {
+        switch ($mapperType) {
+            case 'string':
+                return (string)$value;
+            case 'int':
+                return (int)$value;
+            case 'boolean':
+                return (int)$value;
+            default:
+                throw new storageException("Unsupported field type `{$mapperType}` for conversion to sql");
+        }
+    }
+
     public function insert($db, $collection, $object, $options = [])
     {
+        $object = $this->castTypes($this->map[$db][$collection], $object);
         try {
             $result = $this->getCollection($db, $collection)->insertInto(null, $object)->execute();
         } catch (\PDOException $exception) {
 
-            throw new storageException("PDOException: {$exception->getMessage()}");
+            throw new storageException('[' . __METHOD__ . '] ' . "PDOException: {$exception->getMessage()}");
         }
         return $result;
     }
@@ -137,18 +166,18 @@ class fluentInstance implements storageInterface
                            ->execute();
         } catch (\PDOException $exception) {
 
-            throw new storageException("PDOException: {$exception->getMessage()}");
+            throw new storageException('[' . __METHOD__ . '] ' . "PDOException: {$exception->getMessage()}");
         }
         return $result;
     }
-    
-    public function getCollectionName($db, $collection) 
+
+    public function getCollectionName($db, $collection)
     {
         $config = $this->getPackageConfig();
         if($config['sql_type'] === 'sqlite') {
             return "{$db}_{$collection}";
         }
-        
+
         return $collection;
     }
 
@@ -171,7 +200,7 @@ class fluentInstance implements storageInterface
         if(!isset($databases[$db])) {
             $databases[$db] = new Query($this->getStorageDriver());
         }
-        
+
         return $databases[$db];
     }
 
@@ -192,7 +221,10 @@ class fluentInstance implements storageInterface
 
     public function setMap($db, $collection, $map)
     {
-        // TODO: Implement setMap() method.
+        if(!isset($this->map[$db])) {
+            $this->map[$db] = [];
+        }
+        $this->map[$db][$collection] = $map;
     }
 
     public function generateSchema($db, $collection)

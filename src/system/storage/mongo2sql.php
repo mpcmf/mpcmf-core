@@ -147,10 +147,23 @@ class mongo2sql
         return implode(' ', $sql);
     }
     
-    public function translateUpdatePayload($payload) 
+    public function translateUpdatePayload($payload)
     {
         //@TODO: add $inc, $push, etc
-        return $payload['$set'] ?? $payload;
+        if(isset($payload['$set'])) {
+            if(count($payload) === 1) {
+
+                return $payload['$set'];
+            }
+            throw new \Exception("complex updates not imlemented");
+        }
+        foreach ($payload as $field => $value) {
+            if($field[0] === '$') {
+                throw new \Exception("update method not implemented: `{$field}`");
+            }
+        }
+
+        return $payload;
     }
 
     protected function translateValueToScalar($value): string

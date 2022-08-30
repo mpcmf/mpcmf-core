@@ -42,10 +42,9 @@ trait mongoCrud
             $this->storageInstance = $storageClass::factory($this->mongoCrudStorageConfig['configSection']);
 
             try {
-                //@TODO: setMap creates recursion because it calls getNormalizedMap
-                //$primary = $this->getKey();
-                //$this->storageInstance->setPrimary($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $primary);
-                //$this->storageInstance->setMap($this->getNormalizedMap());
+                //@TODO: setMap creates recursion because getNormalizedMap creates instance of mapper and mapper may be 'related' to self
+                $this->mapSet = true;
+                $this->storageInstance->setMap($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $this->getNormalizedMap());
             } catch (configurationException $configurationException) {
                 //invalid mapper config, pass
             }
