@@ -15,18 +15,7 @@
     <tbody>
     {foreach from=$_entity->getMapper()->getMap() key="fieldName" item="field"}
         <tr>
-            <td>
-                {if $field.formType=='select' || $field.formType=='searchebleselect'}
-                    {assign var="relationMapper" value=$_entity->getMapper()->getRelationMapper($fieldName)}
-                    {if $relationMapper->getEntityActions()->getAction('crud.list') !== false}
-                        <a href="{$_application->getUrl("/{$relationMapper->getModuleName()}/{$relationMapper->getEntityName()}/crud.list", [])}">{$field.name}</a>
-                    {else}
-                        {$field.name}
-                    {/if}
-                {else}
-                    {$field.name}
-                {/if}
-            </td>
+            <td>{include file="forms/generate/field_title.tpl" field=$field}</td>
             {if isset($data.item)}
                 <td>{include file="forms/generate/type_{$field.formType}.tpl" fieldName=$fieldName field=$field item=$data.item readonly=true}</td>
             {else}
