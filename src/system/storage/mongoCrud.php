@@ -22,6 +22,8 @@ trait mongoCrud
 
     private $mongoCrudStorageConfig;
 
+    private static $mapSet = false;
+
     /**
      * @return mongoInstance
      * @throws storageException
@@ -43,8 +45,10 @@ trait mongoCrud
 
             try {
                 //@TODO: setMap creates recursion because getNormalizedMap creates instance of mapper and mapper may be 'related' to self
-                $this->mapSet = true;
-                $this->storageInstance->setMap($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $this->getNormalizedMap());
+                if(!self::$mapSet) {
+                    self::$mapSet = true;
+                    $this->storageInstance->setMap($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $this->getNormalizedMap());
+                }
             } catch (configurationException $configurationException) {
                 //invalid mapper config, pass
             }
@@ -175,7 +179,7 @@ trait mongoCrud
     public function getAllBy($criteria, array $fields = [])
     {
         $cursor = $this->storage()->select($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $fields);
-        
+
         return new storageCursorWrapper($cursor);
     }
 
