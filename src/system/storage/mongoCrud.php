@@ -22,7 +22,7 @@ trait mongoCrud
 
     private $mongoCrudStorageConfig;
 
-    private static $mapSet = false;
+    private static $mapSet = [];
 
     /**
      * @return mongoInstance
@@ -44,9 +44,9 @@ trait mongoCrud
             $this->storageInstance = $storageClass::factory($this->mongoCrudStorageConfig['configSection']);
 
             try {
-                //@TODO: setMap creates recursion because getNormalizedMap creates instance of mapper and mapper may be 'related' to self
-                if(!self::$mapSet) {
-                    self::$mapSet = true;
+                //@TODO: this is hack because setMap creates recursion because getNormalizedMap creates instance of mapper and mapper may be 'related' to self
+                if(!isset(self::$mapSet[$this->mongoCrudStorageConfig['db']][$this->mongoCrudStorageConfig['collection']])) {
+                    self::$mapSet[$this->mongoCrudStorageConfig['db']][$this->mongoCrudStorageConfig['collection']] = true;
                     $this->storageInstance->setMap($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $this->getNormalizedMap());
                 }
             } catch (configurationException $configurationException) {
