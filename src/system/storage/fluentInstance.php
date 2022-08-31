@@ -3,7 +3,7 @@
 namespace mpcmf\system\storage;
 
 use Envms\FluentPDO\Query;
-use mpcmf\modules\moduleBase\mappers\mapperBase;
+use mpcmf\system\helper\io\log;
 use mpcmf\system\pattern\factory;
 use mpcmf\system\storage\exception\storageException;
 use PDO;
@@ -11,7 +11,7 @@ use mpcmf\system\storage\interfaces\storageInterface;
 
 class fluentInstance implements storageInterface
 {
-    use factory;
+    use factory, log;
 
     /** @var PDO */
     private $storageInstance;
@@ -30,6 +30,9 @@ class fluentInstance implements storageInterface
                     break;
                 case 'mysql':
                     $uri = "{$config['sql_type']}:host={$config['host']};port={$config['port']};charset=UTF8";
+                    //$options = [PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'utf8mb4' COLLATE 'utf8mb4_bin'"];
+                    //$options = isset($config['options']) ? array_replace($options, $config['options']) : $options;
+                    //$this->storageInstance = new PDO($uri, $config['username'], $config['password'], $options);
                     $this->storageInstance = new PDO($uri, $config['username'], $config['password'], $config['options'] ?? null);
                     break;
                 default:
@@ -58,9 +61,11 @@ class fluentInstance implements storageInterface
     public function selectOne($db, $collection, $criteria = [], $fields = [])
     {
         $where = mongo2sql::getInstance()->translateCriteria($criteria);
-        $mysqlResult = $this->getCollection($db, $collection)->from()->where($where)->limit(1);
-        $row = $mysqlResult->fetch();
-        if($row === null) {
+        $select = $this->getCollection($db, $collection)->from();
+        $select->where($where)->limit(1);
+        MPCMF_DEBUG && self::log()->addDebug("QUERY: {$select->getQuery(false)}", [__METHOD__]);
+        $row = $select->fetch();
+        if($row === null || $row === false) {
 
             return null;
         }
