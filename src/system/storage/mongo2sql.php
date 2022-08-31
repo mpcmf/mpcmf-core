@@ -144,7 +144,7 @@ class mongo2sql
             return '1=1';
         }
 
-        return implode(' ', $sql);
+        return addcslashes(implode(' ', $sql), '.');
     }
     
     public function translateUpdatePayload($payload)
