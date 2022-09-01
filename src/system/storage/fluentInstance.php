@@ -75,12 +75,12 @@ class fluentInstance implements storageInterface
 
     public function selectAndModify($db, $collection, $criteria, $newObject, $selectFields = [], $options = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        throw new storageException('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
     }
 
     public function selectAndModifyFields($db, $collection, $criteria, $modifyFields, $selectFields = [], $options = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        throw new storageException('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
     }
 
     public function update($db, $collection, $criteria, $newObject, $options = [])
@@ -99,7 +99,7 @@ class fluentInstance implements storageInterface
 
     public function updateFields($db, $collection, $criteria, $fields, $options = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        throw new storageException('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
     }
 
     public function removeOne($db, $collection, $criteria = [], $options = [])
@@ -119,6 +119,9 @@ class fluentInstance implements storageInterface
 
     protected function castTypes($map, $object)
     {
+        if(!is_iterable($object)) {
+            throw new storageException('object is not iterable: ' . json_encode($object));
+        }
         foreach ($object as $field => &$value) {
             if($field === '_id') {
                 continue;
@@ -138,7 +141,10 @@ class fluentInstance implements storageInterface
             case 'int':
                 return (int)$value;
             case 'boolean':
+                //@NOTE tinyint
                 return (int)$value;
+            case 'string[]':
+                return json_encode($value);
             default:
                 throw new storageException("Unsupported field type `{$mapperType}` for conversion to sql");
         }
@@ -158,7 +164,7 @@ class fluentInstance implements storageInterface
 
     public function insertBatch($db, $collection, $objects, $options = [])
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        throw new storageException('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
     }
 
     public function save($db, $collection, $object, $options = [])
@@ -211,12 +217,12 @@ class fluentInstance implements storageInterface
 
     public function checkIndexes($db, $collection, $indexes)
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        throw new storageException('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
     }
 
     public function checkIndicesAuto($config)
     {
-        throw new \Exception('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
+        throw new storageException('method ' . __METHOD__ . ' not implemented yet for ' . __CLASS__);
     }
 
     public function setPrimary($db, $collection, $id)
