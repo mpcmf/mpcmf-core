@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3dfa30578fc939afce267df51445820d",
+    "content-hash": "a4f8f2892f7a22010d9c161e6a612bdd",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -761,13 +761,13 @@
             "version": "2.x-dev",
             "source": {
                 "type": "git",
-                "url": "https://github.com/slimphp/Slim.git",
-                "reference": "7d3308bb8b41238941c0cbf549ef103c1bd69a30"
+                "url": "https://github.com/infostars/Slim.git",
+                "reference": "0e6d3573c4c525be80ffc4a3e66b7189d4af1e3a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/slimphp/Slim/zipball/7d3308bb8b41238941c0cbf549ef103c1bd69a30",
-                "reference": "7d3308bb8b41238941c0cbf549ef103c1bd69a30",
+                "url": "https://api.github.com/repos/infostars/Slim/zipball/0e6d3573c4c525be80ffc4a3e66b7189d4af1e3a",
+                "reference": "0e6d3573c4c525be80ffc4a3e66b7189d4af1e3a",
                 "shasum": ""
             },
             "require": {
@@ -783,7 +783,6 @@
                     "Slim": "."
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -801,7 +800,20 @@
                 "rest",
                 "router"
             ],
-            "time": "2017-01-07T15:23:35+00:00"
+            "support": {
+                "source": "https://github.com/infostars/Slim/tree/2.x"
+            },
+            "funding": [
+                {
+                    "type": "open_collective",
+                    "url": "https://opencollective.com/slimphp"
+                },
+                {
+                    "type": "tidelift",
+                    "url": "https://tidelift.com/funding/github/packagist/slim/slim"
+                }
+            ],
+            "time": "2022-08-12T15:32:34+00:00"
         },
         {
             "name": "smarty/smarty",
@@ -2023,7 +2035,8 @@
         "alcaeus/mongo-php-adapter": 20,
         "nervetattoo/elasticsearch": 20,
         "mpcmf/mpcmf-signal-handler": 20,
-        "phpunit/phpunit": 20
+        "phpunit/phpunit": 20,
+        "slim/slim": 20
     },
     "prefer-stable": true,
     "prefer-lowest": false,

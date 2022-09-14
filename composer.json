@@ -16,7 +16,8 @@
   ],
   "type": "library",
   "repositories": [
-      {"type": "vcs", "url": "https://github.com/pltrm/elasticsearch"}
+      {"type": "vcs", "url": "git@github.com:pltrm/elasticsearch.git"},
+      {"type": "vcs", "url": "git@github.com:infostars/Slim.git"}
   ],
   "require": {
     "php": ">=5.5.10",
