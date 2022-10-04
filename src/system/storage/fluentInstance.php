@@ -20,11 +20,13 @@ class fluentInstance implements storageInterface
 
     public function getStorageDriver(): PDO
     {
-        try {
-            $this->storageInstance->exec('select 1');
-        } catch (\Exception $e) {
-            if($e->getCode() === 2006) { //MySQL server has gone away
-                $this->storageInstance = null;
+        if($this->storageInstance !== null) {
+            try {
+                $this->storageInstance->exec('select 1');
+            } catch (\Exception $e) {
+                if($e->getCode() === 2006) { //MySQL server has gone away
+                    $this->storageInstance = null;
+                }
             }
         }
         if ($this->storageInstance === null) {
