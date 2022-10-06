@@ -26,6 +26,9 @@ class fluentInstance implements storageInterface
             } catch (\Exception $e) {
                 if($e->getCode() === 2006) { //MySQL server has gone away
                     $this->storageInstance = null;
+                } else {
+                    self::log()->addError(sprintf("SQL Exception: %s %s", get_class($e), $e->getCode()));
+                    throw $e;
                 }
             }
         }
