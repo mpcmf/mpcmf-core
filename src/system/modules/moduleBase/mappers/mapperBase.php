@@ -2,6 +2,7 @@
 
 namespace mpcmf\modules\moduleBase\mappers;
 
+use mpcmf\modules\moduleBase\exceptions\itemNotFoundException;
 use mpcmf\modules\moduleBase\exceptions\mapperException;
 use mpcmf\modules\moduleBase\exceptions\modelException;
 use mpcmf\modules\moduleBase\models\modelBase;
@@ -545,7 +546,7 @@ abstract class mapperBase
 
         if($found === null) {
             MPCMF_DEBUG && self::log()->addInfo("Item not found in storage: {$this->getEntityName()}", [__METHOD__]);
-            throw new mapperException("Item not found in storage: {$this->getEntityName()} by criteria: " . json_encode($criteria));
+            throw new itemNotFoundException("Item not found in storage: {$this->getEntityName()} by criteria: " . json_encode($criteria));
         }
 
         return $class::fromArray($found);
@@ -654,7 +655,7 @@ abstract class mapperBase
             throw new mapperException('Some error in storage, request failed', $storageException->getCode(), $storageException);
         }
         if($filter === null) {
-            throw new mapperException("Item not found (`{$this->getEntityName()}` entity)", codes::RESPONSE_CODE_NOT_FOUND);
+            throw new itemNotFoundException("Item not found (`{$this->getEntityName()}` entity)");
         }
 
         return $class::fromArray($filter);
@@ -804,7 +805,7 @@ abstract class mapperBase
 
         if(!$savedItem) {
             MPCMF_DEBUG && self::log()->addInfo("Item not found in storage: {$this->getEntityName()}", [__METHOD__]);
-            throw new mapperException("Item not found in storage: {$this->getEntityName()}");
+            throw new itemNotFoundException("Item not found in storage: {$this->getEntityName()}");
         }
 
         return $class::fromArray($savedItem);
