@@ -4,6 +4,7 @@ namespace mpcmf\system\storage;
 
 use Envms\FluentPDO\Queries\Common;
 use mpcmf\system\storage\interfaces\storageCursorInteface;
+use mpcmf\system\storage\interfaces\storageInterface;
 
 class fluentCursor implements storageCursorInteface 
 {
@@ -11,6 +12,7 @@ class fluentCursor implements storageCursorInteface
      * @var Common
      */
     protected $request;
+    protected $map;
 
     protected $requestParams = [
         'batchSize' => 10,
@@ -28,14 +30,15 @@ class fluentCursor implements storageCursorInteface
         'needNextRequest' => true,
     ];
 
-    public function __construct(Common $mysqlResult) 
+    public function __construct(array $map, Common $mysqlResult) 
     {
         $this->request = $mysqlResult;
+        $this->map = $map;
     }
 
     public function current()
     {
-        return $this->session['rows'][$this->session['pos']];
+        return fluentCast::unCastTypes($this->map, $this->session['rows'][$this->session['pos']]);
     }
 
     public function next()

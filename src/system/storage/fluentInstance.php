@@ -22,7 +22,7 @@ class fluentInstance implements storageInterface
     {
         if($this->storageInstance !== null) {
             try {
-                $this->storageInstance->exec('select 1');
+                $this->storageInstance->query('select 1')->execute();
             } catch (\Exception $e) {
                 if($e->getCode() === 2006) { //MySQL server has gone away
                     $this->storageInstance = null;
@@ -67,7 +67,7 @@ class fluentInstance implements storageInterface
         $where = mongo2sql::getInstance()->translateCriteria($criteria);
         $mysqlRequest = $this->getCollection($db, $collection)->from()->where($where);
 
-        return new fluentCursor($mysqlRequest);
+        return new fluentCursor($this->map[$db][$collection], $mysqlRequest);
     }
 
     public function selectOne($db, $collection, $criteria = [], $fields = [])
@@ -82,7 +82,7 @@ class fluentInstance implements storageInterface
             return null;
         }
 
-        return $row;
+        return fluentCast::unCastTypes($this->map[$db][$collection], $row);
     }
 
     public function selectAndModify($db, $collection, $criteria, $newObject, $selectFields = [], $options = [])
@@ -104,7 +104,7 @@ class fluentInstance implements storageInterface
 
             return false;
         }
-        $newData = $this->castTypes($this->map[$db][$collection], $newData);
+        $newData = fluentCast::castTypes($this->map[$db][$collection], $newData);
 
         return $this->getCollection($db, $collection)->update(null, $newData)->where($where)->execute();
     }
@@ -128,43 +128,10 @@ class fluentInstance implements storageInterface
 
         return $this->getCollection($db, $collection)->delete()->where($where)->execute();
     }
-
-    protected function castTypes($map, $object)
-    {
-        if(!is_iterable($object)) {
-            throw new storageException('object is not iterable: ' . json_encode($object));
-        }
-        foreach ($object as $field => &$value) {
-            if($field === '_id') {
-                continue;
-            }
-            $fieldMap = $map[$field];
-            $value = $this->castType($fieldMap['type'], $value);
-        }
-        unset($value);
-
-        return $object;
-    }
-    protected function castType($mapperType, $value)
-    {
-        switch ($mapperType) {
-            case 'string':
-                return (string)$value;
-            case 'int':
-                return (int)$value;
-            case 'boolean':
-                //@NOTE tinyint
-                return (int)$value;
-            case 'string[]':
-                return json_encode($value);
-            default:
-                throw new storageException("Unsupported field type `{$mapperType}` for conversion to sql");
-        }
-    }
-
+    
     public function insert($db, $collection, $object, $options = [])
     {
-        $object = $this->castTypes($this->map[$db][$collection], $object);
+        $object = fluentCast::castTypes($this->map[$db][$collection], $object);
         try {
             $result = $this->getCollection($db, $collection)->insertInto(null, $object)->execute();
         } catch (\PDOException $exception) {
