@@ -466,16 +466,18 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/pltrm/elasticsearch.git",
-                "reference": "09f41b4e05d1b578db40d75553767c5480124da4"
+                "reference": "6e4200a83d9449d9328eebcdc28ade50578c8b3c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/pltrm/elasticsearch/zipball/09f41b4e05d1b578db40d75553767c5480124da4",
-                "reference": "09f41b4e05d1b578db40d75553767c5480124da4",
+                "url": "https://api.github.com/repos/pltrm/elasticsearch/zipball/6e4200a83d9449d9328eebcdc28ade50578c8b3c",
+                "reference": "6e4200a83d9449d9328eebcdc28ade50578c8b3c",
                 "shasum": ""
             },
             "require": {
-                "php": ">=5.3.0"
+                "ext-curl": "*",
+                "ext-json": "*",
+                "php": ">=7.1"
             },
             "require-dev": {
                 "atoum/atoum": "^2.9"
@@ -497,16 +499,16 @@
                     "homepage": "http://raymondjulin.com"
                 }
             ],
-            "description": "ElasticSearch client for PHP 5.3",
+            "description": "ElasticSearch client for PHP 7.1+",
             "homepage": "http://github.com/nervetattoo/elasticsearch",
             "keywords": [
                 "client",
                 "elasticsearch"
             ],
             "support": {
-                "source": "https://github.com/pltrm/elasticsearch/tree/fix-throwing-exceptions-on-empty-response"
+                "source": "https://github.com/pltrm/elasticsearch/tree/master"
             },
-            "time": "2021-12-20T15:37:09+00:00"
+            "time": "2022-11-30T12:26:28+00:00"
         },
         {
             "name": "phpdocumentor/reflection-docblock",
