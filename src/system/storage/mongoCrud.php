@@ -5,12 +5,13 @@ namespace mpcmf\system\storage;
 use mpcmf\system\configuration\config;
 use mpcmf\system\configuration\exception\configurationException;
 use mpcmf\system\storage\exception\storageException;
+use mpcmf\system\storage\interfaces\storageInterface;
 
 trait mongoCrud
 {
 
     /**
-     * @var mongoInstance
+     * @var storageInterface
      */
     private $storageInstance;
 
@@ -20,6 +21,8 @@ trait mongoCrud
     private $collection;
 
     private $mongoCrudStorageConfig;
+
+    private static $mapSet = [];
 
     /**
      * @return mongoInstance
@@ -33,7 +36,22 @@ trait mongoCrud
             if(!array_key_exists('configSection', $this->mongoCrudStorageConfig)) {
                 throw new storageException('Unable to find config[storage][configSection] in case of mongoCrud usage');
             }
-            $this->storageInstance = mongoInstance::factory($this->mongoCrudStorageConfig['configSection']);
+            $storageClass = $this->mongoCrudStorageConfig['type'] ?? mongoInstance::class;
+            
+            if(!class_exists($storageClass)) {
+                throw new storageException("Invalid storage type: {$storageClass}");
+            }
+            $this->storageInstance = $storageClass::factory($this->mongoCrudStorageConfig['configSection']);
+
+            try {
+                //@TODO: this is hack because setMap creates recursion because getNormalizedMap creates instance of mapper and mapper may be 'related' to self
+                if(!isset(self::$mapSet[$this->mongoCrudStorageConfig['db']][$this->mongoCrudStorageConfig['collection']])) {
+                    self::$mapSet[$this->mongoCrudStorageConfig['db']][$this->mongoCrudStorageConfig['collection']] = true;
+                    $this->storageInstance->setMap($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $this->getNormalizedMap());
+                }
+            } catch (configurationException $configurationException) {
+                //invalid mapper config, pass
+            }
         }
 
         return $this->storageInstance;
@@ -150,7 +168,7 @@ trait mongoCrud
      * @param array $criteria
      * @param array $fields
      *
-     * @return \MongoCursor
+     * @return storageCursorWrapper
      *
      * @throws storageException
      * @throws \MongoConnectionException
@@ -160,7 +178,9 @@ trait mongoCrud
      */
     public function getAllBy($criteria, array $fields = [])
     {
-        return $this->storage()->select($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $fields);
+        $cursor = $this->storage()->select($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $fields);
+
+        return new storageCursorWrapper($cursor);
     }
 
     /**
