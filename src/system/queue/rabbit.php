@@ -120,7 +120,7 @@ class rabbit
         }
 
 
-        if ($force || !isset($this->connections[$key])) {
+        if ($force || !isset($this->connections[$key]) || !$this->connections[$key]->isConnected()) {
             $connectionData = $this->getConnectionData();
             MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize connection: " . json_encode($connectionData), [__METHOD__]);
             $this->connections[$key] = new \AMQPConnection($connectionData);
@@ -379,7 +379,7 @@ class rabbit
         static $exchanges = [];
 
         $key = "{$this->configSection}:{$queueName}";
-        if (!isset($exchanges[$key])) {
+        if (!isset($exchanges[$key]) || !$exchanges[$key]->getChannel()->isConnected()) {
             MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize exchange...", [__METHOD__]);
             $exchanges[$key] = new \AMQPExchange($this->getChannel());
             $exchanges[$key]->setName($this->getExchangeName($queueName, $queueType));
@@ -423,7 +423,7 @@ class rabbit
 
         $key = "{$pid}:{$this->configSection}";
 
-        if ($force || !isset($this->channels[$key])) {
+        if ($force || !isset($this->channels[$key]) || !$this->channels[$key]->isConnected()) {
             $this->channels[$key] = new \AMQPChannel($this->getConnection($force));
             $this->channels[$key]->setPrefetchCount(1);
         }
