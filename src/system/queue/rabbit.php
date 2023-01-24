@@ -453,7 +453,7 @@ class rabbit
 
         $queueKey = "{$pid}:{$this->configSection}:{$queueName}:{$queueType}";
 
-        if (!isset($this->queues[$queueKey])) {
+        if (!isset($this->queues[$queueKey]) || !$this->queues[$queueKey]->getConnection()->isConnected()) {
             MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
             $this->queues[$queueKey] = new \AMQPQueue($this->getChannel());
             $this->queues[$queueKey]->setName($queueName);
