@@ -463,40 +463,53 @@ class rabbit
 
         $queueKey = "{$pid}:{$this->configSection}:{$queueName}:{$queueType}";
 
-        if (!isset($this->queues[$queueKey])) {
-            MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
-            $this->queues[$queueKey] = new class($this->getChannel()) extends \AMQPQueue {
-                use log;
-                
-                public function get($flags = AMQP_NOPARAM)
-                {
-                    try {
-                        return parent::get($flags);
-                    } catch (\AMQPException $e) {
-                        if(strpos($e->getMessage(), 'No channel available') !== false) {
-                            self::log()->addWarning("Reconnecting to rabbit because of exception in queue: {$e->getMessage()}");
-                            $this->getConnection()->disconnect();
-                            $this->getConnection()->connect();
-                        }
+        $isFailedConnection = false;
+        if(isset($this->queues[$queueKey])) {
+            $isFailedConnection = $this->queues[$queueKey]->isFailedConnection();
+            if(!$isFailedConnection) {
 
-                        throw $e;
-                    }
-                }
-            };
-            $this->queues[$queueKey]->setName($queueName);
-            $this->queues[$queueKey]->setFlags(AMQP_DURABLE);
-            if (count($arguments) > 0) {
-                $this->queues[$queueKey]->setArguments($arguments);
+                return $this->queues[$queueKey];
             }
-
-            if (method_exists($this->queues[$queueKey], 'declareQueue')) {
-                $this->queues[$queueKey]->declareQueue();
-            } else {
-                $this->queues[$queueKey]->declare();
-            }
-            $this->getExchange($queueName, $queueType);
-            $this->queues[$queueKey]->bind($this->getExchangeName($queueName, $queueType), $queueName);
         }
+
+        MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
+        $this->queues[$queueKey] = new class($this->getChannel($isFailedConnection)) extends \AMQPQueue {
+            use log;
+
+            protected $isFailedConnection = false;
+
+            public function get($flags = AMQP_NOPARAM)
+            {
+                try {
+                    return parent::get($flags);
+                } catch (\AMQPException $e) {
+                    if(strpos($e->getMessage(), 'No channel available') !== false) {
+                        self::log()->addWarning("queue connection error: {$e->getMessage()}");
+                        $this->isFailedConnection = true;
+                    }
+
+                    throw $e;
+                }
+            }
+
+            public function isFailedConnection() {
+
+                return $this->isFailedConnection;
+            }
+        };
+        $this->queues[$queueKey]->setName($queueName);
+        $this->queues[$queueKey]->setFlags(AMQP_DURABLE);
+        if (count($arguments) > 0) {
+            $this->queues[$queueKey]->setArguments($arguments);
+        }
+
+        if (method_exists($this->queues[$queueKey], 'declareQueue')) {
+            $this->queues[$queueKey]->declareQueue();
+        } else {
+            $this->queues[$queueKey]->declare();
+        }
+        $this->getExchange($queueName, $queueType);
+        $this->queues[$queueKey]->bind($this->getExchangeName($queueName, $queueType), $queueName);
 
         return $this->queues[$queueKey];
     }
