@@ -132,7 +132,8 @@ class rabbit
 
     public function reconnect()
     {
-        $this->getConnection()->reconnect();
+        $this->getConnection()->disconnect();
+        $this->getConnection()->connect();
     }
 
     /**
@@ -153,18 +154,27 @@ class rabbit
      */
     public function sendToBackground($queueName, $body = null, $start = true, $persistent = true, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0, $options = [])
     {
-        if (!$start && !$this->transactionStarted) {
-            $this->getChannel()->startTransaction();
-            $this->transactionStarted = true;
+        try {
+            if (!$start && !$this->transactionStarted) {
+                $this->getChannel()->startTransaction();
+                $this->transactionStarted = true;
+            }
+
+            $result = $this->publishMessage($body, $queueName, $persistent, $queueType, $delay, $options);
+
+            if ($start && $this->transactionStarted) {
+                $this->runTasks();
+            }
+
+            return $result;
+        } catch (\AMQPException $e) {
+            if(strpos($e->getMessage(), 'No channel available') !== false) {
+                self::log()->addWarning("Reconnecting to rabbit because of exception in publish: {$e->getMessage()}");
+                $this->reconnect();
+            }
+
+            throw $e;
         }
-
-        $result = $this->publishMessage($body, $queueName, $persistent, $queueType, $delay, $options);
-
-        if ($start && $this->transactionStarted) {
-            $this->runTasks();
-        }
-
-        return $result;
     }
 
     /**
@@ -379,7 +389,7 @@ class rabbit
         static $exchanges = [];
 
         $key = "{$this->configSection}:{$queueName}";
-        if (!isset($exchanges[$key]) || !$exchanges[$key]->getChannel()->isConnected()) {
+        if (!isset($exchanges[$key])) {
             MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize exchange...", [__METHOD__]);
             $exchanges[$key] = new \AMQPExchange($this->getChannel());
             $exchanges[$key]->setName($this->getExchangeName($queueName, $queueType));
@@ -423,7 +433,7 @@ class rabbit
 
         $key = "{$pid}:{$this->configSection}";
 
-        if ($force || !isset($this->channels[$key]) || !$this->channels[$key]->isConnected()) {
+        if ($force || !isset($this->channels[$key])) {
             $this->channels[$key] = new \AMQPChannel($this->getConnection($force));
             $this->channels[$key]->setPrefetchCount(1);
         }
@@ -455,7 +465,24 @@ class rabbit
 
         if (!isset($this->queues[$queueKey])) {
             MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
-            $this->queues[$queueKey] = new \AMQPQueue($this->getChannel());
+            $this->queues[$queueKey] = new class extends \AMQPQueue {
+                use log;
+                
+                public function get($flags = AMQP_NOPARAM)
+                {
+                    try {
+                        return parent::get($flags);
+                    } catch (\AMQPException $e) {
+                        if(strpos($e->getMessage(), 'No channel available') !== false) {
+                            self::log()->addWarning("Reconnecting to rabbit because of exception in queue: {$e->getMessage()}");
+                            $this->getConnection()->disconnect();
+                            $this->getConnection()->connect();
+                        }
+
+                        throw $e;
+                    }
+                }
+            };
             $this->queues[$queueKey]->setName($queueName);
             $this->queues[$queueKey]->setFlags(AMQP_DURABLE);
             if (count($arguments) > 0) {
