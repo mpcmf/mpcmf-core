@@ -465,7 +465,7 @@ class rabbit
 
         if (!isset($this->queues[$queueKey])) {
             MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
-            $this->queues[$queueKey] = new class extends \AMQPQueue {
+            $this->queues[$queueKey] = new class($this->getChannel()) extends \AMQPQueue {
                 use log;
                 
                 public function get($flags = AMQP_NOPARAM)
