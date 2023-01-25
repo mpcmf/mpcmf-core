@@ -10,6 +10,7 @@ class AMQPQueueDriver extends \AMQPQueue
     use log;
 
     protected $isFailedConnection = false;
+    protected $failedConectionCounter = 0;
 
     public function get($flags = AMQP_NOPARAM)
     {
@@ -17,8 +18,12 @@ class AMQPQueueDriver extends \AMQPQueue
             return parent::get($flags);
         } catch (\AMQPException $e) {
             if (strpos($e->getMessage(), 'No channel available') !== false) {
-                self::log()->addWarning("queue connection error: {$e->getMessage()}");
+                $this->failedConectionCounter++;
+                self::log()->addWarning("queue connection error [{$this->failedConectionCounter}]: {$e->getMessage()}");
                 $this->isFailedConnection = true;
+            }
+            if($this->failedConectionCounter > 3) {
+                exit;
             }
 
             throw $e;
