@@ -154,27 +154,18 @@ class rabbit
      */
     public function sendToBackground($queueName, $body = null, $start = true, $persistent = true, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0, $options = [])
     {
-        try {
-            if (!$start && !$this->transactionStarted) {
-                $this->getChannel()->startTransaction();
-                $this->transactionStarted = true;
-            }
-
-            $result = $this->publishMessage($body, $queueName, $persistent, $queueType, $delay, $options);
-
-            if ($start && $this->transactionStarted) {
-                $this->runTasks();
-            }
-
-            return $result;
-        } catch (\AMQPException $e) {
-            if(strpos($e->getMessage(), 'No channel available') !== false) {
-                self::log()->addWarning("Reconnecting to rabbit because of exception in publish: {$e->getMessage()}");
-                $this->reconnect();
-            }
-
-            throw $e;
+        if (!$start && !$this->transactionStarted) {
+            $this->getChannel()->startTransaction();
+            $this->transactionStarted = true;
         }
+
+        $result = $this->publishMessage($body, $queueName, $persistent, $queueType, $delay, $options);
+
+        if ($start && $this->transactionStarted) {
+            $this->runTasks();
+        }
+
+        return $result;
     }
 
     /**
