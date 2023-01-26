@@ -218,7 +218,18 @@ class rabbit
             $options['x-delay'] = $delay;
         }
 
-        return $this->getExchange($queueName, $queueType)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
+        try {
+
+            return $this->getExchange($queueName, $queueType)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
+        } catch (\AMQPException $e) {
+            $m = $e->getMessage();
+            if($m === 'Could not publish to exchange. No channel available.') {
+                self::log()->addWarning("Reconnecting to rabbit because of exception in publish: {$e->getMessage()}");
+                $this->getExchange($queueName, $queueType, true);
+            }
+
+            throw $e;
+        }
     }
 
     protected function prepareBody($body)
@@ -258,7 +269,7 @@ class rabbit
         }
 
         $body = $envelope->getBody();
-        list($contentType, $compressionType) = explode('/', $contentTypeHeader);
+        [$contentType, $compressionType] = explode('/', $contentTypeHeader);
 
         switch ($compressionType) {
             case self::COMPRESSION_TYPE__GZIP:
@@ -369,15 +380,16 @@ class rabbit
     }
 
     /**
-     * @param string $queueName
+     * @param null   $queueName
      * @param string $queueType
+     * @param bool   $force
      *
      * @return \AMQPExchange
      * @throws \AMQPExchangeException
      * @throws \AMQPConnectionException
      * @throws \AMQPChannelException
      */
-    protected function getExchange($queueName = null, $queueType = self::EXCHANGE_TYPE_DIRECT)
+    protected function getExchange($queueName = null, $queueType = self::EXCHANGE_TYPE_DIRECT, $force = false)
     {
         if(empty($queueName)) {
             $queueName = self::EXCHANGE_POINT;
@@ -389,9 +401,9 @@ class rabbit
         static $exchanges = [];
 
         $key = "{$this->configSection}:{$queueName}";
-        if (!isset($exchanges[$key])) {
+        if (!isset($exchanges[$key]) || $force) {
             MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize exchange...", [__METHOD__]);
-            $exchanges[$key] = new \AMQPExchange($this->getChannel());
+            $exchanges[$key] = new \AMQPExchange($this->getChannel($force));
             $exchanges[$key]->setName($this->getExchangeName($queueName, $queueType));
             $exchanges[$key]->setFlags(AMQP_DURABLE);
 

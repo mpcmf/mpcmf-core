@@ -15,15 +15,18 @@ class AMQPQueueDriver extends \AMQPQueue
     public function get($flags = AMQP_NOPARAM)
     {
         try {
+
             return parent::get($flags);
         } catch (\AMQPException $e) {
-            if (strpos($e->getMessage(), 'No channel available') !== false) {
-                $this->failedConectionCounter++;
-                self::log()->addWarning("queue connection error [{$this->failedConectionCounter}]: {$e->getMessage()}");
+            $m = $e->getMessage();
+            if ($m === 'Could not get messages from queue. No channel available.') {
+                if ($this->failedConectionCounter++ >= 3) {
+                    self::log()->addError("non-recoverable queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
+
+                    exit;
+                }
+                self::log()->addWarning("queue connection error [{$this->failedConectionCounter}]: {$m}");
                 $this->isFailedConnection = true;
-            }
-            if($this->failedConectionCounter > 3) {
-                exit;
             }
 
             throw $e;
