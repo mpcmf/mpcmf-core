@@ -120,7 +120,7 @@ class rabbit
         }
 
 
-        if ($force || !isset($this->connections[$key]) || !$this->connections[$key]->isConnected()) {
+        if ($force || !isset($this->connections[$key])) {
             $connectionData = $this->getConnectionData();
             MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize connection: " . json_encode($connectionData), [__METHOD__]);
             $this->connections[$key] = new \AMQPConnection($connectionData);
@@ -132,7 +132,8 @@ class rabbit
 
     public function reconnect()
     {
-        $this->getConnection()->reconnect();
+        $this->getConnection()->disconnect();
+        $this->getConnection()->connect();
     }
 
     /**
@@ -208,7 +209,18 @@ class rabbit
             $options['x-delay'] = $delay;
         }
 
-        return $this->getExchange($queueName, $queueType)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
+        try {
+
+            return $this->getExchange($queueName, $queueType)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
+        } catch (\AMQPException $e) {
+            $m = $e->getMessage();
+            if($m === 'Could not publish to exchange. No channel available.') {
+                self::log()->addWarning("Reconnecting to rabbit because of exception in publish: {$e->getMessage()}");
+                $this->getExchange($queueName, $queueType, true);
+            }
+
+            throw $e;
+        }
     }
 
     protected function prepareBody($body)
@@ -248,7 +260,7 @@ class rabbit
         }
 
         $body = $envelope->getBody();
-        list($contentType, $compressionType) = explode('/', $contentTypeHeader);
+        [$contentType, $compressionType] = explode('/', $contentTypeHeader);
 
         switch ($compressionType) {
             case self::COMPRESSION_TYPE__GZIP:
@@ -361,13 +373,14 @@ class rabbit
     /**
      * @param string $queueName
      * @param string $queueType
+     * @param bool   $force
      *
      * @return \AMQPExchange
      * @throws \AMQPExchangeException
      * @throws \AMQPConnectionException
      * @throws \AMQPChannelException
      */
-    protected function getExchange($queueName = null, $queueType = self::EXCHANGE_TYPE_DIRECT)
+    protected function getExchange($queueName = null, $queueType = self::EXCHANGE_TYPE_DIRECT, $force = false)
     {
         if(empty($queueName)) {
             $queueName = self::EXCHANGE_POINT;
@@ -379,9 +392,9 @@ class rabbit
         static $exchanges = [];
 
         $key = "{$this->configSection}:{$queueName}";
-        if (!isset($exchanges[$key]) || !$exchanges[$key]->getChannel()->isConnected()) {
+        if (!isset($exchanges[$key]) || $force) {
             MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize exchange...", [__METHOD__]);
-            $exchanges[$key] = new \AMQPExchange($this->getChannel());
+            $exchanges[$key] = new \AMQPExchange($this->getChannel($force));
             $exchanges[$key]->setName($this->getExchangeName($queueName, $queueType));
             $exchanges[$key]->setFlags(AMQP_DURABLE);
 
@@ -423,7 +436,7 @@ class rabbit
 
         $key = "{$pid}:{$this->configSection}";
 
-        if ($force || !isset($this->channels[$key]) || !$this->channels[$key]->isConnected()) {
+        if ($force || !isset($this->channels[$key])) {
             $this->channels[$key] = new \AMQPChannel($this->getConnection($force));
             $this->channels[$key]->setPrefetchCount(1);
         }
@@ -453,23 +466,30 @@ class rabbit
 
         $queueKey = "{$pid}:{$this->configSection}:{$queueName}:{$queueType}";
 
-        if (!isset($this->queues[$queueKey]) || !$this->queues[$queueKey]->getConnection()->isConnected()) {
-            MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
-            $this->queues[$queueKey] = new \AMQPQueue($this->getChannel());
-            $this->queues[$queueKey]->setName($queueName);
-            $this->queues[$queueKey]->setFlags(AMQP_DURABLE);
-            if (count($arguments) > 0) {
-                $this->queues[$queueKey]->setArguments($arguments);
-            }
+        $isFailedConnection = false;
+        if(isset($this->queues[$queueKey])) {
+            $isFailedConnection = $this->queues[$queueKey]->isFailedConnection();
+            if(!$isFailedConnection) {
 
-            if (method_exists($this->queues[$queueKey], 'declareQueue')) {
-                $this->queues[$queueKey]->declareQueue();
-            } else {
-                $this->queues[$queueKey]->declare();
+                return $this->queues[$queueKey];
             }
-            $this->getExchange($queueName, $queueType);
-            $this->queues[$queueKey]->bind($this->getExchangeName($queueName, $queueType), $queueName);
         }
+
+        MPCMF_DEBUG && self::log()->addDebug("[{$queueName}] Declaring queue: {$queueName}", [__METHOD__]);
+        $this->queues[$queueKey] = new AMQPQueueDriver($this->getChannel($isFailedConnection));
+        $this->queues[$queueKey]->setName($queueName);
+        $this->queues[$queueKey]->setFlags(AMQP_DURABLE);
+        if (count($arguments) > 0) {
+            $this->queues[$queueKey]->setArguments($arguments);
+        }
+
+        if (method_exists($this->queues[$queueKey], 'declareQueue')) {
+            $this->queues[$queueKey]->declareQueue();
+        } else {
+            $this->queues[$queueKey]->declare();
+        }
+        $this->getExchange($queueName, $queueType);
+        $this->queues[$queueKey]->bind($this->getExchangeName($queueName, $queueType), $queueName);
 
         return $this->queues[$queueKey];
     }
