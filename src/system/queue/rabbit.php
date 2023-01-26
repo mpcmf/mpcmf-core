@@ -371,7 +371,7 @@ class rabbit
     }
 
     /**
-     * @param null   $queueName
+     * @param string $queueName
      * @param string $queueType
      * @param bool   $force
      *

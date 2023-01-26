@@ -33,6 +33,29 @@ class AMQPQueueDriver extends \AMQPQueue
         }
     }
 
+    //@NOTE: invalid signature in phpstorm amqp stub
+    /** @noinspection PhpSignatureMismatchDuringInheritanceInspection */
+    public function consume($callback, $flags = null, $consumerTag = null)
+    {
+        try {
+
+            parent::consume($callback, $flags, $consumerTag);
+        } catch (\AMQPException $e) {
+            $m = $e->getMessage();
+            if ($m === 'Could not get channel. No channel available.') {
+                if ($this->failedConectionCounter++ >= 3) {
+                    self::log()->addError("non-recoverable consume queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
+
+                    exit;
+                }
+                self::log()->addWarning("consume queue connection error [{$this->failedConectionCounter}]: {$m}");
+                $this->isFailedConnection = true;
+            }
+
+            throw $e;
+        }
+    }
+
     public function isFailedConnection()
     {
 
