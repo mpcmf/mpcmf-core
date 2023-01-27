@@ -437,7 +437,16 @@ class rabbit
         $key = "{$pid}:{$this->configSection}";
 
         if ($force || !isset($this->channels[$key])) {
-            $this->channels[$key] = new \AMQPChannel($this->getConnection($force));
+            try {
+                $this->channels[$key] = new \AMQPChannel($this->getConnection($force));
+            } catch (\AMQPException $e) {
+                $m = $e->getMessage();
+                if($m !== 'Could not create channel. No connection available.') {
+                    throw $e;
+                }
+                self::log()->addWarning("Reconnecting to rabbit because of exception in channel: {$e->getMessage()}");
+                $this->channels[$key] = new \AMQPChannel($this->getConnection(true));
+            }
             $this->channels[$key]->setPrefetchCount(1);
         }
 
