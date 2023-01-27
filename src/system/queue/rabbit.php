@@ -217,6 +217,8 @@ class rabbit
             if($m === 'Could not publish to exchange. No channel available.') {
                 self::log()->addWarning("Reconnecting to rabbit because of exception in publish: {$e->getMessage()}");
                 $this->getExchange($queueName, $queueType, true);
+
+                return $this->getExchange($queueName, $queueType)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
             }
 
             throw $e;
