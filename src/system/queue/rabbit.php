@@ -216,9 +216,8 @@ class rabbit
             $m = $e->getMessage();
             if($m === 'Could not publish to exchange. No channel available.') {
                 self::log()->addWarning("Reconnecting to rabbit because of exception in publish: {$e->getMessage()}");
-                $this->getExchange($queueName, $queueType, true);
 
-                return $this->getExchange($queueName, $queueType)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
+                return $this->getExchange($queueName, $queueType, true)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
             }
 
             throw $e;
@@ -396,7 +395,16 @@ class rabbit
         $key = "{$this->configSection}:{$queueName}";
         if (!isset($exchanges[$key]) || $force) {
             MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize exchange...", [__METHOD__]);
-            $exchanges[$key] = new \AMQPExchange($this->getChannel($force));
+            try {
+                $exchanges[$key] = new \AMQPExchange($this->getChannel($force));
+            } catch (\AMQPException $e) {
+                $m = $e->getMessage();
+                if($m !== 'Could not create exchange. No channel available.') {
+                    throw $e;
+                }
+                self::log()->addWarning("Reconnecting to rabbit because of exception in exchange: {$e->getMessage()}");
+                $exchanges[$key] = new \AMQPExchange($this->getChannel(true));
+            }
             $exchanges[$key]->setName($this->getExchangeName($queueName, $queueType));
             $exchanges[$key]->setFlags(AMQP_DURABLE);
 
