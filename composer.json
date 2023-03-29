@@ -39,7 +39,7 @@
     "bramus/monolog-colored-line-formatter": "2.x",
     "khr/react-curl": "dev-master",
     "infostars/net-curl": "dev-master",
-    "smarty/smarty": "3.1.44",
+    "smarty/smarty": "3.1.48",
     "alcaeus/mongo-php-adapter": "^1.1@dev",
     "nervetattoo/elasticsearch": "dev-master",
     "mpcmf/mpcmf-signal-handler": "dev-master",
