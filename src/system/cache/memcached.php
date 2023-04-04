@@ -8,11 +8,11 @@ use mpcmf\system\helper\system\profiler;
 use mpcmf\system\pattern\factory;
 
 /**
- * Memcached driver wrapper for mpr_cache package
+ * Memcached driver wrapper
  *
  * @author GreeveX <greevex@gmail.com>
  */
-class memcached
+class memcached implements cacheInterface
 {
     use factory {
         __construct as protected factoryConstruct;
