@@ -54,6 +54,9 @@ class elastic
             if ($this->timeout !== null) {
                 $esConfig['timeout'] = $this->timeout;
             }
+            if (isset($esConfig['custom_protocol'])) {
+                Client::addProtocol($esConfig['custom_protocol'], $this->configSection);
+            }
 
             $this->es[$this->elasticCurrent] = Client::connection($esConfig);
         }
