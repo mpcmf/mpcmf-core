@@ -38,5 +38,10 @@
 
     <link href="/custom/select2/dist/css/select2.css" rel="stylesheet" />
     <script src="/custom/select2/dist/js/select2.full.js"></script>
+
+    <link rel="stylesheet" href="/custom/sds/helpers.css?d=29-04-2020" />
+    <script src="/js/helps/helpers.js"></script>
+
+    <link rel="stylesheet" href="/custom/sds/customized.css?d=09-07-2020" />
 </head>
 <body>

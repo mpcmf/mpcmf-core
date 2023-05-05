@@ -3,7 +3,7 @@
         <a class="sidebar_toggle mb-1">
             <i class="bi bi-list fs24"></i>
         </a>
-        <a class="navbar-brand" href="/">SDS Admin{if isset($_title) && !empty($_title)}: {$_title}{/if}</a>
+        <a class="navbar-brand" href="/">MPCMF Admin{if isset($_title) && !empty($_title)}: {$_title}{/if}</a>
     </div>
 </div>
 

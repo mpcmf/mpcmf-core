@@ -50,8 +50,7 @@
                             {assign var="sort" value=1}
                         {/if}
                         <th class="fs14 col-lg-{$colWidth} {if isset($data.sort[$fieldName])}bg-info bg-opacity-25{/if}" {if !empty($field.description)} title="{$field.description|htmlspecialchars}"{/if}>
-                            <div class="d-flex justify-content-center align-items-center text-nowrap
-Создать новую выгрузку">
+                            <div class="d-flex justify-content-center align-items-center text-nowrap">
                                 <span>{$field.name|htmlspecialchars}</span>
                                 {if isset($field.role.sortable) && $field.role.sortable}
                                     <a class="fs14"
