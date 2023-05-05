@@ -6,49 +6,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="">
     <meta name="author" content="">
-    <title>MPCMF Администрирование{if isset($title) && !empty($title)} / {$title}{/if}</title>
+    {assign var="title" value=$_application->getTitle()}
+    <title>SDS {if empty($title)}Администрирование{else}- {$title}{/if}</title>
 
-    <!-- Bootstrap Core CSS -->
-    <link href="/bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- MetisMenu CSS -->
-    <link href="/bower_components/metisMenu/dist/metisMenu.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/sources/dateTimePicker/css/tempus-dominus.min.css">
+    <script src="/sources/popper/popper.min.js"></script>
+    <script src="/sources/dateTimePicker/js/tempus-dominus.js"></script>
 
-    <!-- Timeline CSS -->
-    <link href="/bower_components/startbootstrap-sb-admin-2/dist/css/timeline.css" rel="stylesheet">
+    <link rel="stylesheet" href="/sources/icons.css">
 
-    <!-- Custom CSS -->
-    <link href="/bower_components/startbootstrap-sb-admin-2/dist/css/sb-admin-2.css" rel="stylesheet">
+    <link rel="stylesheet" href="/sources/index.css">
+    <link rel="stylesheet" href="/sources/jquery.css">
 
-    <!-- Custom Fonts -->
-    <link href="/bower_components/font-awesome/css/font-awesome.min.css" rel="stylesheet" type="text/css">
+    <script src="/sources/jquery.bundle.js"></script>
+    <script src="/sources/index.bundle.js"></script>
 
-    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
-    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
-    <!--[if lt IE 9]>
-    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
-    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
-    <![endif]-->
+    <script src="/sources/plugins.bundle.js"></script>
+    <script defer src="/sources/moment.bundle.js"></script>
 
-    <!-- jQuery -->
-    <script src="/bower_components/jquery/dist/jquery.min.js"></script>
 
-    <!-- Bootstrap Core JavaScript -->
-    <script src="/bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+    <link href="/custom/startbootstrap-sb-admin-2/dist/css/sb-admin-2.css" rel="stylesheet">
+    <script defer src="/custom/startbootstrap-sb-admin-2/dist/js/sb-admin-2.js"></script>
 
-    <!-- Metis Menu Plugin JavaScript -->
-    <script src="/bower_components/metisMenu/dist/metisMenu.min.js"></script>
+    {*<link rel="stylesheet" href="/custom/sds/sds-white.css" />*}
+    <script defer type="text/javascript" src="/custom/sds/sds.js?d=07-09-2017"></script>
 
-    <script src="/bower_components/startbootstrap-sb-admin-2/dist/js/sb-admin-2.js"></script>
+    <link rel="stylesheet" href="/custom/sds/sds-support.css?d=16-03-2023"/>
+    <link rel="stylesheet" href="/custom/sds/sds-blue.css?d=14-07-2017" />
+{*    <script defer type="text/javascript" src="/custom/sds/sds-blue.js?d=27-10-2016"></script>*}
 
-    <!-- Datetimepicker -->
-    <script type="text/javascript" src="/bower_components/moment/min/moment.min.js"></script>
-    <script type="text/javascript" src="/bower_components/eonasdan-bootstrap-datetimepicker/build/js/bootstrap-datetimepicker.min.js"></script>
-    <link rel="stylesheet" href="/bower_components/eonasdan-bootstrap-datetimepicker/build/css/bootstrap-datetimepicker.min.css" />
+    <link href="/custom/select2/dist/css/select2.css" rel="stylesheet" />
+    <script src="/custom/select2/dist/js/select2.full.js"></script>
 
-    <!-- Timepicker -->
-    <link rel="stylesheet" href="/custom/bootstrap-3-timepicker-master/css/bootstrap-timepicker.min.css" />
-    <script type="text/javascript" src="/custom/bootstrap-3-timepicker-master/js/bootstrap-timepicker.min.js"></script>
+    <link rel="stylesheet" href="/custom/sds/helpers.css?d=29-04-2020" />
+    <script src="/js/helps/helpers.js"></script>
 
+    <link rel="stylesheet" href="/custom/sds/customized.css?d=09-07-2020" />
 </head>
 <body>

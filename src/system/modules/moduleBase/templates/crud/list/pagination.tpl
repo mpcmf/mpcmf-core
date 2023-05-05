@@ -25,47 +25,49 @@
         {assign var="lastInPaginatiorPageNum" value=$currentPage}
     {/if}
 
-    {if $currentPage > 3}
-        <ul class="pagination">
-            <li><a href="{$_application->getUrl($_route->getName(), $queryParams)}">В начало</a></li>
+   <nav class="d-flex">
+        {if $currentPage > 3}
+        <ul class="pagination flex-wrap">
+            <li><a class="page-link rounded-start" href="{$_application->getUrl($_route->getName(), $queryParams)}">В начало</a></li>
         </ul>
-    {/if}
-    <ul class="pagination">
+        {/if}
+       <ul class="pagination">
         {for $page=$firstInPaginatiorPageNum to $currentPage - 1}
-            <li><a href="{$_application->getUrl($_route->getName(), array_merge($queryParams, ['offset' => $data.items->getCurrentLimit() * ($page-1), 'limit' => $data.items->getCurrentLimit()]))}">{$page}</a></li>
+            <li><a class="page-link" href="{$_application->getUrl($_route->getName(), array_merge($queryParams, ['offset' => $data.items->getCurrentLimit() * ($page-1), 'limit' => $data.items->getCurrentLimit()]))}">{$page}</a></li>
         {/for}
-        <li class="active"><a href="#">{$currentPage}</a></li>
-        {for $page=$currentPage + 1 to $lastInPaginatiorPageNum}
-            <li><a href="{$_application->getUrl($_route->getName(), array_merge($queryParams, ['offset' => $data.items->getCurrentLimit() * ($page-1), 'limit' => $data.items->getCurrentLimit()]))}">{$page}</a></li>
-        {/for}
+           <li class="active"><a class="page-link" href="#">{$currentPage}</a></li>
+           {for $page=$currentPage + 1 to $lastInPaginatiorPageNum}
+               <li><a class="page-link" href="{$_application->getUrl($_route->getName(), array_merge($queryParams, ['offset' => $data.items->getCurrentLimit() * ($page-1), 'limit' => $data.items->getCurrentLimit()]))}">{$page}</a></li>
+           {/for}
     </ul>
-    <ul class="pagination">
+    <ul class="pagination flex-wrap">
         {assign var="nextPage" value=$currentPage+1}
         {if $nextPage > $countPages}
-            <li class="disabled"><a href="">Следующая</a></li>
+            <li class="disabled"><a class="page-link rounded-end" href="">Следующая</a></li>
         {else}
-            <li><a href="{$_application->getUrl($_route->getName(), array_merge($queryParams, ['offset' => $data.items->getCurrentLimit() * ($nextPage - 1), 'limit' => $data.items->getCurrentLimit()]))}">Следующая</a></li>
+            <li><a class="page-link rounded-end" href="{$_application->getUrl($_route->getName(), array_merge($queryParams, ['offset' => $data.items->getCurrentLimit() * ($nextPage - 1), 'limit' => $data.items->getCurrentLimit()]))}">Следующая</a></li>
         {/if}
     </ul>
+   </nav>
 {else}
-    <ul class="pagination" style="margin-bottom: 0">
+    <ul class="pagination mb-1 flex-wrap">
         <li class="paginate_button previous{if !$data.items->hasPrevSkip()} disabled{/if}" tabindex="0">
             {assign var="prevParams" value=array_merge($queryParams, ['limit' => $data.items->getCurrentLimit(), 'offset' => $data.items->getPrevSkip()])}
-            <a{if $data.items->hasPrevSkip()} href="{$_application->getUrl($_route->getName(), $prevParams)}"{/if}>
+            <a class="page-link rounded-start"{if $data.items->hasPrevSkip()} href="{$_application->getUrl($_route->getName(), $prevParams)}"{/if}>
                 Предыдущая
             </a>
         </li>
         <li class="paginate_button current">
-            <a>
+            <a class="page-link">
                 {($data.items->getCurrentSkip()/$data.items->getCurrentLimit()) + 1}/{($data.items->count()/$data.items->getCurrentLimit())|ceil}
             </a>
         </li>
         <li class="paginate_button next{if !$data.items->hasNextSkip()} disabled{/if}" tabindex="0">
             {assign var="nextParams" value=array_merge($queryParams, ['limit' => $data.items->getCurrentLimit(), 'offset' => $data.items->getNextSkip()])}
-            <a{if $data.items->hasNextSkip()} href="{$_application->getUrl($_route->getName(), $nextParams)}"{/if}>
+            <a class="page-link rounded-end"{if $data.items->hasNextSkip()} href="{$_application->getUrl($_route->getName(), $nextParams)}"{/if}>
                 Следующая
             </a>
         </li>
     </ul>
-    <div class="small text-muted">Всего элементов: {$data.items->count()}</div>
+    <div class="small text-muted mb-3">Всего элементов: {$data.items->count()}</div>
 {/if}
