@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
     {assign var="title" value=$_application->getTitle()}
-    <title>SDS {if empty($title)}Администрирование{else}- {$title}{/if}</title>
+    <title>MPCMF Администрирование{if isset($title) && !empty($title)} / {$title}{/if}</title>
 
 
     <link rel="stylesheet" href="/sources/dateTimePicker/css/tempus-dominus.min.css">
@@ -38,10 +38,5 @@
 
     <link href="/custom/select2/dist/css/select2.css" rel="stylesheet" />
     <script src="/custom/select2/dist/js/select2.full.js"></script>
-
-    <link rel="stylesheet" href="/custom/sds/helpers.css?d=29-04-2020" />
-    <script src="/js/helps/helpers.js"></script>
-
-    <link rel="stylesheet" href="/custom/sds/customized.css?d=09-07-2020" />
 </head>
 <body>
