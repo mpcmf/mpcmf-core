@@ -116,5 +116,56 @@
             {include file="crud/list/pagination.tpl" newPagination=true}
         </div>
     </div>
-    <script src="/custom/sds/crud/list_tpl/script.js"></script>
+    <script>
+      let lastChecked = null;
+
+      $(document).ready(function () {
+        let $chkboxes = $('.chkbox');
+        $chkboxes.on('click', function (e) {
+          if (!lastChecked) {
+            lastChecked = this;
+            return;
+          }
+
+          if (e.shiftKey) {
+            let start = $chkboxes.index(this);
+            let end = $chkboxes.index(lastChecked);
+
+            $chkboxes.slice(Math.min(start, end), Math.max(start, end) + 1).prop('checked', lastChecked.checked);
+          }
+
+          lastChecked = this;
+        });
+
+        $('.multi').on('click', function (event) {
+          var listForm = $('#list-form');
+          listForm.attr('action', event.target.pathname);
+          listForm.submit();
+
+          return false;
+        });
+
+        $('#expand-header').on('click', function (item) {
+          let classList = $('#expand-header > span').attr('class').split(/\s+/);
+          $.each(classList, function (index, item) {
+            if (item === 'bi-plus') {
+              $('#expand-header > span').toggleClass('bi-plus').toggleClass('bi-dash');
+              $('tr th').each(function (index, item) {
+                if ($(item).find('span.grey').length) {
+                  $(item).children('span.grey').show();
+                } else if ($(item).attr('title') !== undefined) {
+                  $(item).append('<span class="grey"><br>' + $(item).attr('title') + '</span>');
+                }
+              });
+            } else if (item === 'bi-dash') {
+              $('#expand-header > span').toggleClass('bi-plus').toggleClass('bi-dash');
+              $('tr th span.grey').each(function (i, item) {
+                $(item).hide();
+              });
+            }
+
+          });
+        });
+      });
+    </script>
 {/if}
