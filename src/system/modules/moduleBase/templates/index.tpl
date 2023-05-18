@@ -6,7 +6,7 @@
 {include file="index/header.tpl"}
 
 {block name=head}
-    <link rel="stylesheet" href="/custom/sds/general/style.css">
+    <link rel="stylesheet" href="/custom/mpcmf/general/style.css">
 {/block}
 
 <div id="wrapper">
@@ -38,5 +38,5 @@
     </div>
 </div>
 
-<footer class="sds-footer"><small>{$_profiler::getStackAsString()}</small></footer>
+<footer class="mpcmf-footer"><small>{$_profiler::getStackAsString()}</small></footer>
 {include file="index/footer.tpl"}

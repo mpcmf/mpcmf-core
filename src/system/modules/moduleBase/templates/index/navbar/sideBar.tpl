@@ -24,4 +24,4 @@
   });
 </script>
 
-<script src="/custom/sds/navbar/sidebar_tpl/filterMenu.js"></script>
+<script src="/custom/mpcmf/navbar/sidebar_tpl/filterMenu.js"></script>

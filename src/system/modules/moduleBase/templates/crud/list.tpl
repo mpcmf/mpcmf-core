@@ -6,7 +6,7 @@
     <pre>{$data|var_export}</pre>
 {else}
     {block name=head}
-        <link rel="stylesheet" href="/custom/sds/crud/list_tpl/style.css">
+        <link rel="stylesheet" href="/custom/mpcmf/crud/list_tpl/style.css">
     {/block}
     <div class="row justify-content-between">
         <div class="col-lg-3">
