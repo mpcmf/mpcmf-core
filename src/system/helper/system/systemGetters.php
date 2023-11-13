@@ -8,7 +8,7 @@ use mpcmf\system\application\consoleApplicationBase;
 use mpcmf\system\application\consoleBase;
 use mpcmf\system\application\exception\webApplicationException;
 use mpcmf\system\application\webApplicationBase;
-use Slim\Slim;
+use mpcmf\system\http\slimDriver;
 
 /**
  * System getters helper
@@ -32,7 +32,7 @@ trait systemGetters
     }
 
     /**
-     * @return Slim
+     * @return slimDriver
      * @throws webApplicationException
      */
     protected function getSlim()
