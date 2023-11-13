@@ -16,9 +16,18 @@
     {if !$isMultiple}
         <option value="">Выбрать значение...</option>
     {/if}
-    {assign var="relationMapper" value=$_entity->getMapper()->getRelationMapper($fieldName)}
-    {foreach from=$relationMapper->getAllBy([]) item='optionItem'}
-        {assign var="itemValue" value=$optionItem->getFieldValue($_entity->getMapper()->getRelationField($fieldName))}
+    {if isset($field.enum)}
+        {assign var="fromIterable" value=$field.enum}
+    {else}
+        {assign var="relationMapper" value=$_entity->getMapper()->getRelationMapper($fieldName)}
+        {assign var="fromIterable" value=$relationMapper->getAllBy([])}
+    {/if}
+    {foreach from=$fromIterable item='optionItem'}
+        {if isset($field.enum)}
+            {assign var="itemValue" value=$optionItem}
+        {else}
+            {assign var="itemValue" value=$optionItem->getFieldValue($_entity->getMapper()->getRelationField($fieldName))}
+        {/if}
         {if $isMultiple}
             {if isset($item) && in_array($itemValue, $item->getFieldValue($fieldName))}
                 {assign var="selected" value=true}
@@ -33,7 +42,11 @@
             {/if}
         {/if}
         <option value="{$itemValue|htmlspecialchars}"{if $selected} selected="selected"{/if}>
-            {$optionItem->getTitleValue()}
+            {if isset($field.enum)}
+                {$optionItem}
+            {else}
+                {$optionItem->getTitleValue()}
+            {/if}
         </option>
         {foreachelse}
         {if isset($item) && !$isMultiple}

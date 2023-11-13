@@ -262,6 +262,9 @@ class url
             $new_url .= '@';
         }
         $new_url .= $parsed_url['host'];
+        if (!empty($parsed_url['port'])) {
+            $new_url .= ":{$parsed_url['port']}";
+        }
         if (!$removePath) {
             if (!isset($parsed_url['path'])) {
                 $parsed_url['path'] = '/';

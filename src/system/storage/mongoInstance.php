@@ -170,6 +170,9 @@ class mongoInstance implements storageInterface
                         $log->addDebug('Options in cfg found');
                         $ok = true;
                         foreach ($index['options'] as $option => $optionValue) {
+                            if ($option === 'background') {
+                                continue;
+                            }
                             if (!isset($dbIndex[$option]) || $dbIndex[$option] !== $optionValue) {
                                 $log->addInfo('Option not found in dbIndex, need to create!');
                                 $ok = false;
