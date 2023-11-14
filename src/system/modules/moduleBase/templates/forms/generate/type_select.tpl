@@ -1,5 +1,6 @@
 {if isset($isMultiple) && $isMultiple}
     {assign var="isMultiple" value=true}
+    <input type="hidden" name="item[{$fieldName}]" value=""/>
 {else}
     {assign var="isMultiple" value=false}
 {/if}
