@@ -2,8 +2,6 @@
 
 namespace mpcmf\system\helper\io;
 
-use \mpcmf\system\io\log as monologWrapper;
-
 /**
  * Log trait
  *
@@ -11,11 +9,57 @@ use \mpcmf\system\io\log as monologWrapper;
  */
 trait log
 {
-    /**
-     * @return monologWrapper
-     */
-    protected static function log()
+
+    protected static function log(): \mpcmf\system\io\log
     {
-        return monologWrapper::factory();
+        return \mpcmf\system\io\log::factory();
+    }
+
+    public function addDebug()
+    {
+        /** @see \mpcmf\system\io\log::debug() */
+        $this->debug(...func_get_args());
+    }
+
+    public function addInfo()
+    {
+        /** @see \mpcmf\system\io\log::info() */
+        $this->info(...func_get_args());
+    }
+
+    public function addNotice()
+    {
+        /** @see \mpcmf\system\io\log::notice() */
+        $this->notice(...func_get_args());
+    }
+
+    public function addWarning()
+    {
+        /** @see \mpcmf\system\io\log::warning() */
+        $this->warning(...func_get_args());
+    }
+
+    public function addError()
+    {
+        /** @see \mpcmf\system\io\log::error() */
+        $this->error(...func_get_args());
+    }
+
+    public function addCritical()
+    {
+        /** @see \mpcmf\system\io\log::critical() */
+        $this->critical(...func_get_args());
+    }
+
+    public function addAlert()
+    {
+        /** @see \mpcmf\system\io\log::alert() */
+        $this->alert(...func_get_args());
+    }
+
+    public function addEmergency()
+    {
+        /** @see \mpcmf\system\io\log::emergency() */
+        $this->emergency(...func_get_args());
     }
 }
