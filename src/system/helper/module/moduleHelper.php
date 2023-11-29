@@ -37,7 +37,7 @@ trait moduleHelper
     {
         static $templateDirectory;
 
-        if($templateDirectory === null) {
+        if(true || $templateDirectory === null) {
             $templateDirectory = "{$this->getModuleDirectory()}/templates";
 
             if (!file_exists($templateDirectory) || !is_dir($templateDirectory)) {
@@ -57,7 +57,7 @@ trait moduleHelper
     {
         static $namespace;
 
-        if($namespace === null) {
+        if(true || $namespace === null) {
             $namespace = (new \ReflectionClass(get_called_class()))->getNamespaceName();
             MPCMF_DEBUG && self::log()->addDebug("Module namespace: {$namespace}");
         }
@@ -67,7 +67,7 @@ trait moduleHelper
 
     public function getModuleRoutes()
     {
-        if($this->moduleRoutesInstance === null) {
+        if(true || $this->moduleRoutesInstance === null) {
             /** @var moduleRoutesBase $class */
             $class = $this->getModuleNamespace() . '\routes';
             $this->moduleRoutesInstance = $class::getInstance();
@@ -78,7 +78,7 @@ trait moduleHelper
 
     public function getModule()
     {
-        if($this->moduleInstance === null) {
+        if(true || $this->moduleInstance === null) {
             /** @var moduleBase $class */
             $class = $this->getModuleNamespace() . '\module';
             MPCMF_DEBUG && self::log()->addDebug("Add module class: {$class}");
@@ -92,7 +92,7 @@ trait moduleHelper
     {
         static $moduleName;
 
-        if($moduleName === null) {
+        if(true || $moduleName === null) {
             $moduleName = basename($this->getModuleDirectory());
         }
 
@@ -132,7 +132,7 @@ trait moduleHelper
     {
         static $directory;
 
-        if($directory === null) {
+        if(true || $directory === null) {
             $calledClass = get_called_class();
             $file = loader::getLoader()->findFile($calledClass);
             if(!$file) {
