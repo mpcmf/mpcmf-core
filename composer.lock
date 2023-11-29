@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "068022084a51fe448a631c3ea290974c",
+    "content-hash": "95c648094286a513c267924eeb25a32d",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -201,94 +201,6 @@
             ],
             "description": "Simple curl wrapper",
             "time": "2018-10-08T18:47:09+00:00"
-        },
-        {
-            "name": "khr/php-mcurl-client",
-            "version": "3.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/KhristenkoYura/mcurl.git",
-                "reference": "894eb864a0410173264b95ea7c69f15bb9d2cbe1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/KhristenkoYura/mcurl/zipball/894eb864a0410173264b95ea7c69f15bb9d2cbe1",
-                "reference": "894eb864a0410173264b95ea7c69f15bb9d2cbe1",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "php": ">=5.3.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "MCurl\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Khristenko Yura",
-                    "email": "khristenkoyura@gmail.com"
-                }
-            ],
-            "description": "wrap curl client (http client) for PHP 5.3; using php multi curl, parallel request and write asynchronous code",
-            "homepage": "http://github.com/khristenkoyura/mcurl",
-            "keywords": [
-                "async",
-                "client",
-                "curl",
-                "http",
-                "multi",
-                "parallel",
-                "php",
-                "requests",
-                "spider"
-            ],
-            "time": "2016-06-08T07:34:09+00:00"
-        },
-        {
-            "name": "khr/react-curl",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/KhristenkoYura/reactphp-curl.git",
-                "reference": "95626ed87c138f640780935bf3d06f9b84ad8030"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/KhristenkoYura/reactphp-curl/zipball/95626ed87c138f640780935bf3d06f9b84ad8030",
-                "reference": "95626ed87c138f640780935bf3d06f9b84ad8030",
-                "shasum": ""
-            },
-            "require": {
-                "khr/php-mcurl-client": "3.*",
-                "php": ">=5.4.0",
-                "react/event-loop": "*",
-                "react/promise": "~2.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "KHR\\React\\Curl\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "None"
-            ],
-            "description": "multi curl driver for reactphp.",
-            "keywords": [
-                "curl",
-                "multi",
-                "mysql",
-                "php"
-            ],
-            "time": "2015-05-06T08:11:51+00:00"
         },
         {
             "name": "mongodb/mongodb",
@@ -988,94 +900,6 @@
                 "psr-3"
             ],
             "time": "2016-10-10T12:19:37+00:00"
-        },
-        {
-            "name": "react/event-loop",
-            "version": "0.4.x-dev",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/reactphp/event-loop.git",
-                "reference": "8bde03488ee897dc6bb3d91e4e17c353f9c5252f"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/event-loop/zipball/8bde03488ee897dc6bb3d91e4e17c353f9c5252f",
-                "reference": "8bde03488ee897dc6bb3d91e4e17c353f9c5252f",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~4.8"
-            },
-            "suggest": {
-                "ext-event": "~1.0",
-                "ext-libev": "*",
-                "ext-libevent": ">=0.1.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "React\\EventLoop\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "description": "Event loop abstraction layer that libraries can use for evented I/O.",
-            "keywords": [
-                "asynchronous",
-                "event-loop"
-            ],
-            "time": "2017-04-27T10:56:23+00:00"
-        },
-        {
-            "name": "react/promise",
-            "version": "2.x-dev",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/reactphp/promise.git",
-                "reference": "ec953894782a0366a5533677c68972eea848d848"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/reactphp/promise/zipball/ec953894782a0366a5533677c68972eea848d848",
-                "reference": "ec953894782a0366a5533677c68972eea848d848",
-                "shasum": ""
-            },
-            "require": {
-                "php": ">=5.4.0"
-            },
-            "require-dev": {
-                "phpunit/phpunit": "~4.8"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "React\\Promise\\": "src/"
-                },
-                "files": [
-                    "src/functions_include.php"
-                ]
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Jan Sorgalla",
-                    "email": "jsorgalla@gmail.com"
-                }
-            ],
-            "description": "A lightweight implementation of CommonJS Promises/A for PHP",
-            "keywords": [
-                "promise",
-                "promises"
-            ],
-            "time": "2017-05-08T18:49:20+00:00"
         },
         {
             "name": "slim/slim",
@@ -2175,7 +1999,6 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "slim/slim": 20,
-        "khr/react-curl": 20,
         "infostars/net-curl": 20,
         "alcaeus/mongo-php-adapter": 20,
         "nervetattoo/elasticsearch": 20,
