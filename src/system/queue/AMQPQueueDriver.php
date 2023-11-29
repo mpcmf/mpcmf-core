@@ -12,7 +12,7 @@ class AMQPQueueDriver extends \AMQPQueue
     protected $isFailedConnection = false;
     protected $failedConectionCounter = 0;
 
-    public function get($flags = AMQP_NOPARAM)
+    public function get(?int $flags = AMQP_NOPARAM): ?\AMQPEnvelope
     {
         try {
 
@@ -33,11 +33,11 @@ class AMQPQueueDriver extends \AMQPQueue
         }
     }
 
-    public function ack($delivery_tag, $flags = null)
+    public function ack(int $deliveryTag, ?int $flags = null): void
     {
         try {
 
-            return parent::ack($delivery_tag, $flags);
+            parent::ack($deliveryTag, $flags);
         } catch (\AMQPException $e) {
             $m = $e->getMessage();
             if ($m === 'Could not ack message. No channel available.') {
@@ -54,11 +54,11 @@ class AMQPQueueDriver extends \AMQPQueue
         }
     }
 
-    public function nack($delivery_tag, $flags = null)
+    public function nack(int $deliveryTag, ?int $flags = null): void
     {
         try {
 
-            return parent::nack($delivery_tag, $flags);
+            parent::nack($deliveryTag, $flags);
         } catch (\AMQPException $e) {
             $m = $e->getMessage();
             if ($m === 'Could not nack message. No channel available.') {
@@ -77,7 +77,7 @@ class AMQPQueueDriver extends \AMQPQueue
 
     //@NOTE: invalid signature in phpstorm amqp stub
     /** @noinspection PhpSignatureMismatchDuringInheritanceInspection */
-    public function consume($callback, $flags = null, $consumerTag = null)
+    public function consume(?callable $callback = null, ?int $flags = null, ?string $consumerTag = null): void
     {
         try {
 
