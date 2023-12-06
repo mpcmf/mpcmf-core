@@ -14,11 +14,11 @@
     <script type="text/javascript">
         {literal}
         $(document).ready(function () {
-            $('.chosen-select').chosen({
-                allow_single_deselect: true,
-                search_contains: true,
-                width: '100%'
-            });
+          $('.chosen-select').chosen({
+            allow_single_deselect: true,
+            search_contains: true,
+            width: '100%'
+          });
         });
         {/literal}
     </script>
@@ -63,20 +63,20 @@
         {if $isMultiple}multiple {/if}
         id="item-{$fieldName}"
         name="item[{$fieldName}]{if $isMultiple}[]{/if}"
-        class="form-control chosen-select"
+        class="form-control form-select chosen-select"
         {if isset($field.options.required) && $field.options.required} required{/if}
         {if isset($field.role.key, $field.role['generate-key']) && $field.role.key && $field.role['generate-key']} disabled{/if}
         {if (isset($readonly) && $readonly)} readonly{/if}
 >
     {strip}
-    {if !$isMultiple}
-        <option value="">Выбрать значение...</option>
-    {/if}
+        {if !$isMultiple}
+            <option value="">Выбрать значение...</option>
+        {/if}
 
-    {foreach from=$options item="option"}
-        <option value="{$option['value']}" {if $option['selected']} selected="selected"{/if}>
-            {$option['title']}
-        </option>
-    {/foreach}
+        {foreach from=$options item="option"}
+            <option value="{$option['value']}" {if $option['selected']} selected="selected"{/if}>
+                {$option['title']}
+            </option>
+        {/foreach}
     {/strip}
 </select>
