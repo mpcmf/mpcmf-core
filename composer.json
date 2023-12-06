@@ -30,6 +30,7 @@
     "ext-zlib":  "*",
     "ext-pcntl":  "*",
     "ext-mbstring":  "*",
+    "ext-pdo": "*",
     "slim/slim": "2.x-dev#0e6d3573c4c525be80ffc4a3e66b7189d4af1e3a",
     "symfony/console": "~2.6",
     "phpdocumentor/reflection-docblock": "~2.0",
@@ -43,6 +44,7 @@
     "alcaeus/mongo-php-adapter": "^1.1@dev",
     "nervetattoo/elasticsearch": "dev-master",
     "mpcmf/mpcmf-signal-handler": "dev-master",
+    "envms/fluentpdo": "^2.2",
     "phpseclib/mcrypt_compat": "^1.0"
   },
   "require-dev": {

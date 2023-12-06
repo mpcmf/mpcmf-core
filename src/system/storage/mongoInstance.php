@@ -2,11 +2,11 @@
 
 namespace mpcmf\system\storage;
 
-use mpcmf\system\configuration\exception\configurationException;
 use mpcmf\system\helper\cache\cache;
 use mpcmf\system\helper\io\log;
 use mpcmf\system\helper\system\profiler;
 use mpcmf\system\pattern\factory;
+use mpcmf\system\storage\interfaces\storageInterface;
 
 /**
  * MongoDB accessor class
@@ -14,7 +14,7 @@ use mpcmf\system\pattern\factory;
  * @author Gregory Ostrovsky <greevex@gmail.com>
  * @package mpcmf\system\storage
  */
-class mongoInstance
+class mongoInstance implements storageInterface
 {
     use factory, log, cache;
 
@@ -25,14 +25,7 @@ class mongoInstance
 
     private $pid;
 
-    /**
-     * Return \MongoClient instance for current configuration
-     *
-     * @return \MongoClient
-     * @throws configurationException
-     * @throws \MongoConnectionException
-     */
-    public function getMongo()
+    public function getMongo(): \MongoClient
     {
         $currentPid = getmypid();
         if ($this->mongo === null || $this->pid !== $currentPid) {
@@ -45,21 +38,11 @@ class mongoInstance
         return $this->mongo;
     }
 
-    /**
-     * Get mongo cursor by params
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $criteria
-     * @param array  $fields
-     *
-     * @return \MongoCursor
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \Exception
-     */
+    public function getStorageDriver(): \MongoClient
+    {
+        return $this->getMongo();
+    }
+
     public function select($db, $collection, $criteria = [], $fields = [])
     {
         profiler::addStack('mongo::r');
@@ -68,21 +51,6 @@ class mongoInstance
                     ->find($criteria, $fields);
     }
 
-    /**
-     * Get single item by params
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $criteria
-     * @param array  $fields
-     *
-     * @return array|null
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \Exception
-     */
     public function selectOne($db, $collection, $criteria = [], $fields = [])
     {
         profiler::addStack('mongo::r');
@@ -91,25 +59,6 @@ class mongoInstance
                     ->findOne($criteria, $fields);
     }
 
-    /**
-     * Get single item by params and update like native mongo update
-     *
-     * In the default way it's rewrite all fields that typed in $newObject
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $criteria
-     * @param array  $newObject
-     * @param array  $selectFields
-     * @param array  $options
-     *
-     * @return array
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \Exception
-     */
     public function selectAndModify($db, $collection, $criteria, $newObject, $selectFields = [], $options = [])
     {
         profiler::addStack('mongo::rw');
@@ -118,23 +67,6 @@ class mongoInstance
                     ->findAndModify($criteria, $newObject, $selectFields, $options);
     }
 
-    /**
-     * Get single item by params and update it by typed fields. Other fields would not be changed
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $criteria
-     * @param array  $modifyFields
-     * @param array  $selectFields
-     * @param array  $options
-     *
-     * @return array
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \Exception
-     */
     public function selectAndModifyFields($db, $collection, $criteria, $modifyFields, $selectFields = [], $options = [])
     {
         profiler::addStack('mongo::rw');
@@ -145,25 +77,6 @@ class mongoInstance
                     ->findAndModify($criteria, $updateObject, $selectFields, $options);
     }
 
-    /**
-     * Basic item update method
-     *
-     * In the default way it's rewrite all fields that typed in $newObject
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $criteria
-     * @param array  $newObject
-     * @param array  $options
-     *
-     * @return bool
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \MongoCursorException
-     * @throws \Exception
-     */
     public function update($db, $collection, $criteria, $newObject, $options = [])
     {
         profiler::addStack('mongo::w');
@@ -172,23 +85,6 @@ class mongoInstance
                     ->update($criteria, $newObject, $options);
     }
 
-    /**
-     * Update item by typed fields. Other fields would not be changed
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $criteria
-     * @param array  $fields
-     * @param array  $options
-     *
-     * @return bool
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \MongoCursorException
-     * @throws \Exception
-     */
     public function updateFields($db, $collection, $criteria, $fields, $options = [])
     {
         profiler::addStack('mongo::w');
@@ -200,23 +96,6 @@ class mongoInstance
                     ->update($criteria, $updateObject, $options);
     }
 
-    /**
-     * Remove single item by params
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $criteria
-     * @param array  $options
-     *
-     * @return array|bool
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \MongoCursorException
-     * @throws \MongoCursorTimeoutException
-     * @throws \Exception
-     */
     public function removeOne($db, $collection, $criteria = [], $options = [])
     {
         profiler::addStack('mongo::d');
@@ -229,23 +108,6 @@ class mongoInstance
                     ->remove($criteria, $options);
     }
 
-    /**
-     * Remove items by params
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $criteria
-     * @param array  $options
-     *
-     * @return array|bool
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \MongoCursorException
-     * @throws \MongoCursorTimeoutException
-     * @throws \Exception
-     */
     public function remove($db, $collection, $criteria = [], $options = [])
     {
         profiler::addStack('mongo::d');
@@ -254,24 +116,6 @@ class mongoInstance
                     ->remove($criteria, $options);
     }
 
-    /**
-     * Insert new item to storage
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $object
-     * @param array  $options
-     *
-     * @return array|bool
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \MongoCursorException
-     * @throws \MongoCursorTimeoutException
-     * @throws \MongoException
-     * @throws \Exception
-     */
     public function insert($db, $collection, $object, $options = [])
     {
         profiler::addStack('mongo::w');
@@ -280,22 +124,6 @@ class mongoInstance
                     ->insert($object, $options);
     }
 
-    /**
-     * Insert new items to storage in single request (batch)
-     *
-     * @param string  $db
-     * @param string  $collection
-     * @param array[] $objects
-     * @param array   $options
-     *
-     * @return mixed
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \MongoCursorException
-     * @throws \Exception
-     */
     public function insertBatch($db, $collection, $objects, $options = [])
     {
         profiler::addStack('mongo::w');
@@ -304,24 +132,6 @@ class mongoInstance
                     ->batchInsert($objects, $options);
     }
 
-    /**
-     * Save item by itself _id
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $object
-     * @param array  $options
-     *
-     * @return array|bool
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \MongoCursorException
-     * @throws \MongoCursorTimeoutException
-     * @throws \MongoException
-     * @throws \Exception
-     */
     public function save($db, $collection, $object, $options = [])
     {
         profiler::addStack('mongo::w');
@@ -330,53 +140,17 @@ class mongoInstance
                     ->save($object, $options);
     }
 
-    /**
-     * Get native \MongoCollection instance by params
-     *
-     * @param string $db
-     * @param string $collection
-     *
-     * @return \MongoCollection
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \Exception
-     */
     public function getCollection($db, $collection)
     {
 
         return $this->getMongo()->selectDB($db)->selectCollection($collection);
     }
 
-    /**
-     * Get native \MongoDB instance by params
-     *
-     * @param string $db
-     *
-     * @return \MongoDB
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     */
     public function getDb($db)
     {
         return $this->getMongo()->selectDB($db);
     }
 
-    /**
-     * Check and create indexes by params
-     *
-     * @param string $db
-     * @param string $collection
-     * @param array  $indexes
-     *
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \Exception
-     */
     public function checkIndexes($db, $collection, $indexes)
     {
         $log = self::log();
@@ -431,17 +205,6 @@ class mongoInstance
         }
     }
 
-    /**
-     * Periodically check and create indexes by params
-     *
-     * @param array $config ['db', 'collection', 'indices']
-     *
-     * @return bool
-     * @throws \MongoConnectionException
-     * @throws configurationException
-     * @throws \InvalidArgumentException
-     * @throws \Exception
-     */
     public function checkIndicesAuto($config)
     {
         static $cache, $instancePeriod;
@@ -468,5 +231,20 @@ class mongoInstance
         $this->checkIndexes($config['db'], $config['collection'], $config['indices']);
 
         return true;
+    }
+    
+    public function setPrimary($db, $collection, $id)
+    {
+        // TODO: Implement setPrimary() method.
+    }
+
+    public function setMap($db, $collection, $map)
+    {
+        // TODO: Implement setMap() method.
+    }
+
+    public function generateSchema($db, $collection)
+    {
+        // TODO: Implement generateSchema() method.
     }
 }
