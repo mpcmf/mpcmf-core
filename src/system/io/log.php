@@ -51,4 +51,44 @@ class log
 
         MPCMF_DEBUG && $this->addDebug("New log created: {$this->configSection}");
     }
+
+    public function addDebug($message, array $context = [])
+    {
+        $this->debug($message, $context);
+    }
+
+    public function addInfo($message, array $context = [])
+    {
+        $this->info($message, $context);
+    }
+
+    public function addNotice($message, array $context = [])
+    {
+        $this->notice($message, $context);
+    }
+
+    public function addWarning($message, array $context = [])
+    {
+        $this->warning($message, $context);
+    }
+
+    public function addError($message, array $context = [])
+    {
+        $this->error($message, $context);
+    }
+
+    public function addCritical($message, array $context = [])
+    {
+        $this->critical($message, $context);
+    }
+
+    public function addAlert($message, array $context = [])
+    {
+        $this->alert($message, $context);
+    }
+
+    public function addEmergency($message, array $context = [])
+    {
+        $this->emergency($message, $context);
+    }
 }

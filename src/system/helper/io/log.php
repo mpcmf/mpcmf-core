@@ -2,8 +2,6 @@
 
 namespace mpcmf\system\helper\io;
 
-use \mpcmf\system\io\log as monologWrapper;
-
 /**
  * Log trait
  *
@@ -11,11 +9,9 @@ use \mpcmf\system\io\log as monologWrapper;
  */
 trait log
 {
-    /**
-     * @return monologWrapper
-     */
-    protected static function log()
+
+    protected static function log(): \mpcmf\system\io\log
     {
-        return monologWrapper::factory();
+        return \mpcmf\system\io\log::factory();
     }
 }
