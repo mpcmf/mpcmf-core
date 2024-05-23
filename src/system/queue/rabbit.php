@@ -44,6 +44,8 @@ class rabbit
 
     const MESSAGE_DELIVERY_PERSISTENT = 2;
 
+    const CONFIRM_TIMEOUT = 10;
+
     /**
      * Transaction status flag
      *
@@ -163,6 +165,10 @@ class rabbit
 
         if ($start && $this->transactionStarted) {
             $this->runTasks();
+        }
+
+        if (!$this->transactionStarted) {
+            $this->getChannel()->waitForConfirm(self::CONFIRM_TIMEOUT);
         }
 
         return $result;
@@ -458,9 +464,29 @@ class rabbit
                 $this->channels[$key] = new \AMQPChannel($this->getConnection(true));
             }
             $this->channels[$key]->setPrefetchCount(1);
+            $this->setConfirmOnPublish($this->channels[$key]);
         }
 
         return $this->channels[$key];
+    }
+
+    /**
+     * Set confirmation for producers
+     * @param \AMQPChannel $channel
+     * @return void
+     */
+    protected function setConfirmOnPublish(\AMQPChannel $channel): void
+    {
+        $channel->confirmSelect();
+        // if callbacks unset throws PHP Notice:  Unhandled basic.ack method from server received. Use AMQPChannel::setConfirmCallback() to process it
+        $channel->setConfirmCallback(
+            function ($deliveryTag, $multiple) {
+                return false; // mandatory to prevent script stopping and timeout exception
+            },
+            function ($deliveryTag, $multiple, $requeue) {
+                return false; // mandatory to prevent script stopping and timeout exception
+            }
+        );
     }
 
     /**
