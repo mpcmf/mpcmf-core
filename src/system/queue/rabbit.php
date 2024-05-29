@@ -45,6 +45,7 @@ class rabbit
     const MESSAGE_DELIVERY_PERSISTENT = 2;
 
     const CONFIRM_TIMEOUT = 10;
+    const CONFIRM_TIMEOUT_NAME = 'confirm_timeout';
 
     /**
      * Transaction status flag
@@ -98,6 +99,7 @@ class rabbit
                 'port' => isset($config['port']) ? $config['port'] : self::DEFAULT_PORT,
                 'login' => isset($config['login']) ? $config['login'] : self::DEFAULT_LOGIN,
                 'password' => isset($config['password']) ? $config['password'] : self::DEFAULT_PASSWORD,
+                self::CONFIRM_TIMEOUT_NAME => isset($config[self::CONFIRM_TIMEOUT_NAME]) ? $config[self::CONFIRM_TIMEOUT_NAME] : self::CONFIRM_TIMEOUT,
             ];
         }
 
@@ -168,7 +170,8 @@ class rabbit
         }
 
         if (!$this->transactionStarted) {
-            $this->getChannel()->waitForConfirm(self::CONFIRM_TIMEOUT);
+            $connectionData = $this->getConnectionData();
+            $this->getChannel()->waitForConfirm($connectionData[self::CONFIRM_TIMEOUT_NAME]);
         }
 
         return $result;
