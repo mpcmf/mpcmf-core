@@ -45,7 +45,14 @@ class rabbit
     const MESSAGE_DELIVERY_PERSISTENT = 2;
 
     const DEFAULT_CONFIRM_TIMEOUT = 10;
-    const CONFIRM_TIMEOUT_NAME = 'confirm_timeout';
+    const CONFIRM_TIMEOUT = 'confirm_timeout';
+    const WITH_CONFIRM_DEFAULT = false;
+    const WITH_CONFIRM = 'with_confirm';
+
+    const HOST = 'host';
+    const PORT = 'port';
+    const LOGIN = 'login';
+    const PASSWORD = 'password';
 
     /**
      * Transaction status flag
@@ -95,11 +102,12 @@ class rabbit
         if (!isset($this->connectionData[$this->configSection])) {
             $config = $this->getPackageConfig();
             $this->connectionData[$this->configSection] = [
-                'host' => isset($config['host']) ? $config['host'] : self::DEFAULT_HOST,
-                'port' => isset($config['port']) ? $config['port'] : self::DEFAULT_PORT,
-                'login' => isset($config['login']) ? $config['login'] : self::DEFAULT_LOGIN,
-                'password' => isset($config['password']) ? $config['password'] : self::DEFAULT_PASSWORD,
-                self::CONFIRM_TIMEOUT_NAME => isset($config[self::CONFIRM_TIMEOUT_NAME]) ? $config[self::CONFIRM_TIMEOUT_NAME] : self::DEFAULT_CONFIRM_TIMEOUT,
+                self::HOST => $config[self::HOST] ?? self::DEFAULT_HOST,
+                self::PORT => $config[self::PORT] ?? self::DEFAULT_PORT,
+                self::LOGIN => $config[self::LOGIN] ?? self::DEFAULT_LOGIN,
+                self::PASSWORD => $config[self::PASSWORD] ?? self::DEFAULT_PASSWORD,
+                self::CONFIRM_TIMEOUT => $config[self::CONFIRM_TIMEOUT] ?? self::DEFAULT_CONFIRM_TIMEOUT,
+                self::WITH_CONFIRM => $config[self::WITH_CONFIRM] ?? self::WITH_CONFIRM_DEFAULT,
             ];
         }
 
@@ -171,7 +179,9 @@ class rabbit
 
         if (!$this->transactionStarted) {
             $connectionData = $this->getConnectionData();
-            $this->getChannel()->waitForConfirm($connectionData[self::CONFIRM_TIMEOUT_NAME]);
+            if ($connectionData[self::WITH_CONFIRM]) {
+                $this->getChannel()->waitForConfirm($connectionData[self::CONFIRM_TIMEOUT]);
+            }
         }
 
         return $result;
@@ -467,7 +477,10 @@ class rabbit
                 $this->channels[$key] = new \AMQPChannel($this->getConnection(true));
             }
             $this->channels[$key]->setPrefetchCount(1);
-            $this->setConfirmOnPublish($this->channels[$key]);
+            $connectionData = $this->getConnectionData();
+            if ($connectionData[self::WITH_CONFIRM]) {
+                $this->setConfirmOnPublish($this->channels[$key]);
+            }
         }
 
         return $this->channels[$key];
