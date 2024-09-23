@@ -103,9 +103,7 @@ class thread
      */
     public function __construct($callable = null)
     {
-        if ($callable !== null) {
-            $this->setRunnable($callable);
-        }
+        $this->runnable = $callable;
     }
 
     /**
@@ -217,6 +215,13 @@ class thread
 
             $signalHandler->addHandler(SIGTERM, [__CLASS__, 'signalHandler']);
 
+            if ($this->runnable === null) {
+                self::log()->addError("[ERROR] Cannot run the empty callback");
+                MPCMF_DEBUG && error_log("[ERROR] Cannot run the empty callback");
+
+                exit(1);
+            }
+
             $arguments = func_get_args();
             try {
                 call_user_func_array($this->runnable, $arguments);
@@ -248,6 +253,7 @@ class thread
                 pcntl_waitpid($this->pid, $status);
             }
         }
+        $this->dispose();
     }
 
     /**
@@ -269,6 +275,7 @@ class thread
             MPCMF_DEBUG && self::log()->addDebug("Waiting process [pid {$this->pid}]...", [__METHOD__]);
             pcntl_waitpid($this->pid, $status = 0);
         }
+        $this->dispose();
         MPCMF_DEBUG && self::log()->addDebug("Killed! [pid {$this->pid}]...", [__METHOD__]);
     }
 
@@ -316,6 +323,15 @@ class thread
                 MPCMF_DEBUG && self::log()->addDebug(__METHOD__ . ':exit()', [__METHOD__]);
                 exit(128 + $_signal);
                 break;
+        }
+    }
+
+    private function dispose()
+    {
+        $this->runnable = null;
+        if (!empty($this->pid)) {
+            $signalHandler = signalHandler::getInstance();
+            $signalHandler->removeHandler(SIGTERM, [$this, 'masterSignalHandler']);
         }
     }
 }
