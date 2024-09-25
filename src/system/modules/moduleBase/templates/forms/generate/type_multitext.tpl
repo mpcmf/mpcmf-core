@@ -6,7 +6,7 @@
             body.on('click', '.filterParams .add', function () {
                 var index = parseInt($('.filterParams .form-control').last().attr('index')) + 1;
                 $(this).parent().parent()
-                        .append('<div class="col-md-12" style="padding-left: 0; padding-right: 0"><div class="col-md-10" style="padding-left: 0; padding-right: 0"><input type="text" class="form-control" id="item-{$fieldName}-' + index + '" index="' + index + '" name="item[{$fieldName}][]" value="" {if isset($readonly) && $readonly} readonly{/if}{if isset($field.options.required) && $field.options.required} required{/if}{if isset($field.role.key, $field.role['generate-key']) && $field.role.key && $field.role['generate-key']} disabled{/if}></div><button type="button" class="add col-md-1 btn btn-default"><span class="fa fa-plus"></span></button><button type="button" class="remove col-md-1 btn btn-default"><span class="fa fa-minus"></span></button></div>')
+                        .append('<div class="col-md-12 p-0 d-flex gap-1 mt-1"><div class="flex-grow-1 p-0"><input type="text" class="form-control" id="item-{$fieldName}-' + index + '" index="' + index + '" name="item[{$fieldName}][]" value="" {if isset($readonly) && $readonly} readonly{/if}{if isset($field.options.required) && $field.options.required} required{/if}{if isset($field.role.key, $field.role['generate-key']) && $field.role.key && $field.role['generate-key']} disabled{/if}></div><button type="button" class="add col-md-1 btn btn-light"><span class="bi bi-plus-lg"></span></button><button type="button" class="remove col-md-1 btn btn-light"><span class="bi bi-dash-lg"></span></button></div>')
                         .fadeIn('slow')
                 ;
             });
@@ -22,11 +22,11 @@
         });
     }
 </script>
-<div class="filterParams">
+<div class="filterParams d-flex flex-column">
 {if isset($item) && !empty($item->getFieldValue($fieldName))}
     {foreach from=$item->getFieldValue($fieldName) key="index" item="filterValue"}
-        <div class="col-lg-12" style="padding-left: 0; padding-right: 0">
-            <div class="col-md-10" style="padding-left: 0; padding-right: 0">
+        <div class="col-lg-12 p-0 d-flex gap-1 mt-1">
+            <div class="flex-grow-1 ps-0 pe-0">
                 <input
                         type="text"
                         class="form-control"
@@ -39,13 +39,13 @@
                         {if isset($field.role.key, $field.role['generate-key']) && $field.role.key && $field.role['generate-key']} disabled{/if}
                         >
             </div>
-            <button type="button" class="add col-md-1 btn btn-default {if isset($readonly) && $readonly} disabled{/if}"><span class="fa fa-plus"></span></button>
-            <button type="button" class="remove col-md-1 btn btn-default {if isset($readonly) && $readonly} disabled{/if}"><span class="fa fa-minus"></span></button>
+            <button type="button" class="add col-md-1 btn btn-light {if isset($readonly) && $readonly} disabled{/if}"><span class="bi bi-plus-lg"></span></button>
+            <button type="button" class="remove col-md-1 btn btn-light {if isset($readonly) && $readonly} disabled{/if}"><span class="bi bi-dash-lg"></span></button>
         </div>
     {/foreach}
 {else}
-<div class="col-md-12" style="padding-left: 0; padding-right: 0">
-    <div class="col-md-10" style="padding-left: 0; padding-right: 0">
+<div class="col-md-12 ps-0 pe-0 d-flex gap-1">
+    <div class="flex-grow-1 ps-0 pe-0">
         <input
                 type="text"
                 class="form-control"
@@ -58,8 +58,8 @@
                 {if isset($field.role.key, $field.role['generate-key']) && $field.role.key && $field.role['generate-key']} disabled{/if}
                 >
     </div>
-    <button type="button" class="add col-md-1 btn btn-default {if isset($readonly) && $readonly} disabled{/if}"><span class="fa fa-plus"></span></button>
-    <button type="button" class="remove col-md-1 btn btn-default {if isset($readonly) && $readonly} disabled{/if}"><span class="fa fa-minus"></span></button>
+    <button type="button" class="add col-md-1 btn btn-light {if isset($readonly) && $readonly} disabled{/if}"><span class="bi bi-plus-lg"></span></button>
+    <button type="button" class="remove col-md-1 btn btn-light {if isset($readonly) && $readonly} disabled{/if}"><span class="bi bi-dash-lg"></span></button>
 </div>
 {/if}
 </div>
