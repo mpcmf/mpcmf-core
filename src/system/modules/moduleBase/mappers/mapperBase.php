@@ -34,6 +34,7 @@ abstract class mapperBase
         updateBy as protected _updateBy;
         remove as protected _remove;
         findAndModify as protected _findAndModify;
+        findAndModifyObject as protected _findAndModifyObject;
     }
 
     const RELATION__ONE_TO_ONE = 'one-to-one';
@@ -784,15 +785,15 @@ abstract class mapperBase
     /**
      * Find data and modify by single query
      *
-     * @param       $criteria
-     * @param       $updateData
+     * @param array $criteria
+     * @param array $modifyFields
      * @param array $fields
      * @param array $options
      *
      * @return modelBase
      * @throws mapperException
      */
-    public function findAndModify($criteria, $updateData, $fields = [], $options = [])
+    public function findAndModify($criteria, $modifyFields, $fields = [], $options = [])
     {
         MPCMF_LL_DEBUG && self::log()->addDebug('criteria: ' . json_encode($criteria), [__METHOD__]);
         try {
@@ -801,7 +802,37 @@ abstract class mapperBase
             throw new mapperException('Model error, unable to get model class', $modelException->getCode(), $modelException);
         }
 
-        $savedItem = $this->_findAndModify($criteria, $updateData, $fields, $options);
+        $savedItem = $this->_findAndModify($criteria, $modifyFields, $fields, $options);
+
+        if(!$savedItem) {
+            MPCMF_DEBUG && self::log()->addInfo("Item not found in storage: {$this->getEntityName()}", [__METHOD__]);
+            throw new mapperException("Item not found in storage: {$this->getEntityName()}");
+        }
+
+        return $class::fromArray($savedItem);
+    }
+
+    /**
+     * Find data and modify by single query
+     *
+     * @param array $criteria
+     * @param array $newObject
+     * @param array $fields
+     * @param array $options
+     *
+     * @return modelBase
+     * @throws mapperException
+     */
+    public function findAndModifyObject($criteria, $newObject, $fields = [], $options = [])
+    {
+        MPCMF_DEBUG && self::log()->addDebug('criteria: ' . json_encode($criteria), [__METHOD__]);
+        try {
+            $class = $this->getModelClass();
+        } catch(modelException $modelException) {
+            throw new mapperException('Model error, unable to get model class', $modelException->getCode(), $modelException);
+        }
+
+        $savedItem = $this->_findAndModifyObject($criteria, $newObject, $fields, $options);
 
         if(!$savedItem) {
             MPCMF_LL_DEBUG && self::log()->addInfo("Item not found in storage: {$this->getEntityName()}", [__METHOD__]);
