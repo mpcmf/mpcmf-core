@@ -39,4 +39,18 @@ class stringValidator
         return $strLen >= $data['length']['min'] && $strLen <= $data['length']['max'];
     }
 
+
+    /**
+     *
+     * @param $value
+     * @param $data
+     *
+     * @return bool
+     */
+    public static function byBytes($value, $data)
+    {
+        $strLen = is_string($value) ? strlen($value) : 0;
+
+        return $strLen >= $data['length']['min'] && $strLen <= $data['length']['max'];
+    }
 }
