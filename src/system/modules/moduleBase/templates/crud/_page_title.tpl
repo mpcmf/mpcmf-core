@@ -1,6 +1,6 @@
 <div class="row">
-    <div class="col-lg-12">
-        <h3 class="page-header">
+    <div class="col-lg">
+        <h3 class="page-header my-3">
             {$title}
         </h3>
     </div>
