@@ -32,6 +32,7 @@
 {/if}
 {assign var="relatedModels" value=$_entity->getMapper()->getAllRelatedModels($fieldName, $item)}
 {assign var="remainValues" value=($relatedModels->count())}
+{assign var="hasSelected" value=false}
 
 {foreach from=$relatedModels item='optionItem'}
     {assign var="itemValue" value=$optionItem->getFieldValue($_entity->getMapper()->getRelationField($fieldName))}
@@ -50,13 +51,15 @@
             {assign var="selected" value=($fieldValue == $itemValue)}
         {/if}
     {/if}
+    {if $selected}
+        {assign var="hasSelected" value=true}
+    {/if}
 
     {append var="options" value=['title' => $optionItem->getTitleValue(), 'selected' => $selected, 'value' => $itemValue|htmlspecialchars]}
-    {foreachelse}
-    {if isset($item) && !$isMultiple}
-        {append var="options" value=['title' => $fieldValue, 'selected' => $selected, 'value' => $itemValue|htmlspecialchars]}
-    {/if}
 {/foreach}
+{if $item !== null && !$isMultiple && $fieldValue && !$hasSelected}
+    {append var="options" value=['title' => $fieldValue, 'selected' => true, 'value' => $fieldValue|htmlspecialchars]}
+{/if}
 
 
 <select data-placeholder="Выберите значение..."
