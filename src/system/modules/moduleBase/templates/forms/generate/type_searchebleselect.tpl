@@ -51,12 +51,21 @@
         {/if}
     {/if}
 
-    {append var="options" value=['title' => $optionItem->getTitleValue(), 'selected' => $selected, 'value' => $itemValue|htmlspecialchars]}
-    {foreachelse}
-    {if isset($item) && !$isMultiple}
-        {append var="options" value=['title' => $fieldValue, 'selected' => $selected, 'value' => $itemValue|htmlspecialchars]}
-    {/if}
+    {append var="options" value=['title' => $optionItem->getTitleValue(), 'selected' => $selected, 'value' => $itemValue]}
 {/foreach}
+
+{assign var="optionValues" value=array_column($options, 'value')}
+{if $item !== null && $isMultiple && is_array($fieldValue)}
+    {foreach from=$fieldValue item='storedValue'}
+        {if !in_array($storedValue, $optionValues, true)}
+            {append var="options" value=['title' => $storedValue, 'selected' => true, 'value' => $storedValue]}
+        {/if}
+    {/foreach}
+{elseif $item !== null && !$isMultiple && $fieldValue !== null && $fieldValue !== ''}
+    {if !in_array($fieldValue, $optionValues)}
+        {append var="options" value=['title' => $fieldValue, 'selected' => true, 'value' => $fieldValue]}
+    {/if}
+{/if}
 
 
 <select data-placeholder="Выберите значение..."
@@ -74,8 +83,8 @@
     {/if}
 
     {foreach from=$options item="option"}
-        <option value="{$option['value']}" {if $option['selected']} selected="selected"{/if}>
-            {$option['title']}
+        <option value="{$option['value']|htmlspecialchars}" {if $option['selected']} selected="selected"{/if}>
+            {$option['title']|htmlspecialchars}
         </option>
     {/foreach}
     {/strip}
