@@ -263,8 +263,27 @@ trait mongoCrud
      * @throws \InvalidArgumentException
      * @throws \Exception
      */
-    public function findAndModify($criteria, $update, array $fields = [], array $options = [])
+    public function findAndModify($criteria, $modifyFields, array $fields = [], array $options = [])
     {
-        return $this->storage()->selectAndModifyFields($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $update, $fields, $options);
+        return $this->storage()->selectAndModifyFields($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $modifyFields, $fields, $options);
+    }
+
+    /**
+     * @param $criteria
+     * @param $newObject
+     * @param array $fields
+     * @param array $options
+     *
+     * @return array
+     *
+     * @throws storageException
+     * @throws \MongoConnectionException
+     * @throws configurationException
+     * @throws \InvalidArgumentException
+     * @throws \Exception
+     */
+    public function findAndModifyObject($criteria, $newObject, array $fields = [], array $options = [])
+    {
+        return $this->storage()->selectAndModify($this->mongoCrudStorageConfig['db'], $this->mongoCrudStorageConfig['collection'], $criteria, $newObject, $fields, $options);
     }
 }
