@@ -3,8 +3,11 @@
 namespace mpcmf\system\queue;
 
 use mpcmf\system\helper\io\log;
+use mpcmf\system\queue\interfaces\queueInterface;
 
-class AMQPQueueDriver extends \AMQPQueue
+class AMQPQueueDriver
+    extends \AMQPQueue
+    implements queueInterface
 {
 
     use log;

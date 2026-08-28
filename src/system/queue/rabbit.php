@@ -6,6 +6,7 @@ use mpcmf\system\exceptions\curlException;
 use mpcmf\system\helper\io\log;
 use mpcmf\system\net\curl;
 use mpcmf\system\pattern\factory;
+use mpcmf\system\queue\interfaces\streamInterface;
 
 /**
  * Class rabbitMQ
@@ -16,6 +17,7 @@ use mpcmf\system\pattern\factory;
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class rabbit
+    implements streamInterface
 {
     use factory, log;
 
