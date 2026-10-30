@@ -137,7 +137,7 @@ class rabbit
 
         if ($force || !isset($this->connections[$key])) {
             $connectionData = $this->getConnectionData();
-            MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize connection: " . json_encode($connectionData), [__METHOD__]);
+            MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize connection: " . json_encode(array_merge($connectionData, ['password' => '***'])), [__METHOD__]);
             $this->connections[$key] = new \AMQPConnection($connectionData);
             $this->connections[$key]->connect();
         }
