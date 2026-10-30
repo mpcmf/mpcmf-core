@@ -17,13 +17,14 @@ trait singleton
      */
     public static function getInstance()
     {
-        static $instance;
+        // PHP 8.1+: inherited methods share static variables, so keep an instance per called class
+        static $instances = [];
 
-        if($instance === null) {
-            $calledClass = get_called_class();
-            $instance = new $calledClass();
+        $calledClass = static::class;
+        if(!isset($instances[$calledClass])) {
+            $instances[$calledClass] = new $calledClass();
         }
 
-        return $instance;
+        return $instances[$calledClass];
     }
 }
