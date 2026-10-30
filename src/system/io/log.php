@@ -51,4 +51,108 @@ class log
 
         MPCMF_DEBUG && $this->addDebug("New log created: {$this->configSection}");
     }
+
+    /**
+     * Adds a log record at the DEBUG level (Monolog 1.x API)
+     *
+     * @param mixed $message
+     * @param array $context
+     *
+     * @return bool Whether the record has been processed
+     */
+    public function addDebug($message, array $context = [])
+    {
+        return $this->addRecord(static::DEBUG, (string)$message, $context);
+    }
+
+    /**
+     * Adds a log record at the INFO level (Monolog 1.x API)
+     *
+     * @param mixed $message
+     * @param array $context
+     *
+     * @return bool Whether the record has been processed
+     */
+    public function addInfo($message, array $context = [])
+    {
+        return $this->addRecord(static::INFO, (string)$message, $context);
+    }
+
+    /**
+     * Adds a log record at the NOTICE level (Monolog 1.x API)
+     *
+     * @param mixed $message
+     * @param array $context
+     *
+     * @return bool Whether the record has been processed
+     */
+    public function addNotice($message, array $context = [])
+    {
+        return $this->addRecord(static::NOTICE, (string)$message, $context);
+    }
+
+    /**
+     * Adds a log record at the WARNING level (Monolog 1.x API)
+     *
+     * @param mixed $message
+     * @param array $context
+     *
+     * @return bool Whether the record has been processed
+     */
+    public function addWarning($message, array $context = [])
+    {
+        return $this->addRecord(static::WARNING, (string)$message, $context);
+    }
+
+    /**
+     * Adds a log record at the ERROR level (Monolog 1.x API)
+     *
+     * @param mixed $message
+     * @param array $context
+     *
+     * @return bool Whether the record has been processed
+     */
+    public function addError($message, array $context = [])
+    {
+        return $this->addRecord(static::ERROR, (string)$message, $context);
+    }
+
+    /**
+     * Adds a log record at the CRITICAL level (Monolog 1.x API)
+     *
+     * @param mixed $message
+     * @param array $context
+     *
+     * @return bool Whether the record has been processed
+     */
+    public function addCritical($message, array $context = [])
+    {
+        return $this->addRecord(static::CRITICAL, (string)$message, $context);
+    }
+
+    /**
+     * Adds a log record at the ALERT level (Monolog 1.x API)
+     *
+     * @param mixed $message
+     * @param array $context
+     *
+     * @return bool Whether the record has been processed
+     */
+    public function addAlert($message, array $context = [])
+    {
+        return $this->addRecord(static::ALERT, (string)$message, $context);
+    }
+
+    /**
+     * Adds a log record at the EMERGENCY level (Monolog 1.x API)
+     *
+     * @param mixed $message
+     * @param array $context
+     *
+     * @return bool Whether the record has been processed
+     */
+    public function addEmergency($message, array $context = [])
+    {
+        return $this->addRecord(static::EMERGENCY, (string)$message, $context);
+    }
 }
