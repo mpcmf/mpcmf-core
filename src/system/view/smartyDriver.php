@@ -44,7 +44,7 @@ class smartyDriver
         profiler::addStack('view::init');
 
         if(!defined('SMARTY_MBSTRING')) {
-            define(SMARTY_MBSTRING, true);
+            define('SMARTY_MBSTRING', true);
         }
         $options = config::getConfig(get_called_class());
 
