@@ -37,7 +37,7 @@ class mongoInstance
         $currentPid = getmypid();
         if ($this->mongo === null || $this->pid !== $currentPid) {
             $config = $this->getPackageConfig();
-            MPCMF_LL_DEBUG && self::log()->addDebug("Connecting to {$config['uri']}", [__METHOD__]);
+            MPCMF_LL_DEBUG && self::log()->addDebug('Connecting to ' . preg_replace('#(//[^:/@]+:)[^/]*@#', '$1***@', $config['uri']), [__METHOD__]);
             $this->mongo = new \MongoClient($config['uri'], $config['options']);
             $this->pid = $currentPid;
         }
