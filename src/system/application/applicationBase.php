@@ -10,6 +10,7 @@ use mpcmf\system\helper\io\log;
  *
  * @author GreeveX <greevex@gmail.com>
  */
+#[\AllowDynamicProperties]
 abstract class applicationBase
     implements applicationInterface
 {

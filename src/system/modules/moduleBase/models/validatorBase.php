@@ -10,6 +10,7 @@ use mpcmf\system\helper\module\modulePartsHelper;
  * @author Gregory Ostrovsky <greevex@gmail.com>
  * @date: 2/27/15 1:41 PM
  */
+#[\AllowDynamicProperties]
 class validatorBase
 {
     use modulePartsHelper;

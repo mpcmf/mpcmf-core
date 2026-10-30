@@ -22,6 +22,7 @@ use mpcmf\system\pattern\singletonInterface;
  * @date: 2/27/15 1:41 PM
  */
 
+#[\AllowDynamicProperties]
 abstract class controllerBase
     implements singletonInterface, controllerInterface
 {

@@ -21,6 +21,7 @@ use mpcmf\system\storage\mongoCrud;
  * @author Gregory Ostrovsky <greevex@gmail.com>
  * @date: 2/27/15 1:41 PM
  */
+#[\AllowDynamicProperties]
 abstract class mapperBase
     implements singletonInterface
 {
