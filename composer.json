@@ -25,7 +25,7 @@
     "ext-intl":  "*",
     "ext-posix":  "*",
     "ext-memcached":  "*",
-    "ext-amqp":  "*",
+    "ext-amqp":  ">=2.0",
     "ext-sockets":  "*",
     "ext-zlib":  "*",
     "ext-pcntl":  "*",
