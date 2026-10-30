@@ -66,11 +66,13 @@ abstract class modelBase
      */
     public static function validate($fields, $onlyExistingFields = false)
     {
-        static $map;
+        // PHP 8.1+: inherited methods share static variables, so cache per called class
+        static $maps = [];
+        $map = $maps[static::class] ?? null;
         if($map === null) {
             $entity = static::getInstance();
             try {
-                $map = $entity->getMapper()->getMap();
+                $map = $maps[static::class] = $entity->getMapper()->getMap();
             } catch(modulePartsHelperException $modulePartsHelperException) {
                 throw new modelException(
                     "Unable to get own mapper: {$entity->getEntityName()}",
