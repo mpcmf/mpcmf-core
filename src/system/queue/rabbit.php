@@ -24,6 +24,15 @@ class rabbit
     const DEFAULT_LOGIN = 'guest';
     const DEFAULT_PASSWORD = 'guest';
 
+    const OPTIONAL_CONNECTION_PARAMS = [
+        'vhost',
+        'heartbeat',
+        'connect_timeout',
+        'read_timeout',
+        'write_timeout',
+        'rpc_timeout',
+    ];
+
     const EXCHANGE_POINT = 'amq.direct';
 
     const EXCHANGE_TYPE_DIRECT = 'direct';
@@ -97,6 +106,12 @@ class rabbit
                 'login' => isset($config['login']) ? $config['login'] : self::DEFAULT_LOGIN,
                 'password' => isset($config['password']) ? $config['password'] : self::DEFAULT_PASSWORD,
             ];
+            // passed to AMQPConnection only when configured, ext-amqp defaults apply otherwise
+            foreach (self::OPTIONAL_CONNECTION_PARAMS as $param) {
+                if (isset($config[$param])) {
+                    $this->connectionData[$this->configSection][$param] = $config[$param];
+                }
+            }
         }
 
         return $this->connectionData[$this->configSection];
