@@ -20,7 +20,7 @@
       {"type": "vcs", "url": "git@github.com:infostars/Slim.git"}
   ],
   "require": {
-    "php": ">=7.2",
+    "php": ">=8.1",
     "ext-json":  "*",
     "ext-intl":  "*",
     "ext-posix":  "*",
