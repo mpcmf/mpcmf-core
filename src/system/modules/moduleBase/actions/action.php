@@ -75,6 +75,25 @@ class action
     }
 
     /**
+     * Check that [className, method] points to a public method
+     *
+     * PHP 8.0+: is_callable([className, nonStaticMethod]) returns false
+     *
+     * @param array $callable
+     *
+     * @return bool
+     */
+    private static function isCallableMethod(array $callable)
+    {
+        if(is_callable($callable)) {
+
+            return true;
+        }
+
+        return method_exists($callable[0], $callable[1]) && (new \ReflectionMethod($callable[0], $callable[1]))->isPublic();
+    }
+
+    /**
      * Add data to action by array
      *
      * @param $actionData
@@ -88,7 +107,7 @@ class action
             $actionData['method']
         ];
 
-        if(!is_callable($actionData['callable'])) {
+        if(!self::isCallableMethod($actionData['callable'])) {
             throw new actionException('Method for action doesn\'t exists: ' . json_encode($actionData));
         }
         $callable = $actionData['callable'];
@@ -156,7 +175,7 @@ class action
                 $this->actionData['method']
             ];
 
-            if(!is_callable($this->actionData['callable'])) {
+            if(!self::isCallableMethod($this->actionData['callable'])) {
                 throw new actionException('Method for action doesn\'t exists: ' . json_encode($this->actionData));
             }
         }
