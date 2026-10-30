@@ -62,6 +62,13 @@ class progressBar
     protected $stat_estimatedTime = 0;
 
     /**
+     * Processing speed (elements per second)
+     *
+     * @var float
+     */
+    protected $speed = 0;
+
+    /**
      * Output progressbar format
      *
      * @var string
