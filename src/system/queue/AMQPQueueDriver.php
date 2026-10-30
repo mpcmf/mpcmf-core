@@ -23,7 +23,7 @@ class AMQPQueueDriver extends \AMQPQueue
                 if ($this->failedConectionCounter++ >= 3) {
                     self::log()->addError("non-recoverable queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
 
-                    exit;
+                    exit(1);
                 }
                 self::log()->addWarning("queue connection error [{$this->failedConectionCounter}]: {$m}");
                 $this->isFailedConnection = true;
@@ -44,7 +44,7 @@ class AMQPQueueDriver extends \AMQPQueue
                 if ($this->failedConectionCounter++ >= 3) {
                     self::log()->addError("non-recoverable queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
 
-                    exit;
+                    exit(1);
                 }
                 self::log()->addWarning("queue connection error [{$this->failedConectionCounter}]: {$m}");
                 $this->isFailedConnection = true;
@@ -65,7 +65,7 @@ class AMQPQueueDriver extends \AMQPQueue
                 if ($this->failedConectionCounter++ >= 3) {
                     self::log()->addError("non-recoverable queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
 
-                    exit;
+                    exit(1);
                 }
                 self::log()->addWarning("queue connection error [{$this->failedConectionCounter}]: {$m}");
                 $this->isFailedConnection = true;
@@ -88,7 +88,7 @@ class AMQPQueueDriver extends \AMQPQueue
                 if ($this->failedConectionCounter++ >= 3) {
                     self::log()->addError("non-recoverable consume queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
 
-                    exit;
+                    exit(1);
                 }
                 self::log()->addWarning("consume queue connection error [{$this->failedConectionCounter}]: {$m}");
                 $this->isFailedConnection = true;
