@@ -61,6 +61,18 @@ class thread
     private $pid;
 
     /**
+     * Child has been reaped (or is not our child anymore), its pid may belong to another process now
+     *
+     * @var bool
+     */
+    private $exited = false;
+
+    /**
+     * @var int|null
+     */
+    private $exitCode;
+
+    /**
      * Get thread data file path
      *
      * @return string
@@ -169,23 +181,33 @@ class thread
      */
     public function isAlive()
     {
-        if ($this->pid === null) {
+        if ($this->pid === null || $this->exited) {
 
             return false;
         }
         $pid = pcntl_waitpid($this->pid, $status, WNOHANG);
-        $alive = ($pid === 0);
-        if (!$alive) {
-            $alive = posix_kill($this->pid, 0);
-        }
-        if (!$alive) {
-            $alive = posix_getpgid($this->pid) !== false;
-        }
-        if (!$alive) {
-            $alive = file_exists("/proc/{$this->pid}");
+        if ($pid === 0) {
+
+            return true;
         }
 
-        return $alive;
+        // reaped now, or -1 (ECHILD): reaped elsewhere. Probing the pid further would hit a reused pid
+        $this->exited = true;
+        if ($pid === $this->pid) {
+            $this->exitCode = pcntl_wifexited($status) ? pcntl_wexitstatus($status) : 128 + pcntl_wtermsig($status);
+        }
+
+        return false;
+    }
+
+    /**
+     * Exit code of the finished thread, signal number + 128 if it was killed, null if unknown or still running
+     *
+     * @return int|null
+     */
+    public function getExitCode()
+    {
+        return $this->exitCode;
     }
 
     /**
@@ -249,8 +271,7 @@ class thread
         if ($isAlive) {
             posix_kill($this->pid, $_signal);
             if ($_wait) {
-                $status = 0;
-                pcntl_waitpid($this->pid, $status);
+                $this->wait();
             }
         }
         $this->dispose();
@@ -267,13 +288,14 @@ class thread
     public function kill($_signal = SIGKILL, $_wait = false)
     {
         MPCMF_DEBUG && self::log()->addDebug("Killing process with pid {$this->pid}...", [__METHOD__]);
-        for ($i = 0; $i < 10; $i++) {
+        // only an alive, not yet reaped child is guaranteed to own the pid
+        for ($i = 0; $i < 10 && $this->isAlive(); $i++) {
             posix_kill($this->pid, $_signal);
             usleep(10000);
         }
         if ($_wait) {
             MPCMF_DEBUG && self::log()->addDebug("Waiting process [pid {$this->pid}]...", [__METHOD__]);
-            pcntl_waitpid($this->pid, $status = 0);
+            $this->wait();
         }
         $this->dispose();
         MPCMF_DEBUG && self::log()->addDebug("Killed! [pid {$this->pid}]...", [__METHOD__]);
@@ -323,6 +345,22 @@ class thread
                 MPCMF_DEBUG && self::log()->addDebug(__METHOD__ . ':exit()', [__METHOD__]);
                 exit(128 + $_signal);
                 break;
+        }
+    }
+
+    /**
+     * Block until the child exits and remember its exit code
+     */
+    private function wait()
+    {
+        if ($this->exited) {
+
+            return;
+        }
+        $pid = pcntl_waitpid($this->pid, $status);
+        $this->exited = true;
+        if ($pid === $this->pid) {
+            $this->exitCode = pcntl_wifexited($status) ? pcntl_wexitstatus($status) : 128 + pcntl_wtermsig($status);
         }
     }
 

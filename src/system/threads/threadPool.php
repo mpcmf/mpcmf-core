@@ -73,11 +73,11 @@ class threadPool
     public function refresh()
     {
         /**
-         * @note kill thread if thread is not alive
+         * @note release finished threads: the child is already reaped, there is nothing to kill
          */
         foreach($this->pool as $thread_key => $thread) {
             if(!$thread->isAlive()) {
-                $thread->kill();
+                $thread->stop();
                 unset($this->pool[$thread_key]);
             }
         }
