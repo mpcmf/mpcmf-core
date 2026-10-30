@@ -73,6 +73,25 @@ class thread
     private $exitCode;
 
     /**
+     * Graceful stop mode: the child gets SIGTERM/SIGINT as a stop request instead of being terminated by the master
+     *
+     * @var bool
+     */
+    private $gracefulStop = false;
+
+    /**
+     * @var int|null
+     */
+    private $startedAt;
+
+    /**
+     * Stop requested by SIGTERM/SIGINT inside a graceful child
+     *
+     * @var bool
+     */
+    private static $stopRequested = false;
+
+    /**
      * Get thread data file path
      *
      * @return string
@@ -211,6 +230,65 @@ class thread
     }
 
     /**
+     * Enable graceful stop mode, must be called before start()
+     *
+     * In the child SIGTERM/SIGINT only set a flag (see isStopRequested()) and signals are dispatched asynchronously,
+     * so the callback can finish its current work. The master does not forward SIGTERM to the child, the owner
+     * (threadPool) decides when to stop it.
+     *
+     * @param bool $enabled
+     */
+    public function setGracefulStop($enabled = true)
+    {
+        $this->gracefulStop = (bool)$enabled;
+    }
+
+    /**
+     * Inside a graceful child: whether SIGTERM/SIGINT was received
+     *
+     * @return bool
+     */
+    public static function isStopRequested()
+    {
+        return self::$stopRequested;
+    }
+
+    /**
+     * @param int $_signal
+     */
+    public static function requestStop($_signal = SIGTERM)
+    {
+        self::$stopRequested = true;
+    }
+
+    /**
+     * Unix time the thread was started at
+     *
+     * @return int|null
+     */
+    public function getStartedAt()
+    {
+        return $this->startedAt;
+    }
+
+    /**
+     * Send a signal to the child if it is still alive (and so still owns its pid)
+     *
+     * @param int $signal
+     *
+     * @return bool
+     */
+    public function signal($signal)
+    {
+        if (!$this->isAlive()) {
+
+            return false;
+        }
+
+        return posix_kill($this->pid, $signal);
+    }
+
+    /**
      * starts the thread, all the parameters are
      * passed to the callback function
      *
@@ -229,13 +307,23 @@ class thread
         if ($pid) {
             // master process
             $this->pid = $pid;
+            $this->startedAt = time();
 
-            $signalHandler->addHandler(SIGTERM, [$this, 'masterSignalHandler']);
+            if (!$this->gracefulStop) {
+                $signalHandler->addHandler(SIGTERM, [$this, 'masterSignalHandler']);
+            }
         } else {
             // child process
             cli_set_process_title(cli_get_process_title() . self::CHILD_POSTFIX);
 
-            $signalHandler->addHandler(SIGTERM, [__CLASS__, 'signalHandler']);
+            if ($this->gracefulStop) {
+                self::$stopRequested = false;
+                pcntl_async_signals(true);
+                $signalHandler->addHandler(SIGTERM, [__CLASS__, 'requestStop']);
+                $signalHandler->addHandler(SIGINT, [__CLASS__, 'requestStop']);
+            } else {
+                $signalHandler->addHandler(SIGTERM, [__CLASS__, 'signalHandler']);
+            }
 
             if ($this->runnable === null) {
                 self::log()->addError("[ERROR] Cannot run the empty callback");
@@ -369,7 +457,7 @@ class thread
     private function dispose()
     {
         $this->runnable = null;
-        if (!empty($this->pid)) {
+        if (!empty($this->pid) && !$this->gracefulStop) {
             $signalHandler = signalHandler::getInstance();
             $signalHandler->removeHandler(SIGTERM, [$this, 'masterSignalHandler']);
         }
