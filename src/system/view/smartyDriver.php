@@ -13,6 +13,28 @@ use mpcmf\system\helper\system\profiler;
 class smartyDriver
     extends \Smarty
 {
+    /**
+     * PHP functions available in templates as modifiers and in expressions
+     *
+     * Smarty 4.3+ deprecates unregistered PHP functions in templates. Functions that Smarty
+     * ships as its own modifiers (count, implode, explode, json_encode, nl2br, round, strlen, ...) are not listed.
+     *
+     * @var string[]
+     */
+    protected static $phpFunctionModifiers = [
+        'htmlspecialchars', 'htmlspecialchars_decode', 'htmlentities', 'html_entity_decode', 'addslashes', 'stripslashes',
+        'urlencode', 'urldecode', 'rawurlencode', 'rawurldecode', 'http_build_query', 'base64_encode', 'base64_decode',
+        'md5', 'sha1', 'crc32', 'uniqid', 'json_decode', 'var_export', 'var_dump', 'print_r', 'serialize',
+        'trim', 'ltrim', 'rtrim', 'ucfirst', 'lcfirst', 'ucwords', 'strtoupper', 'strtolower', 'sprintf', 'str_pad',
+        'str_replace', 'str_split', 'strpos', 'stripos', 'strrpos', 'strstr', 'substr_count', 'basename', 'dirname',
+        'mb_strtoupper', 'mb_strtolower', 'mb_substr', 'mb_strlen', 'mb_strpos', 'mb_convert_case',
+        'array_merge', 'array_column', 'array_keys', 'array_values', 'array_key_exists', 'array_slice', 'array_search',
+        'array_sum', 'array_unique', 'array_flip', 'array_reverse', 'array_combine', 'array_key_first', 'array_key_last',
+        'array_diff', 'array_intersect', 'array_fill_keys', 'range', 'sizeof',
+        'ceil', 'floor', 'abs', 'min', 'max', 'intval', 'floatval', 'strval', 'boolval', 'gettype', 'get_class',
+        'is_string', 'is_numeric', 'is_int', 'is_float', 'is_bool', 'is_null', 'is_object', 'is_scalar',
+        'date', 'strtotime', 'checkdate',
+    ];
 
     /**
      * Constructor
@@ -35,6 +57,22 @@ class smartyDriver
         $this->setCompileDir($options['compile_dir']);
         $this->setConfigDir($options['config_dir']);
         $this->setCacheDir($options['cache_dir']);
+
+        $this->registerPhpFunctionModifiers();
+    }
+
+    /**
+     * Register PHP functions as template modifiers
+     *
+     * @throws \SmartyException
+     */
+    protected function registerPhpFunctionModifiers()
+    {
+        foreach (static::$phpFunctionModifiers as $function) {
+            if (function_exists($function) && !isset($this->registered_plugins[self::PLUGIN_MODIFIER][$function])) {
+                $this->registerPlugin(self::PLUGIN_MODIFIER, $function, $function);
+            }
+        }
     }
 
     /**
