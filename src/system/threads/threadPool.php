@@ -59,6 +59,20 @@ class threadPool
     private $stopRequested = false;
 
     /**
+     * Max thread lifetime in seconds, 0 - unlimited
+     *
+     * @var int
+     */
+    private $threadTimeout = 0;
+
+    /**
+     * Seconds between SIGTERM and SIGKILL for threads over the timeout
+     *
+     * @var int
+     */
+    private $threadTimeoutGrace = 10;
+
+    /**
      * When SIGTERM was sent to a thread, by pool key
      *
      * @var float[]
@@ -123,6 +137,14 @@ class threadPool
             return true;
         }
 
+        if($this->threadTimeout > 0) {
+            $now = time();
+            foreach($this->pool as $thread_key => $thread) {
+                if(isset($this->terminatedAt[$thread_key]) || $now - $thread->getStartedAt() >= $this->threadTimeout) {
+                    $this->terminate($thread_key, $thread, $this->threadTimeoutGrace);
+                }
+            }
+        }
         /**
          * @note add threads in pool from queue
          */
@@ -262,6 +284,18 @@ class threadPool
         }
 
         return $this->stopRequested;
+    }
+
+    /**
+     * Limit thread lifetime: a thread running longer gets SIGTERM, then SIGKILL after $grace seconds
+     *
+     * @param int $seconds 0 - unlimited
+     * @param int $grace
+     */
+    public function setThreadTimeout($seconds, $grace = 10)
+    {
+        $this->threadTimeout = (int)$seconds;
+        $this->threadTimeoutGrace = (int)$grace;
     }
 
     /**
