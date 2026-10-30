@@ -66,6 +66,7 @@ class modelCursor
      *
      * @return modelBase
      */
+    #[\ReturnTypeWillChange]
     public function current()
     {
         $modelClass = $this->modelClass;
@@ -104,6 +105,7 @@ class modelCursor
      * @link http://php.net/manual/en/iterator.next.php
      * @return void Any returned value is ignored.
      */
+    #[\ReturnTypeWillChange]
     public function next()
     {
         $this->cursor->next();
@@ -116,6 +118,7 @@ class modelCursor
      * @link http://php.net/manual/en/iterator.key.php
      * @return mixed scalar on success, or null on failure.
      */
+    #[\ReturnTypeWillChange]
     public function key()
     {
         return $this->cursor->key();
@@ -129,6 +132,7 @@ class modelCursor
      * @return boolean The return value will be casted to boolean and then evaluated.
      *       Returns true on success or false on failure.
      */
+    #[\ReturnTypeWillChange]
     public function valid()
     {
         return $this->cursor->valid();
@@ -141,6 +145,7 @@ class modelCursor
      * @link http://php.net/manual/en/iterator.rewind.php
      * @return void Any returned value is ignored.
      */
+    #[\ReturnTypeWillChange]
     public function rewind()
     {
         $this->cursor->rewind();
