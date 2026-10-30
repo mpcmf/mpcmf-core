@@ -2,6 +2,8 @@
 
 namespace mpcmf\system\threads;
 
+use mpcmf\system\helper\service\signalHandler;
+
 /**
  * Thread Pool class
  *
@@ -38,6 +40,32 @@ class threadPool
     private $pool = array();
 
     /**
+     * Graceful stop mode, see enableGracefulStop()
+     *
+     * @var bool
+     */
+    private $gracefulStop = false;
+
+    /**
+     * Seconds between SIGTERM and SIGKILL when stopping threads
+     *
+     * @var int
+     */
+    private $stopGrace = 10;
+
+    /**
+     * @var bool
+     */
+    private $stopRequested = false;
+
+    /**
+     * When SIGTERM was sent to a thread, by pool key
+     *
+     * @var float[]
+     */
+    private $terminatedAt = array();
+
+    /**
      * Check if has alive threads
      *
      * @return bool
@@ -72,15 +100,29 @@ class threadPool
      */
     public function refresh()
     {
+        if($this->gracefulStop) {
+            pcntl_signal_dispatch();
+        }
+
         /**
          * @note release finished threads: the child is already reaped, there is nothing to kill
          */
         foreach($this->pool as $thread_key => $thread) {
             if(!$thread->isAlive()) {
                 $thread->stop();
-                unset($this->pool[$thread_key]);
+                unset($this->pool[$thread_key], $this->terminatedAt[$thread_key]);
             }
         }
+
+        if($this->stopRequested) {
+            $this->queue = array();
+            foreach($this->pool as $thread_key => $thread) {
+                $this->terminate($thread_key, $thread, $this->stopGrace);
+            }
+
+            return true;
+        }
+
         /**
          * @note add threads in pool from queue
          */
@@ -114,10 +156,15 @@ class threadPool
      */
     public function add($thread, $arguments = null)
     {
+        if($this->stopRequested) {
+            return false;
+        }
         if(count($this->pool) >= $this->max_threads && count($this->queue) >= $this->max_queue) {
             return false;
         }
-        $this->queue[] = array(new thread($thread), $arguments);
+        $threadInstance = new thread($thread);
+        $threadInstance->setGracefulStop($this->gracefulStop);
+        $this->queue[] = array($threadInstance, $arguments);
         $this->refresh();
 
         return true;
@@ -173,5 +220,64 @@ class threadPool
     public function getPool()
     {
         return $this->pool;
+    }
+
+    /**
+     * Enable graceful stop
+     *
+     * SIGTERM/SIGINT to the master only request a stop (see isStopRequested()): add() refuses new threads,
+     * queued threads are dropped, running threads get SIGTERM and SIGKILL after $grace seconds.
+     * Threads get SIGTERM/SIGINT as a stop request too (see thread::isStopRequested()).
+     * The master process is not terminated, the application decides when to exit.
+     *
+     * @param int $grace Seconds between SIGTERM and SIGKILL
+     */
+    public function enableGracefulStop($grace = 10)
+    {
+        $this->gracefulStop = true;
+        $this->stopGrace = (int)$grace;
+
+        $signalHandler = signalHandler::getInstance();
+        $signalHandler->addHandler(SIGTERM, [$this, 'requestStop']);
+        $signalHandler->addHandler(SIGINT, [$this, 'requestStop']);
+    }
+
+    /**
+     * Request a stop of the pool, also called on SIGTERM/SIGINT in graceful stop mode
+     */
+    public function requestStop()
+    {
+        $this->stopRequested = true;
+    }
+
+    /**
+     * Whether a stop was requested
+     *
+     * @return bool
+     */
+    public function isStopRequested()
+    {
+        if($this->gracefulStop) {
+            pcntl_signal_dispatch();
+        }
+
+        return $this->stopRequested;
+    }
+
+    /**
+     * SIGTERM once, SIGKILL when the grace period is over
+     *
+     * @param int|string $thread_key
+     * @param thread     $thread
+     * @param int        $grace
+     */
+    private function terminate($thread_key, thread $thread, $grace)
+    {
+        if(!isset($this->terminatedAt[$thread_key])) {
+            $thread->signal(SIGTERM);
+            $this->terminatedAt[$thread_key] = microtime(true);
+        } elseif(microtime(true) - $this->terminatedAt[$thread_key] >= $grace) {
+            $thread->signal(SIGKILL);
+        }
     }
 }
