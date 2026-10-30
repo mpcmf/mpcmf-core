@@ -35,17 +35,20 @@ trait moduleHelper
      */
     public function getTemplatesDirectory()
     {
-        static $templateDirectory;
+        // PHP 8.1+: inherited methods share static variables, so cache per called class
+        static $templateDirectories = [];
 
-        if($templateDirectory === null) {
+        $calledClass = static::class;
+        if(!isset($templateDirectories[$calledClass])) {
             $templateDirectory = "{$this->getModuleDirectory()}/templates";
 
             if (!file_exists($templateDirectory) || !is_dir($templateDirectory)) {
                 throw new moduleException('Module templates directory doesn\'t exists!');
             }
+            $templateDirectories[$calledClass] = $templateDirectory;
         }
 
-        return $templateDirectory;
+        return $templateDirectories[$calledClass];
     }
 
     /**
@@ -55,14 +58,15 @@ trait moduleHelper
      */
     public function getModuleNamespace()
     {
-        static $namespace;
+        static $namespaces = [];
 
-        if($namespace === null) {
-            $namespace = (new \ReflectionClass(get_called_class()))->getNamespaceName();
-            MPCMF_DEBUG && self::log()->addDebug("Module namespace: {$namespace}");
+        $calledClass = static::class;
+        if(!isset($namespaces[$calledClass])) {
+            $namespaces[$calledClass] = (new \ReflectionClass($calledClass))->getNamespaceName();
+            MPCMF_DEBUG && self::log()->addDebug("Module namespace: {$namespaces[$calledClass]}");
         }
 
-        return $namespace;
+        return $namespaces[$calledClass];
     }
 
     public function getModuleRoutes()
@@ -90,13 +94,14 @@ trait moduleHelper
 
     public function getModuleName()
     {
-        static $moduleName;
+        static $moduleNames = [];
 
-        if($moduleName === null) {
-            $moduleName = basename($this->getModuleDirectory());
+        $calledClass = static::class;
+        if(!isset($moduleNames[$calledClass])) {
+            $moduleNames[$calledClass] = basename($this->getModuleDirectory());
         }
 
-        return $moduleName;
+        return $moduleNames[$calledClass];
     }
 
     /**
@@ -130,17 +135,17 @@ trait moduleHelper
      */
     public function getModuleDirectory()
     {
-        static $directory;
+        static $directories = [];
 
-        if($directory === null) {
-            $calledClass = get_called_class();
+        $calledClass = static::class;
+        if(!isset($directories[$calledClass])) {
             $file = loader::getLoader()->findFile($calledClass);
             if(!$file) {
                 throw new moduleException("File for class {$calledClass} not found!");
             }
-            $directory = dirname($file);
+            $directories[$calledClass] = dirname($file);
         }
 
-        return $directory;
+        return $directories[$calledClass];
     }
 }
