@@ -18,16 +18,7 @@ class AMQPQueueDriver extends \AMQPQueue
 
             return parent::get($flags);
         } catch (\AMQPException $e) {
-            $m = $e->getMessage();
-            if ($m === 'Could not get messages from queue. No channel available.') {
-                if ($this->failedConectionCounter++ >= 3) {
-                    self::log()->addError("non-recoverable queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
-
-                    exit(1);
-                }
-                self::log()->addWarning("queue connection error [{$this->failedConectionCounter}]: {$m}");
-                $this->isFailedConnection = true;
-            }
+            $this->handleConnectionError($e, 'get');
 
             throw $e;
         }
@@ -39,16 +30,7 @@ class AMQPQueueDriver extends \AMQPQueue
 
             parent::ack($deliveryTag, $flags);
         } catch (\AMQPException $e) {
-            $m = $e->getMessage();
-            if ($m === 'Could not ack message. No channel available.') {
-                if ($this->failedConectionCounter++ >= 3) {
-                    self::log()->addError("non-recoverable queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
-
-                    exit(1);
-                }
-                self::log()->addWarning("queue connection error [{$this->failedConectionCounter}]: {$m}");
-                $this->isFailedConnection = true;
-            }
+            $this->handleConnectionError($e, 'ack');
 
             throw $e;
         }
@@ -60,16 +42,7 @@ class AMQPQueueDriver extends \AMQPQueue
 
             parent::nack($deliveryTag, $flags);
         } catch (\AMQPException $e) {
-            $m = $e->getMessage();
-            if ($m === 'Could not nack message. No channel available.') {
-                if ($this->failedConectionCounter++ >= 3) {
-                    self::log()->addError("non-recoverable queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
-
-                    exit(1);
-                }
-                self::log()->addWarning("queue connection error [{$this->failedConectionCounter}]: {$m}");
-                $this->isFailedConnection = true;
-            }
+            $this->handleConnectionError($e, 'nack');
 
             throw $e;
         }
@@ -83,16 +56,7 @@ class AMQPQueueDriver extends \AMQPQueue
 
             parent::consume($callback, $flags, $consumerTag);
         } catch (\AMQPException $e) {
-            $m = $e->getMessage();
-            if ($m === 'Could not get channel. No channel available.') {
-                if ($this->failedConectionCounter++ >= 3) {
-                    self::log()->addError("non-recoverable consume queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
-
-                    exit(1);
-                }
-                self::log()->addWarning("consume queue connection error [{$this->failedConectionCounter}]: {$m}");
-                $this->isFailedConnection = true;
-            }
+            $this->handleConnectionError($e, 'consume');
 
             throw $e;
         }
@@ -102,5 +66,52 @@ class AMQPQueueDriver extends \AMQPQueue
     {
 
         return $this->isFailedConnection;
+    }
+
+    /**
+     * Mark the queue for reconnect when the exception means a lost channel or connection
+     *
+     * @param \AMQPException $e
+     * @param string         $operation
+     */
+    protected function handleConnectionError(\AMQPException $e, $operation)
+    {
+        if (!$this->isConnectionLost($e)) {
+
+            return;
+        }
+
+        $m = $e->getMessage();
+        if ($this->failedConectionCounter++ >= 3) {
+            self::log()->addError("non-recoverable {$operation} queue connection error, exiting [{$this->failedConectionCounter}]: {$m}");
+
+            exit(1);
+        }
+        self::log()->addWarning("{$operation} queue connection error [{$this->failedConectionCounter}]: {$m}");
+        $this->isFailedConnection = true;
+    }
+
+    /**
+     * The first error after a drop has no fixed text (CONNECTION_FORCED, Channel mismatch, empty on heartbeat timeout),
+     * so the channel and connection state is checked, not only the message
+     *
+     * @param \AMQPException $e
+     *
+     * @return bool
+     */
+    protected function isConnectionLost(\AMQPException $e)
+    {
+        if (strpos($e->getMessage(), 'No channel available.') !== false) {
+
+            return true;
+        }
+
+        try {
+
+            return !$this->getChannel()->isConnected() || !$this->getConnection()->isConnected();
+        } catch (\Throwable $stateException) {
+
+            return true;
+        }
     }
 }
