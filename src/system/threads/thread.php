@@ -247,9 +247,11 @@ class thread
             $arguments = func_get_args();
             try {
                 call_user_func_array($this->runnable, $arguments);
-            } catch (\Exception $exception) {
+            } catch (\Throwable $exception) {
                 self::log()->addError("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}");
                 MPCMF_DEBUG && error_log("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}\nStack trace:\n{$exception->getTraceAsString()}");
+
+                exit(1);
             }
             exit(0);
         }
