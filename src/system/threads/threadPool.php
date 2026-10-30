@@ -73,6 +73,13 @@ class threadPool
     private $threadTimeoutGrace = 10;
 
     /**
+     * Signals reset to SIG_DFL in children
+     *
+     * @var int[]
+     */
+    private $childDefaultSignals = array();
+
+    /**
      * When SIGTERM was sent to a thread, by pool key
      *
      * @var float[]
@@ -186,6 +193,7 @@ class threadPool
         }
         $threadInstance = new thread($thread);
         $threadInstance->setGracefulStop($this->gracefulStop);
+        $threadInstance->setDefaultSignals($this->childDefaultSignals);
         $this->queue[] = array($threadInstance, $arguments);
         $this->refresh();
 
@@ -296,6 +304,18 @@ class threadPool
     {
         $this->threadTimeout = (int)$seconds;
         $this->threadTimeoutGrace = (int)$grace;
+    }
+
+    /**
+     * Reset signals to SIG_DFL in children, so signals handled by the master are not swallowed there
+     *
+     * In graceful stop mode SIGTERM/SIGINT are handled by the thread anyway.
+     *
+     * @param int[] $signals
+     */
+    public function setChildDefaultSignals(array $signals)
+    {
+        $this->childDefaultSignals = $signals;
     }
 
     /**

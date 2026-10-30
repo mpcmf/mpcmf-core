@@ -85,6 +85,13 @@ class thread
     private $startedAt;
 
     /**
+     * Signals reset to SIG_DFL in the child before the callback runs
+     *
+     * @var int[]
+     */
+    private $defaultSignals = [];
+
+    /**
      * Stop requested by SIGTERM/SIGINT inside a graceful child
      *
      * @var bool
@@ -244,6 +251,18 @@ class thread
     }
 
     /**
+     * Reset signals to SIG_DFL in the child, must be called before start()
+     *
+     * Without it the child keeps handlers inherited from the master, and signals the master handled are swallowed.
+     *
+     * @param int[] $signals
+     */
+    public function setDefaultSignals(array $signals)
+    {
+        $this->defaultSignals = $signals;
+    }
+
+    /**
      * Inside a graceful child: whether SIGTERM/SIGINT was received
      *
      * @return bool
@@ -315,6 +334,10 @@ class thread
         } else {
             // child process
             cli_set_process_title(cli_get_process_title() . self::CHILD_POSTFIX);
+
+            foreach ($this->defaultSignals as $signal) {
+                pcntl_signal($signal, SIG_DFL);
+            }
 
             if ($this->gracefulStop) {
                 self::$stopRequested = false;
