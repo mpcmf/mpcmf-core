@@ -8,11 +8,19 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * socketServer class
  *
+ * @deprecated not used by applications, will be removed in the next major version
+ *
  * @author Gregory Ostrovsky <greevex@gmail.com>
  */
 class socketServer
 {
     use log;
+
+    public function __construct()
+    {
+        self::log()->addWarning(__CLASS__ . ' is deprecated and will be removed in the next major version');
+        @trigger_error(__CLASS__ . ' is deprecated and will be removed in the next major version', E_USER_DEPRECATED);
+    }
 
     const DEBUG_ENABLED = false;
 

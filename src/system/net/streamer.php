@@ -8,6 +8,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 /**
  * Gearman worker class
+ *
+ * @deprecated not used by applications, will be removed in the next major version
  */
 class streamer
 {
@@ -32,6 +34,9 @@ class streamer
 
     public function __construct($config)
     {
+        self::log()->addWarning(__CLASS__ . ' is deprecated and will be removed in the next major version');
+        @trigger_error(__CLASS__ . ' is deprecated and will be removed in the next major version', E_USER_DEPRECATED);
+
         $onShutdown = function() {
             self::onShutdown();
         };
