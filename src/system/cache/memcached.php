@@ -27,6 +27,16 @@ class memcached implements cacheInterface
 
     protected $pid;
 
+    const RETRY_RESULT_CODES = [
+        \Memcached::RES_FAILURE,
+        \Memcached::RES_CONNECTION_FAILURE,
+        \Memcached::RES_WRITE_FAILURE,
+        \Memcached::RES_READ_FAILURE,
+        \Memcached::RES_UNKNOWN_READ_FAILURE,
+        \Memcached::RES_ERRNO,
+        \Memcached::RES_SERVER_MARKED_DEAD,
+    ];
+
     /**
      * Commit changes
      *
@@ -88,6 +98,27 @@ class memcached implements cacheInterface
         }
     }
 
+    /**
+     * Call the backend, once more on a connection error
+     *
+     * A process forked from this one closes the shared connection when it releases its inherited copy of the driver,
+     * the next request here fails once and libmemcached reconnects. Such a failed request is not applied by the server.
+     *
+     * @param string $method
+     * @param mixed  ...$arguments
+     *
+     * @return mixed
+     */
+    protected function call($method, ...$arguments)
+    {
+        $result = $this->memcached->{$method}(...$arguments);
+        if ($result === false && in_array($this->memcached->getResultCode(), self::RETRY_RESULT_CODES, true)) {
+            $result = $this->memcached->{$method}(...$arguments);
+        }
+
+        return $result;
+    }
+
     protected function checkConnection()
     {
         $currentPid = getmypid();
@@ -112,7 +143,7 @@ class memcached implements cacheInterface
 
         $this->checkConnection();
 
-        return $this->memcached->set($key, $value, $expire);
+        return $this->call('set', $key, $value, $expire);
     }
 
     /**
@@ -129,7 +160,7 @@ class memcached implements cacheInterface
 
         $this->checkConnection();
 
-        return $this->memcached->setMulti($items, $expire);
+        return $this->call('setMulti', $items, $expire);
     }
 
     /**
@@ -146,7 +177,7 @@ class memcached implements cacheInterface
 
         $this->checkConnection();
 
-        return $this->memcached->touch($key, $expire);
+        return $this->call('touch', $key, $expire);
     }
 
     /**
@@ -164,7 +195,7 @@ class memcached implements cacheInterface
 
         $this->checkConnection();
 
-        return $this->memcached->add($key, $value, $expire);
+        return $this->call('add', $key, $value, $expire);
     }
 
     /**
@@ -179,7 +210,7 @@ class memcached implements cacheInterface
 
         $this->checkConnection();
 
-        return $this->memcached->get($key);
+        return $this->call('get', $key);
     }
 
     /**
@@ -200,14 +231,14 @@ class memcached implements cacheInterface
 
         $this->checkConnection();
 
-        $value = $this->memcached->get($key);
+        $value = $this->call('get', $key);
         if($value === false) {
             $value = $initial;
         } else {
             $value += $howMany;
         }
 
-        $this->memcached->set($key, $value, $expire);
+        $this->call('set', $key, $value, $expire);
 
         return $value;
     }
@@ -229,14 +260,14 @@ class memcached implements cacheInterface
 
         $this->checkConnection();
 
-        $value = $this->memcached->get($key);
+        $value = $this->call('get', $key);
         if($value === false) {
             $value = $initial;
         } else {
             $value -= $howMany;
         }
 
-        $this->memcached->set($key, $value, $expire);
+        $this->call('set', $key, $value, $expire);
 
         return $value;
     }
@@ -253,7 +284,7 @@ class memcached implements cacheInterface
 
         $this->checkConnection();
 
-        $data = $this->memcached->get($key);
+        $data = $this->call('get', $key);
         return !($data === false || $data === null);
     }
 
@@ -269,7 +300,7 @@ class memcached implements cacheInterface
 
         $this->checkConnection();
 
-        return $this->memcached->delete($key);
+        return $this->call('delete', $key);
     }
 
     /**
@@ -283,7 +314,7 @@ class memcached implements cacheInterface
 
         $this->checkConnection();
 
-        return $this->memcached->flush();
+        return $this->call('flush');
     }
 
     /**
