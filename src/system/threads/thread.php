@@ -58,38 +58,38 @@ class thread
      *
      * @var integer
      */
-    private $pid;
+    protected $pid;
 
     /**
      * Child has been reaped (or is not our child anymore), its pid may belong to another process now
      *
      * @var bool
      */
-    private $exited = false;
+    protected $exited = false;
 
     /**
      * @var int|null
      */
-    private $exitCode;
+    protected $exitCode;
 
     /**
      * Graceful stop mode: the child gets SIGTERM/SIGINT as a stop request instead of being terminated by the master
      *
      * @var bool
      */
-    private $gracefulStop = false;
+    protected $gracefulStop = false;
 
     /**
      * @var int|null
      */
-    private $startedAt;
+    protected $startedAt;
 
     /**
      * Signals reset to SIG_DFL in the child before the callback runs
      *
      * @var int[]
      */
-    private $defaultSignals = [];
+    protected $defaultSignals = [];
 
     /**
      * Stop requested by SIGTERM/SIGINT inside a graceful child
@@ -317,7 +317,6 @@ class thread
     public function start()
     {
         $pid = @ pcntl_fork();
-        $signalHandler = signalHandler::getInstance();
 
         if ($pid == -1) {
             throw new \Exception($this->getError(self::COULD_NOT_FORK), self::COULD_NOT_FORK);
@@ -325,49 +324,72 @@ class thread
 
         if ($pid) {
             // master process
-            $this->pid = $pid;
-            $this->startedAt = time();
-
-            if (!$this->gracefulStop) {
-                $signalHandler->addHandler(SIGTERM, [$this, 'masterSignalHandler']);
-            }
+            $this->onStarted($pid);
         } else {
             // child process
             cli_set_process_title(cli_get_process_title() . self::CHILD_POSTFIX);
-
-            foreach ($this->defaultSignals as $signal) {
-                pcntl_signal($signal, SIG_DFL);
-            }
-
-            if ($this->gracefulStop) {
-                self::$stopRequested = false;
-                pcntl_async_signals(true);
-                $signalHandler->addHandler(SIGTERM, [__CLASS__, 'requestStop']);
-                $signalHandler->addHandler(SIGINT, [__CLASS__, 'requestStop']);
-            } else {
-                $signalHandler->addHandler(SIGTERM, [__CLASS__, 'signalHandler']);
-            }
-
-            if ($this->runnable === null) {
-                self::log()->addError("[ERROR] Cannot run the empty callback");
-                MPCMF_DEBUG && error_log("[ERROR] Cannot run the empty callback");
-
-                exit(1);
-            }
-
-            $arguments = func_get_args();
-            try {
-                call_user_func_array($this->runnable, $arguments);
-            } catch (\Throwable $exception) {
-                self::log()->addError("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}");
-                MPCMF_DEBUG && error_log("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}\nStack trace:\n{$exception->getTraceAsString()}");
-
-                exit(1);
-            }
-            exit(0);
+            $this->runInChild(func_get_args());
         }
 
         return $this;
+    }
+
+    /**
+     * Master side: remember the started child
+     *
+     * @param int $pid
+     */
+    protected function onStarted($pid)
+    {
+        $this->pid = $pid;
+        $this->startedAt = time();
+
+        if (!$this->gracefulStop) {
+            signalHandler::getInstance()->addHandler(SIGTERM, [$this, 'masterSignalHandler']);
+        }
+    }
+
+    /**
+     * Child side: set up signals and run the callback, never returns
+     *
+     * @internal used by thread start methods
+     *
+     * @param array $arguments
+     * @param bool  $forked The child is a fork of the master and inherits its signal handlers
+     */
+    public function runInChild(array $arguments, $forked = true)
+    {
+        $signalHandler = signalHandler::getInstance();
+
+        foreach ($this->defaultSignals as $signal) {
+            pcntl_signal($signal, SIG_DFL);
+        }
+
+        if ($this->gracefulStop) {
+            self::$stopRequested = false;
+            pcntl_async_signals(true);
+            $signalHandler->addHandler(SIGTERM, [__CLASS__, 'requestStop']);
+            $signalHandler->addHandler(SIGINT, [__CLASS__, 'requestStop']);
+        } elseif ($forked) {
+            $signalHandler->addHandler(SIGTERM, [__CLASS__, 'signalHandler']);
+        }
+
+        if ($this->runnable === null) {
+            self::log()->addError("[ERROR] Cannot run the empty callback");
+            MPCMF_DEBUG && error_log("[ERROR] Cannot run the empty callback");
+
+            exit(1);
+        }
+
+        try {
+            call_user_func_array($this->runnable, $arguments);
+        } catch (\Throwable $exception) {
+            self::log()->addError("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}");
+            MPCMF_DEBUG && error_log("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}\nStack trace:\n{$exception->getTraceAsString()}");
+
+            exit(1);
+        }
+        exit(0);
     }
 
     /**
@@ -382,7 +404,7 @@ class thread
         $isAlive = (int)$this->isAlive();
         MPCMF_DEBUG && self::log()->addDebug("Stopping process {$this->pid}, alive:{$isAlive}", [__METHOD__]);
         if ($isAlive) {
-            posix_kill($this->pid, $_signal);
+            $this->signal($_signal);
             if ($_wait) {
                 $this->wait();
             }
@@ -402,8 +424,7 @@ class thread
     {
         MPCMF_DEBUG && self::log()->addDebug("Killing process with pid {$this->pid}...", [__METHOD__]);
         // only an alive, not yet reaped child is guaranteed to own the pid
-        for ($i = 0; $i < 10 && $this->isAlive(); $i++) {
-            posix_kill($this->pid, $_signal);
+        for ($i = 0; $i < 10 && $this->signal($_signal); $i++) {
             usleep(10000);
         }
         if ($_wait) {
@@ -464,7 +485,7 @@ class thread
     /**
      * Block until the child exits and remember its exit code
      */
-    private function wait()
+    protected function wait()
     {
         if ($this->exited) {
 
@@ -477,7 +498,7 @@ class thread
         }
     }
 
-    private function dispose()
+    protected function dispose()
     {
         $this->runnable = null;
         if (!empty($this->pid) && !$this->gracefulStop) {
