@@ -1,16 +1,16 @@
 <?php
 
 /**
- * Child process entry point for the spawn and forkserver start methods of threadPool
+ * Child process entry point for the spawn start method of threadPool
  *
- * usage: php runner.php spawn|forkserver, fd 3 is the task pipe (spawn) or the master socket (forkserver)
+ * usage: php runner.php spawn, fd 3 is the task pipe
  */
 
 namespace mpcmf\system\threads;
 
 $mode = isset($argv[1]) ? $argv[1] : '';
-if ($mode !== 'spawn' && $mode !== 'forkserver') {
-    fwrite(STDERR, "usage: php runner.php spawn|forkserver\n");
+if ($mode !== 'spawn') {
+    fwrite(STDERR, "usage: php runner.php spawn\n");
     exit(2);
 }
 
@@ -36,15 +36,10 @@ if ($bootstrap) {
     require_once APP_ROOT . '/environment.php';
 }
 
-$fd = fopen('php://fd/3', $mode === 'spawn' ? 'r' : 'r+');
+$fd = fopen('php://fd/3', 'r');
 if ($fd === false) {
     fwrite(STDERR, "runner.php: fd 3 is not open\n");
     exit(2);
-}
-
-if ($mode === 'forkserver') {
-    forkServer::serve($fd);
-    exit(0);
 }
 
 $message = @unserialize(stream_get_contents($fd));

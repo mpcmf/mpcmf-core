@@ -10,6 +10,11 @@ namespace mpcmf\system\threads;
  */
 class spawnThread extends thread
 {
+    const ENV_APP_ROOT = 'MPCMF_THREAD_APP_ROOT';
+    const ENV_APP_NAME = 'MPCMF_THREAD_APP_NAME';
+    const ENV_BOOTSTRAP = 'MPCMF_THREAD_BOOTSTRAP';
+    const ENV_TITLE = 'MPCMF_THREAD_TITLE';
+
     /**
      * @var string
      */
@@ -60,7 +65,7 @@ class spawnThread extends thread
             'payload' => $this->payload,
             'graceful' => $this->gracefulStop,
             'signals' => $this->defaultSignals,
-            'title' => isset($this->env[forkServer::ENV_TITLE]) ? $this->env[forkServer::ENV_TITLE] : '',
+            'title' => isset($this->env[self::ENV_TITLE]) ? $this->env[self::ENV_TITLE] : '',
         ]);
         for ($written = 0; $written < strlen($message); $written += $result) {
             $result = @fwrite($pipes[3], substr($message, $written));

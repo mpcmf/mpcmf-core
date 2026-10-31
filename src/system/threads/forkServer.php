@@ -7,35 +7,21 @@ use mpcmf\system\helper\io\log;
 /**
  * Fork server (forkserver start method)
  *
- * The server is a fresh php process (`php runner.php forkserver`, a direct child of the master) that loads only
- * the application bootstrap and forks thread children from itself, so children inherit nothing from the master.
+ * The server is a fork of the master made at an explicit point (threadPool::startForkServer()), before the master
+ * opens connections; it forks thread children from itself, so children inherit the master state of that moment.
  * The master talks to it over a socket pair: start a task, signal a task; the server reports pids and exit codes.
- * Liveness is checked by process relationships, not by EOF: the server polls getppid() and terminates its
- * children when the master is gone, the master polls the server with proc_get_status().
+ * The server checks getppid() and terminates its children when the master is gone, the master reaps the server
+ * with waitpid(). The server never runs destructors or shutdown functions of objects inherited from the master:
+ * it ends with SIGKILL to itself when all its children are reaped.
  */
 class forkServer
 {
     use log;
 
-    const ENV_APP_ROOT = 'MPCMF_THREAD_APP_ROOT';
-    const ENV_APP_NAME = 'MPCMF_THREAD_APP_NAME';
-    const ENV_BOOTSTRAP = 'MPCMF_THREAD_BOOTSTRAP';
-    const ENV_TITLE = 'MPCMF_THREAD_TITLE';
-
     /**
-     * Seconds to wait for the server to load the bootstrap and for replies
+     * Seconds to wait for server replies
      */
     const TIMEOUT = 30;
-
-    /**
-     * @var array
-     */
-    private $env;
-
-    /**
-     * @var resource|null
-     */
-    private $process;
 
     /**
      * @var resource|null
@@ -75,52 +61,70 @@ class forkServer
     private $dead = false;
 
     /**
-     * @param array $env environment of the server
+     * Shutdown was requested, the server exit is expected
+     *
+     * @var bool
      */
-    public function __construct(array $env)
+    private $stopping = false;
+
+    /**
+     * @var string
+     */
+    private $title;
+
+    /**
+     * @param string $title process title base of the server
+     */
+    public function __construct($title = '')
     {
-        $this->env = $env;
+        $this->title = (string)$title;
     }
 
     /**
-     * Start the server and wait until it has loaded the bootstrap
+     * Fork the server from the current process and wait until it is ready
      *
      * @throws \RuntimeException
      */
     public function start()
     {
-        if ($this->process !== null) {
+        if ($this->pid !== null) {
             return;
+        }
+        $connections = self::getOpenConnections();
+        if (count($connections) > 0) {
+            $message = '[WARNING] Fork server is started with open connections, its threads inherit them: ' . implode(', ', $connections);
+            self::log()->addWarning($message);
+            MPCMF_DEBUG && error_log($message);
         }
         $pair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
         if ($pair === false) {
             throw new \RuntimeException('Unable to create a socket pair for the fork server');
         }
-        $descriptors = [
-            0 => ['file', '/dev/null', 'r'],
-            3 => $pair[1],
-        ];
-        $process = proc_open([PHP_BINARY ?: 'php', __DIR__ . '/runner.php', 'forkserver'], $descriptors, $pipes, null, $this->env);
-        fclose($pair[1]);
-        if (!is_resource($process)) {
+        $pid = pcntl_fork();
+        if ($pid === -1) {
             fclose($pair[0]);
-            throw new \RuntimeException('Unable to start the fork server');
+            fclose($pair[1]);
+            throw new \RuntimeException('Unable to fork the fork server', thread::COULD_NOT_FORK);
         }
-        $this->process = $process;
-        $this->pid = proc_get_status($process)['pid'];
+        if ($pid === 0) {
+            fclose($pair[0]);
+            self::serve($pair[1], $this->title);
+        }
+        fclose($pair[1]);
+        $this->pid = $pid;
         $this->ownerPid = getmypid();
         $this->socket = $pair[0];
 
         $deadline = microtime(true) + self::TIMEOUT;
         while (!$this->dead && !isset($this->tasks[0])) {
             if (microtime(true) > $deadline) {
-                $this->terminate();
+                posix_kill($this->pid, SIGKILL);
                 throw new \RuntimeException('Fork server did not start in ' . self::TIMEOUT . ' seconds');
             }
             $this->poll(0.1);
         }
         if ($this->dead) {
-            throw new \RuntimeException('Fork server exited on start, see its stderr');
+            throw new \RuntimeException('Fork server exited on start');
         }
         unset($this->tasks[0]);
     }
@@ -130,7 +134,7 @@ class forkServer
      */
     public function isStarted()
     {
-        return $this->process !== null;
+        return $this->pid !== null;
     }
 
     /**
@@ -138,11 +142,11 @@ class forkServer
      */
     public function isAlive()
     {
-        if ($this->process !== null) {
+        if ($this->pid !== null) {
             $this->poll();
         }
 
-        return $this->process !== null && !$this->dead;
+        return $this->pid !== null && !$this->dead;
     }
 
     /**
@@ -163,7 +167,9 @@ class forkServer
      */
     public function startTask(array $message)
     {
-        $this->start();
+        if ($this->pid === null) {
+            throw new \LogicException('Fork server is not started');
+        }
         $this->poll();
         if ($this->dead) {
             throw new \RuntimeException('Fork server is dead, no new threads can be started');
@@ -238,21 +244,40 @@ class forkServer
         if ($this->socket === null || $this->dead) {
             return;
         }
-        $read = [$this->socket];
-        $write = $except = null;
-        if (@stream_select($read, $write, $except, (int)$timeout, (int)(($timeout - (int)$timeout) * 1000000)) > 0) {
-            $data = fread($this->socket, 65536);
-            if ($data !== false && $data !== '') {
-                $this->buffer .= $data;
-                foreach (self::parse($this->buffer) as $message) {
-                    $this->handle($message);
-                }
+        $this->read($timeout);
+        // the server is our child: reaping it is the reliable death check
+        if (pcntl_waitpid($this->pid, $status, WNOHANG) !== 0) {
+            // exit reports the server sent before it died
+            while ($this->read(0)) {
             }
-        }
-        $status = proc_get_status($this->process);
-        if (!$status['running']) {
             $this->onServerDeath($status);
         }
+    }
+
+    /**
+     * Read and handle available server messages
+     *
+     * @param float $timeout
+     *
+     * @return bool something was read
+     */
+    private function read($timeout)
+    {
+        $read = [$this->socket];
+        $write = $except = null;
+        if (@stream_select($read, $write, $except, (int)$timeout, (int)(($timeout - (int)$timeout) * 1000000)) < 1) {
+            return false;
+        }
+        $data = fread($this->socket, 65536);
+        if ($data === false || $data === '') {
+            return false;
+        }
+        $this->buffer .= $data;
+        foreach (self::parse($this->buffer) as $message) {
+            $this->handle($message);
+        }
+
+        return true;
     }
 
     /**
@@ -260,7 +285,8 @@ class forkServer
      */
     public function stop()
     {
-        if ($this->socket !== null && !$this->dead) {
+        if ($this->socket !== null && !$this->dead && !$this->stopping) {
+            $this->stopping = true;
             $this->send(['op' => 'shutdown']);
         }
     }
@@ -268,8 +294,18 @@ class forkServer
     public function __destruct()
     {
         // forked copies of the master must not stop the server of the original
-        if ($this->ownerPid === getmypid()) {
-            $this->stop();
+        if ($this->ownerPid !== getmypid()) {
+            return;
+        }
+        $this->stop();
+        foreach ($this->tasks as $task) {
+            if (!$task['exited']) {
+                return;
+            }
+        }
+        // idle server exits right away, reap it to leave no zombie
+        for ($i = 0; $i < 100 && !$this->dead; $i++) {
+            $this->poll(0.01);
         }
     }
 
@@ -300,12 +336,12 @@ class forkServer
     /**
      * Server is gone: its children are orphans now, kill the ones that still are the processes we know
      *
-     * @param array $status
+     * @param int $status
      */
-    private function onServerDeath(array $status)
+    private function onServerDeath($status)
     {
         $this->dead = true;
-        $code = $status['signaled'] ? 128 + $status['termsig'] : $status['exitcode'];
+        $code = pcntl_wifexited($status) ? pcntl_wexitstatus($status) : 128 + pcntl_wtermsig($status);
         $killed = 0;
         foreach ($this->tasks as $id => $task) {
             if ($task['exited']) {
@@ -318,16 +354,11 @@ class forkServer
             }
             $this->tasks[$id]['exited'] = true;
         }
+        if ($this->stopping && $killed === 0) {
+            return;
+        }
         self::log()->addError("[ERROR] Fork server {$this->pid} died (code {$code}), killed {$killed} orphaned threads");
         MPCMF_DEBUG && error_log("[ERROR] Fork server {$this->pid} died (code {$code}), killed {$killed} orphaned threads");
-    }
-
-    private function terminate()
-    {
-        if ($this->process !== null) {
-            proc_terminate($this->process, SIGKILL);
-            $this->dead = true;
-        }
     }
 
     /**
@@ -402,16 +433,97 @@ class forkServer
     }
 
     /**
-     * Server loop, runs in the fork server process
+     * Connections the framework knows to be open in this process
+     *
+     * @return string[]
+     */
+    public static function getOpenConnections()
+    {
+        $pid = getmypid();
+        $result = [];
+        $classes = [
+            'mpcmf\\system\\queue\\rabbit' => function ($instance) use ($pid) {
+                $count = 0;
+                foreach ((array)self::readProperty($instance, 'connections') as $key => $connection) {
+                    $count += strpos($key, "{$pid}:") === 0 && $connection instanceof \AMQPConnection && $connection->isConnected();
+                }
+
+                return $count;
+            },
+            'mpcmf\\system\\cache\\memcached' => function ($instance) use ($pid) {
+                return self::readProperty($instance, 'pid') === $pid;
+            },
+            'mpcmf\\system\\storage\\mongoInstance' => function ($instance) use ($pid) {
+                return self::readProperty($instance, 'pid') === $pid && self::readProperty($instance, 'mongo') !== null;
+            },
+        ];
+        foreach ($classes as $class => $isOpen) {
+            // factory() keeps its instances in a static variable, a class that is not loaded has none
+            if (!class_exists($class, false) || !method_exists($class, 'factory')) {
+                continue;
+            }
+            $instances = (new \ReflectionMethod($class, 'factory'))->getStaticVariables();
+            foreach (isset($instances['instances']) ? $instances['instances'] : [] as $section => $instance) {
+                $count = (int)$isOpen($instance);
+                if ($count > 0) {
+                    $result[] = substr($class, strrpos($class, '\\') + 1) . ":{$section}" . ($count > 1 ? " x{$count}" : '');
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * @param object $object
+     * @param string $property
+     *
+     * @return mixed
+     */
+    private static function readProperty($object, $property)
+    {
+        $reflection = new \ReflectionObject($object);
+        if (!$reflection->hasProperty($property)) {
+            return null;
+        }
+        $property = $reflection->getProperty($property);
+        $property->setAccessible(true);
+
+        return $property->getValue($object);
+    }
+
+    /**
+     * Server side: run the loop and die without running destructors and shutdown functions of inherited objects
      *
      * @param resource $socket
+     * @param string   $title
      */
-    public static function serve($socket)
+    private static function serve($socket, $title)
+    {
+        try {
+            self::loop($socket, $title);
+        } catch (\Throwable $exception) {
+            self::log()->addError("[EXCEPTION] Fork server: {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}");
+        } finally {
+            posix_kill(getmypid(), SIGKILL);
+        }
+    }
+
+    /**
+     * Server loop, returns when the master is gone or asked to stop and all children are reaped
+     *
+     * @param resource $socket
+     * @param string   $title
+     */
+    private static function loop($socket, $title)
     {
         $masterPid = posix_getppid();
-        $title = getenv(self::ENV_TITLE);
-        if ($title) {
-            cli_set_process_title($title . '#fork_server');
+        cli_set_process_title($title . '#fork_server');
+        // drop handlers inherited from the master, SIGPIPE stays as php cli set it
+        for ($signal = 1; $signal < 32; $signal++) {
+            if (!in_array($signal, [SIGKILL, SIGSTOP, SIGPIPE], true)) {
+                @pcntl_signal($signal, SIG_DFL);
+            }
         }
         // the server lives in the master's process group: group signals must not kill it before its children
         $ignored = [SIGTERM, SIGINT, SIGHUP, SIGQUIT, SIGUSR1, SIGUSR2];
@@ -449,7 +561,7 @@ class forkServer
                 }
             }
             if (($masterGone || $shutdown) && count($children) === 0) {
-                exit(0);
+                return;
             }
             if ($masterGone) {
                 foreach ($children as $child) {
