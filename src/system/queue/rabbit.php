@@ -67,6 +67,13 @@ class rabbit
 
     private $connectionData = [];
     private $declaredQueues = [];
+
+    /**
+     * Process the per-process state (declared queues, transaction) belongs to
+     *
+     * @var int|null
+     */
+    private $statePid;
     /**
      * @var \AMQPQueue[]
      */
@@ -169,6 +176,7 @@ class rabbit
      */
     public function sendToBackground($queueName, $body = null, $start = true, $persistent = true, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0, $options = [])
     {
+        $this->checkProcessState();
         if (!$start && !$this->transactionStarted) {
             $this->getChannel()->startTransaction();
             $this->transactionStarted = true;
@@ -344,6 +352,7 @@ class rabbit
      */
     public function runTasks()
     {
+        $this->checkProcessState();
         $status = false;
         if ($this->transactionStarted) {
             $status = $this->getChannel()->commitTransaction();
@@ -407,7 +416,8 @@ class rabbit
          */
         static $exchanges = [];
 
-        $key = "{$this->configSection}:{$queueName}";
+        // per process: an exchange object holds the channel of the process that created it
+        $key = getmypid() . ":{$this->configSection}:{$queueName}:{$queueType}";
         if (!isset($exchanges[$key]) || $force) {
             MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize exchange...", [__METHOD__]);
             try {
@@ -438,6 +448,25 @@ class rabbit
         }
 
         return $exchanges[$key];
+    }
+
+    /**
+     * Drop state inherited from the parent process after fork: its queues were declared and its transaction
+     * was started on the parent connection
+     */
+    protected function checkProcessState()
+    {
+        $pid = getmypid();
+        if ($this->statePid === $pid) {
+
+            return;
+        }
+
+        if ($this->statePid !== null) {
+            $this->declaredQueues = [];
+            $this->transactionStarted = false;
+        }
+        $this->statePid = $pid;
     }
 
     protected function getExchangeName($queueName, $queueType = self::EXCHANGE_TYPE_DIRECT)
