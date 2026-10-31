@@ -12,6 +12,13 @@ use mpcmf\system\helper\service\signalHandler;
 class threadPool
 {
     /**
+     * Start methods, see setStartMethod()
+     */
+    const START_FORK = 'fork';
+    const START_FORKSERVER = 'forkserver';
+    const START_SPAWN = 'spawn';
+
+    /**
      * Max treads in pool
      *
      * @var int
@@ -85,6 +92,30 @@ class threadPool
      * @var float[]
      */
     private $terminatedAt = array();
+
+    /**
+     * @var string
+     */
+    private $startMethod = self::START_FORK;
+
+    /**
+     * Whether add() was called, the start method cannot be changed after that
+     *
+     * @var bool
+     */
+    private $used = false;
+
+    /**
+     * Bootstrap file for spawn/forkserver children
+     *
+     * @var string|null
+     */
+    private $bootstrap;
+
+    /**
+     * @var forkServer|null
+     */
+    private $forkServer;
 
     /**
      * Check if has alive threads
@@ -179,9 +210,10 @@ class threadPool
     /**
      * Add thread with arguments in pool
      *
-     * @param callable $thread
+     * @param callable|string|array $thread With forkserver/spawn start methods an addressable task, see setStartMethod()
      * @param array|null $arguments
      * @return bool
+     * @throws \InvalidArgumentException Task or arguments cannot be passed to a forkserver/spawn child
      */
     public function add($thread, $arguments = null)
     {
@@ -191,7 +223,8 @@ class threadPool
         if(count($this->pool) >= $this->max_threads && count($this->queue) >= $this->max_queue) {
             return false;
         }
-        $threadInstance = new thread($thread);
+        $this->used = true;
+        $threadInstance = $this->createThread($thread, $arguments);
         $threadInstance->setGracefulStop($this->gracefulStop);
         $threadInstance->setDefaultSignals($this->childDefaultSignals);
         $this->queue[] = array($threadInstance, $arguments);
@@ -333,5 +366,163 @@ class threadPool
         } elseif(microtime(true) - $this->terminatedAt[$thread_key] >= $grace) {
             $thread->signal(SIGKILL);
         }
+    }
+
+    /**
+     * Set how children are started, must be called before the first add()
+     *
+     * START_FORK (default): pcntl_fork() of the master, the task is any callable, the child inherits everything.
+     * START_FORKSERVER: a fork of the fork server, a fresh php process with only the application bootstrap loaded.
+     * START_SPAWN: a new php process per thread, loads the application bootstrap itself.
+     * With forkserver/spawn the task must be addressable: 'class::method', [class::class, 'method']
+     * (public static method) or an invokable class name, and its arguments must be serializable.
+     *
+     * @param string $method
+     *
+     * @throws \LogicException
+     * @throws \InvalidArgumentException
+     */
+    public function setStartMethod($method)
+    {
+        if($this->used) {
+            throw new \LogicException('Start method must be set before the first add()');
+        }
+        if(!in_array($method, array(self::START_FORK, self::START_FORKSERVER, self::START_SPAWN), true)) {
+            throw new \InvalidArgumentException("Unknown thread start method: {$method}");
+        }
+        $this->startMethod = $method;
+    }
+
+    /**
+     * @return string
+     */
+    public function getStartMethod()
+    {
+        return $this->startMethod;
+    }
+
+    /**
+     * Bootstrap file loaded by spawn/forkserver children, default APP_ROOT/loader.php
+     * (or vendor/autoload.php and environment.php, as bin/mpcmf does)
+     *
+     * @param string $file
+     */
+    public function setBootstrap($file)
+    {
+        $this->bootstrap = $file;
+    }
+
+    /**
+     * Start the fork server now, otherwise it starts on the first add()
+     *
+     * The server is a fresh process and does not inherit the master state, so it can be started at any time;
+     * starting it early only moves its bootstrap time out of the first add().
+     *
+     * @throws \LogicException
+     * @throws \RuntimeException
+     */
+    public function startForkServer()
+    {
+        if($this->startMethod !== self::START_FORKSERVER) {
+            throw new \LogicException('Fork server is used only with the forkserver start method');
+        }
+        $this->getForkServer()->start();
+    }
+
+    /**
+     * Whether the fork server is running
+     *
+     * @return bool
+     */
+    public function isForkServerAlive()
+    {
+        return $this->forkServer !== null && $this->forkServer->isAlive();
+    }
+
+    /**
+     * Fork server pid, null if it is not started
+     *
+     * @return int|null
+     */
+    public function getForkServerPid()
+    {
+        return $this->forkServer !== null ? $this->forkServer->getPid() : null;
+    }
+
+    /**
+     * Stop the fork server when its running threads have finished
+     */
+    public function stopForkServer()
+    {
+        if($this->forkServer !== null) {
+            $this->forkServer->stop();
+            $this->forkServer = null;
+        }
+    }
+
+    /**
+     * @param mixed $task
+     * @param mixed $arguments
+     *
+     * @return thread
+     * @throws \InvalidArgumentException
+     * @throws \RuntimeException
+     */
+    private function createThread($task, $arguments)
+    {
+        if($this->startMethod === self::START_FORK) {
+            return new thread($task);
+        }
+        $payload = threadTask::encode($task, $arguments);
+        if($this->startMethod === self::START_SPAWN) {
+            return new spawnThread($payload, $this->getChildEnv());
+        }
+        $server = $this->getForkServer();
+        if($server->isStarted() && !$server->isAlive()) {
+            throw new \RuntimeException('Fork server is dead, no new threads can be started');
+        }
+
+        return new forkServerThread($server, $payload, array(
+            'title' => $this->getChildEnv()[forkServer::ENV_TITLE],
+            'grace' => $this->stopGrace,
+        ));
+    }
+
+    /**
+     * @return forkServer
+     */
+    private function getForkServer()
+    {
+        if($this->forkServer === null) {
+            $this->forkServer = new forkServer($this->getChildEnv());
+        }
+
+        return $this->forkServer;
+    }
+
+    /**
+     * Environment of spawn/forkserver children: the master environment and how to load the application
+     *
+     * @return array
+     */
+    private function getChildEnv()
+    {
+        $title = (string)cli_get_process_title();
+        if($title === '' && is_readable('/proc/self/cmdline')) {
+            $title = trim(str_replace("\0", ' ', file_get_contents('/proc/self/cmdline')));
+        }
+        $env = getenv();
+        $env[forkServer::ENV_TITLE] = $title;
+        if(defined('APP_ROOT')) {
+            $env[forkServer::ENV_APP_ROOT] = APP_ROOT;
+        }
+        if(defined('APP_NAME')) {
+            $env[forkServer::ENV_APP_NAME] = APP_NAME;
+        }
+        if($this->bootstrap !== null) {
+            $env[forkServer::ENV_BOOTSTRAP] = $this->bootstrap;
+        }
+
+        return $env;
     }
 }
