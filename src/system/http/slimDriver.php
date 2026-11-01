@@ -16,10 +16,7 @@ class slimDriver extends Slim
         set_error_handler([static::class, 'handleErrors']);
 
         //Apply final outer middleware layers
-        if ($this->config('debug')) {
-            //Apply pretty exceptions only in debug to avoid accidental information leakage in production
-            $this->add(new \Slim\Middleware\PrettyExceptions());
-        }
+        $this->addPrettyExceptions();
 
         //Invoke middleware and application stack
         $this->middleware[0]->call();
@@ -71,10 +68,7 @@ class slimDriver extends Slim
         set_error_handler([static::class, 'handleErrors']);
 
         //Apply final outer middleware layers
-        if ($this->config('debug')) {
-            //Apply pretty exceptions only in debug to avoid accidental information leakage in production
-            $this->add(new \Slim\Middleware\PrettyExceptions());
-        }
+        $this->addPrettyExceptions();
 
         //Invoke middleware and application stack
         $this->middleware[0]->call();
@@ -121,6 +115,27 @@ class slimDriver extends Slim
         }
 
         return parent::handleErrors($errno, $errstr, $errfile, $errline);
+    }
+
+    /**
+     * Apply pretty exceptions only in debug to avoid accidental information leakage in production
+     *
+     * Added once: run()/runRaw() are called on every request by the long living web server,
+     * and the application may have added it already (webApplicationBase::slim() in mpcmf-web does).
+     */
+    protected function addPrettyExceptions()
+    {
+        if (!$this->config('debug')) {
+
+            return;
+        }
+        foreach ($this->middleware as $middleware) {
+            if ($middleware instanceof \Slim\Middleware\PrettyExceptions) {
+
+                return;
+            }
+        }
+        $this->add(new \Slim\Middleware\PrettyExceptions());
     }
 
     public function getRequestData()
