@@ -55,7 +55,8 @@ class reactCurl
     private $_defaultOptions = [
         CURLOPT_VERBOSE             => 0,
         CURLOPT_RETURNTRANSFER      => true,
-        CURLOPT_FOLLOWLOCATION      => 20,
+        CURLOPT_FOLLOWLOCATION      => true,
+        CURLOPT_MAXREDIRS           => 20,
         CURLOPT_SSL_VERIFYPEER      => false,
         CURLOPT_USERAGENT           => 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/44.0.2403.155 Safari/537.36',
         CURLOPT_CONNECTTIMEOUT      => 30,
