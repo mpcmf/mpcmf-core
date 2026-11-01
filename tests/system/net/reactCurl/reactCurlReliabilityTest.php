@@ -17,6 +17,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     protected function setUp(): void
     {
         $this->requireOwnEngine();
+        \mpcmf\system\net\curl\curlPool::setLogRateLimit(60);
     }
 
     private function collect($client, array &$log)
@@ -50,60 +51,119 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     }
 
     /**
-     * P1: TypeError/ValueError/false from curl_setopt_array() rejects only that task.
+     * P1: TypeError/ValueError from curl_setopt_array() rejects only that task.
      */
-    public function testRejectedOptionRejectsOnlyItsTask()
+    public function testInvalidOptionTypeRejectsOnlyItsTask()
+    {
+        $loop = $this->createLoop();
+        $client = $this->createClient($loop);
+        $client->setMaxRequest(5);
+        $log = [];
+        $this->collect($client, $log);
+        $exception = null;
+        $client->prepareTask(self::httpBase() . '/ok?1');
+        $client->prepareTask(self::httpBase() . '/ok?2', 'GET', null, [CURLOPT_HTTPHEADER => 'X-A: 1'])->then(null, function ($e) use (&$exception) {
+            $exception = $e;
+        });
+        $client->prepareTask(self::httpBase() . '/ok?3');
+        $client->run();
+        $this->runLoop($loop, function () use (&$log) {
+            return count($log) >= 3;
+        });
+        sort($log);
+        $this->assertSame([
+            'err ' . optionException::class . ' 43',
+            'ok ' . self::httpBase() . '/ok?1',
+            'ok ' . self::httpBase() . '/ok?3',
+        ], $log);
+        $this->assertInstanceOf(curlException::class, $exception);
+        $this->assertSame('client', $exception->result->getErrorType());
+        $this->assertSame($exception->getMessage(), $exception->result->getError());
+        $this->assertStringContainsString('CURLOPT_HTTPHEADER', $exception->getMessage());
+        $this->assertArrayHasKey(CURLOPT_URL, $exception->result->getOptions());
+        $this->assertSame(0, $client->getCurlClient()->getActiveCount());
+        $this->assertSame(0, $client->getCurlClient()->getCountQuery());
+
+        // the client keeps working
+        $client->prepareTask(self::httpBase() . '/ok?4');
+        $client->run();
+        $this->runLoop($loop, function () use (&$log) {
+            return count($log) >= 4;
+        });
+        $this->assertContains('ok ' . self::httpBase() . '/ok?4', $log);
+    }
+
+    /**
+     * An option libcurl rejects with false (e.g. HTTP/2 without nghttp2) is skipped with a warning,
+     * all other options are applied and the request runs (khr lost the rest of the options).
+     */
+    public function testOptionRejectedByLibcurlIsSkippedWithWarning()
     {
         $probe = curl_init();
         $this->assertFalse(@curl_setopt($probe, CURLOPT_HTTP_VERSION, 99), 'precondition: libcurl rejects HTTP version 99');
 
         $loop = $this->createLoop();
         $client = $this->createClient($loop);
-        $client->setMaxRequest(5);
+        $logged = [];
+        $client->setErrorLogger(function ($message, array $context) use (&$logged) {
+            $logged[] = $context['level'] . ': ' . $message;
+        });
+        $echo = [];
+        for ($i = 0; $i < 3; $i++) {
+            // task options come first, the client options (UA, ...) are the tail after the bad one
+            $client->prepareTask(self::httpBase() . '/echo', 'POST', 'a=' . $i, [CURLOPT_HTTP_VERSION => 99, CURLOPT_REFERER => 'tail-referer'])->then(function ($result) use (&$echo) {
+                $echo[] = json_decode($result->getBody(), true);
+            });
+        }
+        $client->run();
+        $this->runLoop($loop, function () use (&$echo) {
+            return count($echo) >= 3;
+        });
+        foreach ($echo as $request) {
+            $this->assertSame('POST', $request['m']);
+            $this->assertSame('tail-referer', $request['referer']);
+            $this->assertStringStartsWith('Mozilla/5.0 (X11; Linux x86_64)', $request['ua']);
+        }
+        $this->assertCount(1, $logged, 'rate-limited: one line per option per 60 s');
+        $this->assertStringStartsWith('warning: reactCurl: curl rejected CURLOPT_HTTP_VERSION (' . CURLOPT_HTTP_VERSION . '), the option is skipped', $logged[0]);
+    }
+
+    public function testStrictOptionsRejectTheTask()
+    {
+        $loop = $this->createLoop();
+        $client = $this->createClient($loop);
+        $client->setStrictOptions(true);
         $log = [];
         $this->collect($client, $log);
-        $exceptions = [];
-        $client->prepareTask(self::httpBase() . '/ok?1');
-        $client->prepareTask(self::httpBase() . '/ok?2', 'GET', null, [CURLOPT_HTTPHEADER => 'X-A: 1'])->then(null, function ($e) use (&$exceptions) {
-            $exceptions[] = $e;
+        $message = null;
+        $client->prepareTask(self::httpBase() . '/ok?bad', 'GET', null, [CURLOPT_HTTP_VERSION => 99])->then(null, function ($e) use (&$message) {
+            $message = $e->getMessage();
         });
-        $client->prepareTask(self::httpBase() . '/ok?3', 'GET', null, [CURLOPT_HTTP_VERSION => 99])->then(null, function ($e) use (&$exceptions) {
-            $exceptions[] = $e;
-        });
-        $client->prepareTask(self::httpBase() . '/ok?4');
+        $client->prepareTask(self::httpBase() . '/ok?good');
         $client->run();
         $this->runLoop($loop, function () use (&$log) {
-            return count($log) >= 4;
+            return count($log) >= 2;
         });
         sort($log);
-        $this->assertSame([
-            'err ' . optionException::class . ' 43',
-            'err ' . optionException::class . ' 43',
-            'ok ' . self::httpBase() . '/ok?1',
-            'ok ' . self::httpBase() . '/ok?4',
-        ], $log);
-        $this->assertCount(2, $exceptions);
-        foreach ($exceptions as $exception) {
-            $this->assertInstanceOf(curlException::class, $exception);
-            $this->assertSame('client', $exception->result->getErrorType());
-            $this->assertSame($exception->getMessage(), $exception->result->getError());
-            $this->assertArrayHasKey(CURLOPT_URL, $exception->result->getOptions());
-        }
-        $messages = implode("\n", array_map(function ($e) {
-            return $e->getMessage();
-        }, $exceptions));
-        $this->assertStringContainsString('CURLOPT_HTTPHEADER', $messages);
-        $this->assertStringContainsString('failed to set CURLOPT_HTTP_VERSION (' . CURLOPT_HTTP_VERSION . ')', $messages);
-        $this->assertSame(0, $client->getCurlClient()->getActiveCount());
-        $this->assertSame(0, $client->getCurlClient()->getCountQuery());
+        $this->assertSame(['err ' . optionException::class . ' 43', 'ok ' . self::httpBase() . '/ok?good'], $log);
+        $this->assertSame('curl_setopt_array(): failed to set CURLOPT_HTTP_VERSION (' . CURLOPT_HTTP_VERSION . ')', $message);
+    }
 
-        // the client keeps working
-        $client->prepareTask(self::httpBase() . '/ok?5');
-        $client->run();
-        $this->runLoop($loop, function () use (&$log) {
-            return count($log) >= 5;
+    public function testLogLinesAreRateLimitedPerKey()
+    {
+        \mpcmf\system\net\curl\curlPool::setLogRateLimit(0.3);
+        $pool = $this->createClient($this->createLoop())->getCurlClient();
+        $logged = [];
+        $pool->setErrorLogger(function ($message) use (&$logged) {
+            $logged[] = $message;
         });
-        $this->assertContains('ok ' . self::httpBase() . '/ok?5', $log);
+        for ($i = 0; $i < 5; $i++) {
+            $pool->logError("line {$i}", null, 'same-key');
+        }
+        $pool->logError('other', null, 'other-key');
+        usleep(350000);
+        $pool->logError('after window', null, 'same-key');
+        $this->assertSame(['line 0', 'other', 'after window (4 similar messages suppressed in the last 0 s)'], $logged);
     }
 
     public function testRejectionIsNeverSynchronousInsidePrepareTask()
@@ -145,6 +205,13 @@ class reactCurlReliabilityTest extends reactCurlTestCase
         $client->setDoneCallback(function () {
             throw new \LogicException('bug in done');
         });
+        // the same exception from many requests is logged once per 60 s
+        $repeats = 0;
+        for ($i = 0; $i < 5; $i++) {
+            $client->prepareTask(self::httpBase() . '/ok?repeat=' . $i)->then(function () use (&$repeats) {
+                $repeats++;
+            });
+        }
         $client->setErrorCallback(function () use (&$errorCallbackCalls) {
             $errorCallbackCalls++;
             throw new \LogicException('bug in error');
@@ -155,12 +222,12 @@ class reactCurlReliabilityTest extends reactCurlTestCase
         });
         $client->prepareTask(self::httpBase() . '/code?c=500');
         $client->run();
-        $this->runLoop($loop, function () use (&$logged) {
-            return count($logged) >= 2;
+        $this->runLoop($loop, function () use (&$repeats, &$chained, &$errorCallbackCalls) {
+            return $repeats >= 5 && $chained && $errorCallbackCalls >= 1;
         });
         sort($logged);
-        $this->assertCount(2, $logged);
-        $this->assertStringStartsWith('reactCurl: uncaught exception in done callback for ' . self::httpBase() . '/ok | LogicException: bug in done', $logged[0]);
+        $this->assertCount(2, $logged, implode("\n", $logged));
+        $this->assertMatchesRegularExpression('~^reactCurl: uncaught exception in done callback for ' . preg_quote(self::httpBase(), '~') . '/ok(\\?repeat=\\d)? \\| LogicException: bug in done~', $logged[0]);
         $this->assertStringStartsWith('reactCurl: uncaught exception in error callback for ' . self::httpBase() . '/code?c=500 | LogicException: bug in error', $logged[1]);
         $this->assertSame(1, $errorCallbackCalls, 'a throwing done callback does not trigger the error callback');
         $this->assertSame(['own then() still called'], $chained);
