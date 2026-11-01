@@ -4,11 +4,17 @@ namespace mpcmf\system\net;
 
 use KHR\React\Curl\Curl as khrCurl;
 use mpcmf\system\helper\convert\url;
+use mpcmf\system\net\curl\curlPool;
 use React\EventLoop\LoopInterface;
-use React\Promise\Promise;
+use React\Promise\PromiseInterface;
 
 /**
- * Curl wrapper
+ * Asynchronous HTTP client on a ReactPHP event loop.
+ *
+ * Engine: mpcmf\system\net\curl\curlPool (own implementation, replaces khr/react-curl and
+ * khr/php-mcurl-client; KHR\React\Curl\{Curl,Result,Exception} and MCurl\Result are kept as
+ * compatibility classes). Done callbacks get \KHR\React\Curl\Result, error callbacks get
+ * \KHR\React\Curl\Exception (network error: code = curl errno; HTTP >= 400: "http error N").
  *
  * @author Gregory Ostrovsky <greevex@gmail.com>
  */
@@ -23,6 +29,12 @@ class reactCurl
 
     /** @var  callable */
     protected $progressCallback;
+
+    /** @var callable|null done callback that logs exceptions it throws */
+    private $guardedDoneCallback;
+
+    /** @var callable|null error callback that logs exceptions it throws */
+    private $guardedErrorCallback;
 
     protected $baseConfig = [
         'max_requests' => 10,
@@ -83,9 +95,12 @@ class reactCurl
     }
 
     /**
-     * @param int $next Sleep after * requests
-     * @param float $second
-     * @param bool $blocking async mode
+     * Throttling: after every $next started requests wait $second seconds before the next batch
+     * (default: 1 request, 0.9 s, non-blocking => up to max_requests every 0.9 s).
+     *
+     * @param int $next Sleep after * requests (< 1 is treated as 1)
+     * @param float $second 0 - no throttling
+     * @param bool $blocking usleep() inside the event loop instead of postponing requests
      */
     public function setSleep($next, $second = 1.0, $blocking = false)
     {
@@ -138,7 +153,7 @@ class reactCurl
      * @param array|string $params
      * @param array        $options
      *
-     * @return Promise
+     * @return PromiseInterface resolves with \KHR\React\Curl\Result, rejects with \KHR\React\Curl\Exception
      */
     public function prepareTask($url, $method = 'GET', $params = null, array $options = [])
     {
@@ -173,13 +188,17 @@ class reactCurl
         $options[CURLOPT_URL] = $url;
 
         $promise = $this->curl->add($options);
-        $promise->then($this->doneCallback, $this->errorCallback, $this->progressCallback);
+        $promise->then($this->guardedDoneCallback, $this->guardedErrorCallback, $this->progressCallback);
 
         return $promise;
     }
 
     /**
-     * @return \MCurl\Client
+     * Client: setCurlOption() (options for every request), setSleep(), setMaxRequest(),
+     * enableHeaders(), opt-in features (setPollInterval(), setPollMode(), setMaxQueue(),
+     * setDeadline(), setCancellable(), setAutoRun(), setCookieShare()).
+     *
+     * @return curlPool
      */
     public function getCurlClient()
     {
@@ -206,6 +225,7 @@ class reactCurl
     public function setDoneCallback($doneCallback)
     {
         $this->doneCallback = $doneCallback;
+        $this->guardedDoneCallback = $this->guardCallback($doneCallback, 'done');
     }
 
     /**
@@ -214,6 +234,7 @@ class reactCurl
     public function setErrorCallback($errorCallback)
     {
         $this->errorCallback = $errorCallback;
+        $this->guardedErrorCallback = $this->guardCallback($errorCallback, 'error');
     }
 
     /**
@@ -222,5 +243,107 @@ class reactCurl
     public function setProgressCallback($progressCallback)
     {
         $this->progressCallback = $progressCallback;
+    }
+
+    /**
+     * Poll interval of the adaptive timer, setPollInterval(0.01, 0.01) - old fixed 10 ms
+     *
+     * @see curlPool::setPollInterval()
+     */
+    public function setPollInterval($min, $max = null)
+    {
+        $this->curl->client->setPollInterval($min, $max);
+    }
+
+    /**
+     * @see curlPool::setPollMode()
+     */
+    public function setPollMode($mode, $selectTimeout = 0.005)
+    {
+        $this->curl->client->setPollMode($mode, $selectTimeout);
+    }
+
+    /**
+     * Opt-in: reject new tasks with curl\exception\queueFullException when $max tasks are queued
+     *
+     * @see curlPool::setMaxQueue()
+     */
+    public function setMaxQueue($max)
+    {
+        $this->curl->client->setMaxQueue($max);
+    }
+
+    /**
+     * Opt-in: time limit per task including the queue wait
+     *
+     * @see curlPool::setDeadline()
+     */
+    public function setDeadline($seconds)
+    {
+        $this->curl->client->setDeadline($seconds);
+    }
+
+    /**
+     * Opt-in: $promise->cancel() aborts the task
+     *
+     * @see curlPool::setCancellable()
+     */
+    public function setCancellable($enable = true)
+    {
+        $this->curl->client->setCancellable($enable);
+    }
+
+    /**
+     * Opt-in: prepareTask() starts processing without run()
+     *
+     * @see curlPool::setAutoRun()
+     */
+    public function setAutoRun($enable = true)
+    {
+        $this->curl->client->setAutoRun($enable);
+    }
+
+    /**
+     * Opt-in: in-memory cookies shared by the requests of this client instead of the cookie file
+     *
+     * @see curlPool::setCookieShare()
+     */
+    public function setCookieShare($enable = true)
+    {
+        $this->curl->client->setCookieShare($enable);
+    }
+
+    /**
+     * Logger for exceptions thrown by done/error callbacks: function (string $message, array $context)
+     *
+     * @param callable|null $logger null - mpcmf log
+     */
+    public function setErrorLogger($logger)
+    {
+        $this->curl->client->setErrorLogger($logger);
+    }
+
+    /**
+     * Exceptions thrown by done/error callbacks were swallowed silently by the promise: log them,
+     * then rethrow so the promise chain behaves exactly as before.
+     */
+    private function guardCallback($callback, $kind)
+    {
+        if (!is_callable($callback)) {
+            return $callback;
+        }
+        $pool = $this->curl->client;
+
+        return static function ($value) use ($callback, $kind, $pool) {
+            try {
+                return $callback($value);
+            } catch (\Throwable $exception) {
+                $result = $value instanceof \MCurl\Result ? $value : ($value->result ?? null);
+                $url = $result instanceof \MCurl\Result ? ($result->getOptions()[CURLOPT_URL] ?? '') : '';
+                $pool->logError("reactCurl: uncaught exception in {$kind} callback for {$url}", $exception);
+
+                throw $exception;
+            }
+        };
     }
 }
