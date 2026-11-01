@@ -73,6 +73,13 @@ class thread
     protected $exitCode;
 
     /**
+     * masterSignalHandler is registered, kept across restarts of the same object
+     *
+     * @var bool
+     */
+    protected $masterHandlerAdded = false;
+
+    /**
      * Graceful stop mode: the child gets SIGTERM/SIGINT as a stop request instead of being terminated by the master
      *
      * @var bool
@@ -347,8 +354,9 @@ class thread
         $this->exited = false;
         $this->exitCode = null;
 
-        if (!$this->gracefulStop) {
+        if (!$this->gracefulStop && !$this->masterHandlerAdded) {
             signalHandler::getInstance()->addHandler(SIGTERM, [$this, 'masterSignalHandler']);
+            $this->masterHandlerAdded = true;
         }
     }
 
@@ -504,9 +512,10 @@ class thread
     protected function dispose()
     {
         $this->runnable = null;
-        if (!empty($this->pid) && !$this->gracefulStop) {
+        if ($this->masterHandlerAdded) {
             $signalHandler = signalHandler::getInstance();
             $signalHandler->removeHandler(SIGTERM, [$this, 'masterSignalHandler']);
+            $this->masterHandlerAdded = false;
         }
     }
 }
