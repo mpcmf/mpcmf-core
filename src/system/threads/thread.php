@@ -343,6 +343,9 @@ class thread
     {
         $this->pid = $pid;
         $this->startedAt = time();
+        // the same object may be started again after its previous child exited
+        $this->exited = false;
+        $this->exitCode = null;
 
         if (!$this->gracefulStop) {
             signalHandler::getInstance()->addHandler(SIGTERM, [$this, 'masterSignalHandler']);
