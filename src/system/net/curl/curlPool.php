@@ -18,8 +18,10 @@ use React\Promise\PromiseInterface;
  * Replaces khr/react-curl + khr/php-mcurl-client (abandoned) under mpcmf\system\net\reactCurl,
  * written from scratch. Keeps their observable behaviour (results, errors, throttling, client
  * options, MCurl\Client setters) and fixes:
- *  - a rejected curl option (TypeError/ValueError/false) rejects only its request with
+ *  - an option failing with TypeError/ValueError rejects only its request with
  *    exception\optionException, the pool keeps working (was: slots leaked, run() never finished);
+ *    an option libcurl rejects with false is skipped with a warning and all other options are
+ *    applied (was: the rest of the options was lost), see setStrictOptions();
  *  - timers are cancelled with $loop->cancelTimer(): works with react/event-loop 0.4 and 1.x;
  *  - setSleep() with next < 1 no longer divides by zero;
  *  - transfers start right after add() when the pool is running, the poll timer adapts its
@@ -150,8 +152,17 @@ class curlPool
     /** @var bool */
     protected $cookieShare = false;
 
+    /** @var bool */
+    protected $strictOptions = false;
+
     /** @var callable|null function (string $message, array $context) */
     protected $errorLogger;
+
+    /** @var float seconds, per message key and process */
+    private static $logWindow = 60.0;
+
+    /** @var array key => [window start, suppressed count] */
+    private static $logSeen = [];
 
     /**
      * @param LoopInterface $loop
@@ -462,7 +473,32 @@ class curlPool
     }
 
     /**
-     * @param callable|null $logger function (string $message, array $context): void; null - mpcmf log
+     * Opt-in: reject the request (exception\optionException) when libcurl rejects one of its options
+     * with false. Default: the option is skipped with a warning, the request runs with the others.
+     * TypeError/ValueError of an option always reject the request.
+     *
+     * @param bool $enable
+     */
+    public function setStrictOptions($enable = true)
+    {
+        $this->strictOptions = (bool)$enable;
+    }
+
+    /**
+     * Log lines of the engine (callback exceptions, skipped options) are written at most once per
+     * message key per $seconds per process, with the count of suppressed repeats. Resets the state.
+     *
+     * @param float $seconds 0 - no limit
+     */
+    public static function setLogRateLimit($seconds)
+    {
+        self::$logWindow = max(0.0, (float)$seconds);
+        self::$logSeen = [];
+    }
+
+    /**
+     * @param callable|null $logger function (string $message, array $context): void, context has 'level'
+     *                              (error|warning) and 'exception'; null - mpcmf log
      */
     public function setErrorLogger($logger)
     {
@@ -470,14 +506,38 @@ class curlPool
     }
 
     /**
-     * Log an error through the configured logger (mpcmf log by default, error_log() as fallback)
+     * Log an error through the configured logger (mpcmf log by default, error_log() as fallback),
+     * rate-limited per $key (default: the message)
      *
      * @param string $message
      * @param \Throwable|null $exception
+     * @param string|null $key
      */
-    public function logError($message, $exception = null)
+    public function logError($message, $exception = null, $key = null)
     {
-        $context = [];
+        $this->log('error', $message, $exception, $key);
+    }
+
+    protected function log($level, $message, $exception = null, $key = null)
+    {
+        $key = $key ?? $message;
+        if (self::$logWindow > 0) {
+            $now = microtime(true);
+            if (isset(self::$logSeen[$key]) && $now - self::$logSeen[$key][0] < self::$logWindow) {
+                self::$logSeen[$key][1]++;
+
+                return;
+            }
+            $suppressed = isset(self::$logSeen[$key]) ? self::$logSeen[$key][1] : 0;
+            self::$logSeen[$key] = [$now, 0];
+            if (count(self::$logSeen) > 10000) {
+                self::$logSeen = [$key => self::$logSeen[$key]];
+            }
+            if ($suppressed > 0) {
+                $message .= sprintf(' (%d similar messages suppressed in the last %d s)', $suppressed, self::$logWindow);
+            }
+        }
+        $context = ['level' => $level];
         if ($exception !== null) {
             $context['exception'] = get_class($exception) . ': ' . $exception->getMessage() . ' at ' . $exception->getFile() . ':' . $exception->getLine();
         }
@@ -489,7 +549,9 @@ class curlPool
         static $mpcmfLogUsable = true;
         if ($mpcmfLogUsable) {
             try {
-                \mpcmf\system\io\log::factory()->addError($message, $context);
+                $logger = \mpcmf\system\io\log::factory();
+                unset($context['level']);
+                $level === 'warning' ? $logger->addWarning($message, $context) : $logger->addError($message, $context);
 
                 return;
             } catch (\Throwable $logException) {
@@ -589,7 +651,7 @@ class curlPool
         $error = null;
         try {
             if (!curl_setopt_array($ch, $options)) {
-                $error = 'curl_setopt_array(): failed to set ' . $this->findRejectedOption($options);
+                $error = $this->applyOptionsOneByOne($ch, $options, $task);
             }
         } catch (\Throwable $exception) {
             $error = $exception->getMessage();
@@ -640,23 +702,35 @@ class curlPool
         return $options;
     }
 
-    protected function findRejectedOption(array $options)
+    /**
+     * curl_setopt_array() stops at the first option libcurl rejects with false (khr lost the rest
+     * of the options this way). Set every option separately: by default a rejected option is
+     * skipped with a (rate-limited) warning and the request runs with all other options; in strict
+     * mode the request is rejected.
+     *
+     * @return string|null error that rejects the request
+     *
+     * @throws \Throwable TypeError/ValueError of an option
+     */
+    protected function applyOptionsOneByOne($ch, array $options, curlTask $task)
     {
-        // a probe handle with a cookie jar would rewrite the jar file when released
-        unset($options[CURLOPT_COOKIEJAR]);
-        $probe = curl_init();
+        $skipped = [];
         foreach ($options as $option => $value) {
-            try {
-                $ok = @curl_setopt($probe, $option, $value);
-            } catch (\Throwable $exception) {
-                $ok = false;
-            }
-            if (!$ok) {
-                return self::optionName($option);
+            if (!curl_setopt($ch, $option, $value)) {
+                $skipped[] = self::optionName($option);
             }
         }
+        if (!$skipped) {
+            return null;
+        }
+        if ($this->strictOptions) {
+            return 'curl_setopt_array(): failed to set ' . implode(', ', $skipped);
+        }
+        foreach ($skipped as $name) {
+            $this->log('warning', "reactCurl: curl rejected {$name}, the option is skipped (url " . ($task->opts[CURLOPT_URL] ?? '') . ')', null, "option:{$name}");
+        }
 
-        return 'an option';
+        return null;
     }
 
     public static function optionName($option)

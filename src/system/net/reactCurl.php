@@ -314,7 +314,18 @@ class reactCurl
     }
 
     /**
-     * Logger for exceptions thrown by done/error callbacks: function (string $message, array $context)
+     * Opt-in: reject tasks whose curl options libcurl rejects (default: skip the option, warn)
+     *
+     * @see curlPool::setStrictOptions()
+     */
+    public function setStrictOptions($enable = true)
+    {
+        $this->curl->client->setStrictOptions($enable);
+    }
+
+    /**
+     * Logger for exceptions thrown by done/error callbacks and skipped options (rate-limited,
+     * see curlPool::setLogRateLimit()): function (string $message, array $context)
      *
      * @param callable|null $logger null - mpcmf log
      */
@@ -340,7 +351,8 @@ class reactCurl
             } catch (\Throwable $exception) {
                 $result = $value instanceof \MCurl\Result ? $value : ($value->result ?? null);
                 $url = $result instanceof \MCurl\Result ? ($result->getOptions()[CURLOPT_URL] ?? '') : '';
-                $pool->logError("reactCurl: uncaught exception in {$kind} callback for {$url}", $exception);
+                $key = "callback:{$kind}:" . get_class($exception) . ':' . $exception->getMessage();
+                $pool->logError("reactCurl: uncaught exception in {$kind} callback for {$url}", $exception, $key);
 
                 throw $exception;
             }
