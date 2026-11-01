@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3fd5d26fd3ba58c1bd8a6410d610e3ee",
+    "content-hash": "149da267e03f6d6a6736ce0e3ec682d7",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -215,103 +215,6 @@
                 "source": "https://github.com/infostars/net-curl/tree/master"
             },
             "time": "2018-10-08T18:47:09+00:00"
-        },
-        {
-            "name": "khr/php-mcurl-client",
-            "version": "3.1.0",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/KhristenkoYura/mcurl.git",
-                "reference": "894eb864a0410173264b95ea7c69f15bb9d2cbe1"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/KhristenkoYura/mcurl/zipball/894eb864a0410173264b95ea7c69f15bb9d2cbe1",
-                "reference": "894eb864a0410173264b95ea7c69f15bb9d2cbe1",
-                "shasum": ""
-            },
-            "require": {
-                "ext-curl": "*",
-                "php": ">=5.3.0"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "MCurl\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Khristenko Yura",
-                    "email": "khristenkoyura@gmail.com"
-                }
-            ],
-            "description": "wrap curl client (http client) for PHP 5.3; using php multi curl, parallel request and write asynchronous code",
-            "homepage": "http://github.com/khristenkoyura/mcurl",
-            "keywords": [
-                "async",
-                "client",
-                "curl",
-                "http",
-                "multi",
-                "parallel",
-                "php",
-                "requests",
-                "spider"
-            ],
-            "support": {
-                "issues": "https://github.com/KhristenkoYura/mcurl/issues",
-                "source": "https://github.com/KhristenkoYura/mcurl/tree/master"
-            },
-            "time": "2016-06-08T07:34:09+00:00"
-        },
-        {
-            "name": "khr/react-curl",
-            "version": "dev-master",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/KhristenkoYura/reactphp-curl.git",
-                "reference": "95626ed87c138f640780935bf3d06f9b84ad8030"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/KhristenkoYura/reactphp-curl/zipball/95626ed87c138f640780935bf3d06f9b84ad8030",
-                "reference": "95626ed87c138f640780935bf3d06f9b84ad8030",
-                "shasum": ""
-            },
-            "require": {
-                "khr/php-mcurl-client": "3.*",
-                "php": ">=5.4.0",
-                "react/event-loop": "*",
-                "react/promise": "~2.0"
-            },
-            "default-branch": true,
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "KHR\\React\\Curl\\": "src"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "None"
-            ],
-            "description": "multi curl driver for reactphp.",
-            "keywords": [
-                "curl",
-                "multi",
-                "mysql",
-                "php"
-            ],
-            "support": {
-                "issues": "https://github.com/KhristenkoYura/reactphp-curl/issues",
-                "source": "https://github.com/KhristenkoYura/reactphp-curl/tree/master"
-            },
-            "time": "2015-05-06T08:11:51+00:00"
         },
         {
             "name": "mongodb/mongodb",
@@ -3794,7 +3697,6 @@
     "minimum-stability": "dev",
     "stability-flags": {
         "infostars/net-curl": 20,
-        "khr/react-curl": 20,
         "mpcmf/mpcmf-signal-handler": 20,
         "nervetattoo/elasticsearch": 20,
         "slim/slim": 20
