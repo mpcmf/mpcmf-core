@@ -3,7 +3,6 @@
 namespace mpcmf\tests\system\net\reactCurl;
 
 use KHR\React\Curl\Exception as curlException;
-use mpcmf\system\net\curl\curlPool;
 use mpcmf\system\net\curl\exception\cancelledException;
 use mpcmf\system\net\curl\exception\deadlineException;
 use mpcmf\system\net\curl\exception\optionException;
@@ -270,10 +269,11 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     public static function pollModeProvider()
     {
         return [
-            'adaptive' => [curlPool::POLL_ADAPTIVE, null, 0.008],
-            'fixed 10ms' => [curlPool::POLL_ADAPTIVE, [0.01, 0.01], 0.03],
-            'select' => [curlPool::POLL_SELECT, null, 0.006],
-            'legacy' => [curlPool::POLL_LEGACY, null, 0.03],
+            // literals: the provider also runs when the engine is absent (khr), see setUp()
+            'adaptive' => ['adaptive', null, 0.008],
+            'fixed 10ms' => ['adaptive', [0.01, 0.01], 0.03],
+            'select' => ['select', null, 0.006],
+            'legacy' => ['legacy', null, 0.03],
         ];
     }
 
