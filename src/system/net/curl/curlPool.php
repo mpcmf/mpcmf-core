@@ -642,6 +642,8 @@ class curlPool
 
     protected function findRejectedOption(array $options)
     {
+        // a probe handle with a cookie jar would rewrite the jar file when released
+        unset($options[CURLOPT_COOKIEJAR]);
         $probe = curl_init();
         foreach ($options as $option => $value) {
             try {
@@ -833,7 +835,7 @@ class curlPool
     /**
      * One polling round (adaptive and select modes)
      */
-    public function tick()
+    protected function tick()
     {
         if ($this->isLegacy()) {
             $this->legacyTick();
