@@ -356,7 +356,7 @@ class url
      *
      * @return string
      */
-    public static function removeSession($url = '', $sortParams = false, array $subdomainVariants = null)
+    public static function removeSession($url = '', $sortParams = false, ?array $subdomainVariants = null)
     {
         $parsed = parse_url($url);
 
