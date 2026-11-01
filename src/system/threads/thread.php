@@ -99,13 +99,6 @@ class thread
     protected $defaultSignals = [];
 
     /**
-     * Stop requested by SIGTERM/SIGINT inside a graceful child
-     *
-     * @var bool
-     */
-    private static $stopRequested = false;
-
-    /**
      * Get thread data file path
      *
      * @return string
@@ -270,21 +263,23 @@ class thread
     }
 
     /**
-     * Inside a graceful child: whether SIGTERM/SIGINT was received
+     * Inside a graceful child: whether SIGTERM/SIGINT was received, see gracefulStop::isRequested()
      *
      * @return bool
      */
     public static function isStopRequested()
     {
-        return self::$stopRequested;
+        return gracefulStop::isRequested();
     }
 
     /**
+     * Request a stop of the current process, see gracefulStop::request()
+     *
      * @param int $_signal
      */
     public static function requestStop($_signal = SIGTERM)
     {
-        self::$stopRequested = true;
+        gracefulStop::request();
     }
 
     /**
@@ -377,12 +372,12 @@ class thread
         }
 
         if ($this->gracefulStop) {
-            self::$stopRequested = false;
-            pcntl_async_signals(true);
-            $signalHandler->addHandler(SIGTERM, [__CLASS__, 'requestStop']);
-            $signalHandler->addHandler(SIGINT, [__CLASS__, 'requestStop']);
+            gracefulStop::enable();
+            // the pool sends SIGTERM to a thread which may have got it from the process manager already
+            gracefulStop::setForceOnRepeat(false);
         } elseif ($forked) {
-            $signalHandler->addHandler(SIGTERM, [__CLASS__, 'signalHandler']);
+            // the default handler: gracefulStop of the callback suppresses it
+            $signalHandler->setDefaultHandler(SIGTERM, [__CLASS__, 'signalHandler']);
         }
 
         if ($this->runnable === null) {

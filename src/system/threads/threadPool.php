@@ -2,8 +2,6 @@
 
 namespace mpcmf\system\threads;
 
-use mpcmf\system\helper\service\signalHandler;
-
 /**
  * Thread Pool class
  *
@@ -152,9 +150,7 @@ class threadPool
      */
     public function refresh()
     {
-        if($this->gracefulStop) {
-            pcntl_signal_dispatch();
-        }
+        $stopRequested = $this->isStopRequested();
 
         /**
          * @note release finished threads: the child is already reaped, there is nothing to kill
@@ -166,7 +162,7 @@ class threadPool
             }
         }
 
-        if($this->stopRequested) {
+        if($stopRequested) {
             $this->queue = array();
             foreach($this->pool as $thread_key => $thread) {
                 $this->terminate($thread_key, $thread, $this->stopGrace);
@@ -217,7 +213,7 @@ class threadPool
      */
     public function add($thread, $arguments = null)
     {
-        if($this->stopRequested) {
+        if($this->isStopRequested()) {
             return false;
         }
         if(count($this->pool) >= $this->max_threads && count($this->queue) >= $this->max_queue) {
@@ -291,7 +287,8 @@ class threadPool
      * SIGTERM/SIGINT to the master only request a stop (see isStopRequested()): add() refuses new threads,
      * queued threads are dropped, running threads get SIGTERM and SIGKILL after $grace seconds.
      * Threads get SIGTERM/SIGINT as a stop request too (see thread::isStopRequested()).
-     * The master process is not terminated, the application decides when to exit.
+     * The master process is not terminated, the application decides when to exit: signals are handled
+     * by gracefulStop, which is enabled for the process, a repeated signal does not exit.
      *
      * @param int $grace Seconds between SIGTERM and SIGKILL
      */
@@ -300,13 +297,13 @@ class threadPool
         $this->gracefulStop = true;
         $this->stopGrace = (int)$grace;
 
-        $signalHandler = signalHandler::getInstance();
-        $signalHandler->addHandler(SIGTERM, [$this, 'requestStop']);
-        $signalHandler->addHandler(SIGINT, [$this, 'requestStop']);
+        gracefulStop::enable();
+        // the pool owns the shutdown: it stops threads and kills them after the grace period
+        gracefulStop::setForceOnRepeat(false);
     }
 
     /**
-     * Request a stop of the pool, also called on SIGTERM/SIGINT in graceful stop mode
+     * Request a stop of the pool, SIGTERM/SIGINT in graceful stop mode request it too (see gracefulStop)
      */
     public function requestStop()
     {
@@ -320,8 +317,8 @@ class threadPool
      */
     public function isStopRequested()
     {
-        if($this->gracefulStop) {
-            pcntl_signal_dispatch();
+        if($this->gracefulStop && !$this->stopRequested && gracefulStop::isRequested()) {
+            $this->stopRequested = true;
         }
 
         return $this->stopRequested;
