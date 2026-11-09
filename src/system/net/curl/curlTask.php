@@ -9,9 +9,9 @@ use React\Promise\Deferred;
  */
 class curlTask
 {
-    public const QUEUED = 0;
-    public const ACTIVE = 1;
-    public const DONE = 2;
+    const QUEUED = 0;
+    const ACTIVE = 1;
+    const DONE = 2;
 
     /** @var mixed|null */
     public $id;

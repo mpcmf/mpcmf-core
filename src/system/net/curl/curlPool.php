@@ -35,15 +35,15 @@ use React\Promise\PromiseInterface;
  */
 class curlPool
 {
-    public const POLL_ADAPTIVE = 'adaptive';
-    public const POLL_SELECT = 'select';
-    public const POLL_LEGACY = 'legacy';
+    const POLL_ADAPTIVE = 'adaptive';
+    const POLL_SELECT = 'select';
+    const POLL_LEGACY = 'legacy';
 
     /** Result written to memory (MCurl\Client compatible) */
-    public const STREAM_MEMORY = 'php://memory';
+    const STREAM_MEMORY = 'php://memory';
 
     /** Result written to temporary files (MCurl\Client compatible) */
-    public const STREAM_FILE = 'php://temp/maxmemory:0';
+    const STREAM_FILE = 'php://temp/maxmemory:0';
 
     private const LEGACY_INTERVAL = 0.01;
 
@@ -816,7 +816,7 @@ class curlPool
     protected function flushFailed()
     {
         while ($this->failed) {
-            list($task, $exceptionClass, $failure) = array_shift($this->failed);
+            [$task, $exceptionClass, $failure] = array_shift($this->failed);
             $deferred = $task->deferred;
             $task->deferred = null;
             if ($deferred === null) {
