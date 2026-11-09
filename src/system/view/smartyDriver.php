@@ -76,6 +76,50 @@ class smartyDriver
     }
 
     /**
+     * Reset template caches before a request of a long-running process
+     *
+     * With caching or force_compile on everything is cleared as before (clearAllCache()): cache ids are unique
+     * per request, and force_compile recompiles only new template objects. Otherwise template objects are kept,
+     * so compiled templates are not included again on every request (PHP leaks memory on each include),
+     * and are dropped only when a file they were compiled from changed, as compile_check does for new objects.
+     */
+    public function clearRequestCache()
+    {
+        if ($this->caching || $this->force_compile) {
+            $this->clearAllCache();
+
+            return;
+        }
+        if (!$this->compile_check) {
+            return;
+        }
+
+        clearstatcache();
+        $mtimes = [];
+        foreach (\Smarty_Internal_Template::$tplObjCache as $template) {
+            if (!isset($template->compiled) || !$template->compiled->processed) {
+                continue;
+            }
+            foreach ($template->compiled->file_dependency as [$path, $timestamp, $type]) {
+                $key = "{$type}:{$path}";
+                if (!array_key_exists($key, $mtimes)) {
+                    if ($type === 'file' || $type === 'php') {
+                        $mtimes[$key] = is_file($path) ? filemtime($path) : false;
+                    } else {
+                        // other resources are not checked here: clear as before if they have timestamps
+                        $mtimes[$key] = \Smarty_Resource::load($this, $type)->checkTimestamps() ? false : null;
+                    }
+                }
+                if ($mtimes[$key] === false || ($mtimes[$key] !== null && $mtimes[$key] > $timestamp)) {
+                    $this->_clearTemplateCache();
+
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
      * Does view data have value with key?
      * @param  string  $key
      * @return boolean
