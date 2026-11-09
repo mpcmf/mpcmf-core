@@ -6,7 +6,8 @@ namespace mpcmf\system\threads;
  * Thread started as a new php process (spawn start method)
  *
  * The child is `php runner.php spawn`: it loads the application bootstrap, reads the task from fd 3 and runs it.
- * Nothing is inherited from the master except the environment, stdout and stderr.
+ * No memory is inherited from the master, only the environment, stdout, stderr and the descriptors the master
+ * has open without close-on-exec (streams and sockets of PHP are opened without it).
  */
 class spawnThread extends thread
 {

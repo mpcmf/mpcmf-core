@@ -469,6 +469,7 @@ class threadPool
      *
      * @return thread
      * @throws \InvalidArgumentException
+     * @throws \LogicException
      * @throws \RuntimeException
      */
     private function createThread($task, $arguments)

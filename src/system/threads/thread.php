@@ -484,7 +484,6 @@ class thread
             case SIGTERM:
                 MPCMF_DEBUG && self::log()->addDebug(__METHOD__ . ':exit()', [__METHOD__]);
                 exit(128 + $_signal);
-                break;
         }
     }
 

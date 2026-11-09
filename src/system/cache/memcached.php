@@ -102,7 +102,8 @@ class memcached implements cacheInterface
      * Call the backend, once more on a connection error
      *
      * A process forked from this one closes the shared connection when it releases its inherited copy of the driver,
-     * the next request here fails once and libmemcached reconnects. Such a failed request is not applied by the server.
+     * the next request here fails once and libmemcached reconnects. A request failed that way is not applied
+     * by the server; a request whose reply was lost for another reason may have been applied before it is repeated.
      *
      * @param string $method
      * @param mixed  ...$arguments

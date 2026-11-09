@@ -163,6 +163,7 @@ class forkServer
      * @param array $message payload, graceful, signals, title, grace
      *
      * @return int
+     * @throws \LogicException
      * @throws \RuntimeException
      */
     public function startTask(array $message)
