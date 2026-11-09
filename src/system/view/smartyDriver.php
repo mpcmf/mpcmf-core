@@ -253,7 +253,8 @@ class smartyDriver
      */
     public function display($template = null, $cache_id = null, $compile_id = null, $parent = null)
     {
-        if ($cache_id === null) {
+        // without caching a cache id only makes the template object id unique per data
+        if ($cache_id === null && $this->caching) {
             $cache_id = md5(json_encode([$template, $this->getData()]));
         }
 
