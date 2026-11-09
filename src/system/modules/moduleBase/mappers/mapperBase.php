@@ -356,7 +356,7 @@ abstract class mapperBase
      * @return modelCursor
      * @throws mapperException
      */
-    public function getAllBy($criteria = [], array $fields = [], array $sort = null)
+    public function getAllBy($criteria = [], array $fields = [], ?array $sort = null)
     {
         MPCMF_LL_DEBUG && self::log()->addDebug('criteria:' . json_encode($criteria), [__METHOD__]);
         try {
@@ -430,7 +430,7 @@ abstract class mapperBase
      * @return modelCursor
      * @throws mapperException
      */
-    public function searchAllBy($query, array $fields = [], array $sort = null)
+    public function searchAllBy($query, array $fields = [], ?array $sort = null)
     {
         $criteria = $this->getSearchCriteria($query);
 
@@ -475,7 +475,7 @@ abstract class mapperBase
      * @return modelCursor
      * @throws mapperException
      */
-    public function searchAllByCriteria($criteria, array $fields = [], array $sort = null)
+    public function searchAllByCriteria($criteria, array $fields = [], ?array $sort = null)
     {
         $criteria = $this->convertDataFromForm($criteria);
 
@@ -966,7 +966,7 @@ abstract class mapperBase
         }
     }
 
-    public function convertDataFromForm($input, modelBase $model = null)
+    public function convertDataFromForm($input, ?modelBase $model = null)
     {
         $result = [];
         foreach($input as $field => $value) {
@@ -1055,7 +1055,7 @@ abstract class mapperBase
                             break;
                         case 'float[]':
                         case 'double[]':
-                            $result[$valueKey] = (double)$valueLine;
+                            $result[$valueKey] = (float)$valueLine;
                             break;
                         case 'string[]':
                             if ($valueLine !== '') {
@@ -1090,7 +1090,7 @@ abstract class mapperBase
                         break;
                     case 'float':
                     case 'double':
-                        $result = (double)$value;
+                        $result = (float)$value;
                         break;
                     case 'string':
                         $result = (string)$value;
@@ -1244,7 +1244,7 @@ abstract class mapperBase
      * @return modelCursor
      * @throws mapperException
      */
-    public function getAllRelatedModels($fieldName, modelBase $model = null)
+    public function getAllRelatedModels($fieldName, ?modelBase $model = null)
     {
         $criteria = $this->relatedMapperCriteria($fieldName, $model);
 
@@ -1257,7 +1257,7 @@ abstract class mapperBase
      *
      * @return array
      */
-    protected function relatedMapperCriteria($fieldName, modelBase $model = null)
+    protected function relatedMapperCriteria($fieldName, ?modelBase $model = null)
     {
         return [];
     }

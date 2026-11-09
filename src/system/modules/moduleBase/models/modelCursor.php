@@ -30,7 +30,7 @@ class modelCursor
      * @param string|modelBase  $modelClass
      * @param \MongoCursor      $cursor
      */
-    public function __construct($modelClass, \MongoCursor $cursor = null)
+    public function __construct($modelClass, ?\MongoCursor $cursor = null)
     {
         $this->setCursor($cursor);
         $this->modelClass = $modelClass;

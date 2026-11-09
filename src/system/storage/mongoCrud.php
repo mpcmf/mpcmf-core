@@ -53,7 +53,7 @@ trait mongoCrud
      *
      * @throws storageException
      */
-    protected function setStorageInstance($storageInstance, array $storageConfig = null)
+    protected function setStorageInstance($storageInstance, ?array $storageConfig = null)
     {
         if(!$storageInstance instanceof mongoInstance) {
             throw new storageException("invalid instance\n" . var_export($storageInstance, true));
