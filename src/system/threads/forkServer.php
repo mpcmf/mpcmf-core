@@ -487,7 +487,6 @@ class forkServer
             return null;
         }
         $property = $reflection->getProperty($property);
-        $property->setAccessible(true);
 
         return $property->getValue($object);
     }
