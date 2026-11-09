@@ -9,7 +9,7 @@
     'config_dir' => '/tmp/mpcmf/smarty/configs/',
     'cache_dir' => '/tmp/mpcmf/smarty/templates_cache/',
     'cache_lifetime' => 3600,
-    'caching' => true,
+    'caching' => false,
     'debugging' => false,
-    'force_compile' => true
+    'force_compile' => false
 ]);
