@@ -22,11 +22,20 @@ abstract class reactCurlTestCase extends TestCase
     }
 
     /**
-     * @param int $shift 0 - accept+close, 1 - never answers, 2 - truncated body
+     * @param int $shift 0 - accept+close, 1 - never answers, 2 - truncated body, 3 - see delayUrl()
      */
     protected static function rawUrl($shift)
     {
         return 'http://127.0.0.1:' . (self::port('MPCMF_TEST_RAW_PORT', 19001) + $shift) . '/';
+    }
+
+    /**
+     * Answers after $seconds without holding other requests (a slow `php -S` request may hold the
+     * ones its worker has already accepted); the body is the time the connection was accepted.
+     */
+    protected static function delayUrl($seconds, $query = '')
+    {
+        return self::rawUrl(3) . '?s=' . $seconds . ($query === '' ? '' : '&' . $query);
     }
 
     protected static function refusedUrl()
