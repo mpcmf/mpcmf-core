@@ -416,8 +416,9 @@ class rabbit
          */
         static $exchanges = [];
 
-        // per process: an exchange object holds the channel of the process that created it
-        $key = getmypid() . ":{$this->configSection}:{$queueName}:{$queueType}";
+        // per process: an exchange object holds the channel of the process that created it;
+        // per class: PHP 8.1+ shares static variables of an inherited method with subclasses
+        $key = static::class . ':' . getmypid() . ":{$this->configSection}:{$queueName}:{$queueType}";
         if (!isset($exchanges[$key]) || $force) {
             MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize exchange...", [__METHOD__]);
             try {
