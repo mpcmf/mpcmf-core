@@ -3,6 +3,7 @@
 namespace mpcmf\system\threads;
 
 use mpcmf\system\helper\io\log;
+use mpcmf\system\threads\exception\threadException;
 
 /**
  * Fork server (forkserver start method)
@@ -83,7 +84,7 @@ class forkServer
     /**
      * Fork the server from the current process and wait until it is ready
      *
-     * @throws \RuntimeException
+     * @throws threadException
      */
     public function start()
     {
@@ -98,13 +99,13 @@ class forkServer
         }
         $pair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
         if ($pair === false) {
-            throw new \RuntimeException('Unable to create a socket pair for the fork server');
+            throw new threadException('Unable to create a socket pair for the fork server');
         }
         $pid = pcntl_fork();
         if ($pid === -1) {
             fclose($pair[0]);
             fclose($pair[1]);
-            throw new \RuntimeException('Unable to fork the fork server', thread::COULD_NOT_FORK);
+            throw new threadException('Unable to fork the fork server', thread::COULD_NOT_FORK);
         }
         if ($pid === 0) {
             fclose($pair[0]);
@@ -119,12 +120,12 @@ class forkServer
         while (!$this->dead && !isset($this->tasks[0])) {
             if (microtime(true) > $deadline) {
                 posix_kill($this->pid, SIGKILL);
-                throw new \RuntimeException('Fork server did not start in ' . self::TIMEOUT . ' seconds');
+                throw new threadException('Fork server did not start in ' . self::TIMEOUT . ' seconds');
             }
             $this->poll(0.1);
         }
         if ($this->dead) {
-            throw new \RuntimeException('Fork server exited on start');
+            throw new threadException('Fork server exited on start');
         }
         unset($this->tasks[0]);
     }
@@ -163,34 +164,33 @@ class forkServer
      * @param array $message payload, graceful, signals, title, grace
      *
      * @return int
-     * @throws \LogicException
-     * @throws \RuntimeException
+     * @throws threadException
      */
     public function startTask(array $message)
     {
         if ($this->pid === null) {
-            throw new \LogicException('Fork server is not started');
+            throw new threadException('Fork server is not started');
         }
         $this->poll();
         if ($this->dead) {
-            throw new \RuntimeException('Fork server is dead, no new threads can be started');
+            throw new threadException('Fork server is dead, no new threads can be started');
         }
         $id = $this->nextId++;
         $this->send(['op' => 'start', 'id' => $id] + $message);
         $deadline = microtime(true) + self::TIMEOUT;
         while (!isset($this->tasks[$id]) && !$this->dead) {
             if (microtime(true) > $deadline) {
-                throw new \RuntimeException("Fork server did not reply in " . self::TIMEOUT . " seconds");
+                throw new threadException("Fork server did not reply in " . self::TIMEOUT . " seconds");
             }
             $this->poll(0.1);
         }
         if (!isset($this->tasks[$id])) {
-            throw new \RuntimeException('Fork server died while starting a thread');
+            throw new threadException('Fork server died while starting a thread');
         }
         if (isset($this->tasks[$id]['error'])) {
             $error = $this->tasks[$id]['error'];
             unset($this->tasks[$id]);
-            throw new \RuntimeException($error, thread::COULD_NOT_FORK);
+            throw new threadException($error, thread::COULD_NOT_FORK);
         }
 
         return $id;

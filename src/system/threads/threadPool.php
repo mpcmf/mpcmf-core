@@ -2,6 +2,8 @@
 
 namespace mpcmf\system\threads;
 
+use mpcmf\system\threads\exception\threadException;
+
 /**
  * Thread Pool class
  *
@@ -376,13 +378,13 @@ class threadPool
      *
      * @param string $method
      *
-     * @throws \LogicException
+     * @throws threadException
      * @throws \InvalidArgumentException
      */
     public function setStartMethod($method)
     {
         if($this->used) {
-            throw new \LogicException('Start method must be set before the first add() and startForkServer()');
+            throw new threadException('Start method must be set before the first thread');
         }
         if(!in_array($method, array(self::START_FORK, self::START_FORKSERVER, self::START_SPAWN), true)) {
             throw new \InvalidArgumentException("Unknown thread start method: {$method}");
@@ -416,13 +418,12 @@ class threadPool
      * so call it after the application initialization and before opening connections: connections the
      * framework knows to be open are reported to the log as a warning. A dead server is replaced.
      *
-     * @throws \LogicException
-     * @throws \RuntimeException
+     * @throws threadException
      */
     public function startForkServer()
     {
         if($this->startMethod !== self::START_FORKSERVER) {
-            throw new \LogicException('Fork server is used only with the forkserver start method');
+            throw new threadException('Fork server is used only with the forkserver start method');
         }
         $this->used = true;
         if($this->forkServer !== null && $this->forkServer->isAlive()) {
@@ -469,8 +470,7 @@ class threadPool
      *
      * @return thread
      * @throws \InvalidArgumentException
-     * @throws \LogicException
-     * @throws \RuntimeException
+     * @throws threadException
      */
     private function createThread($task, $arguments)
     {
@@ -482,10 +482,10 @@ class threadPool
             return new spawnThread($payload, $this->getChildEnv());
         }
         if($this->forkServer === null) {
-            throw new \LogicException('Fork server is not started, call startForkServer() before add()');
+            throw new threadException('Fork server is not started');
         }
         if(!$this->forkServer->isAlive()) {
-            throw new \RuntimeException('Fork server is dead, no new threads can be started');
+            throw new threadException('Fork server is dead, no new threads can be started');
         }
 
         return new forkServerThread($this->forkServer, $payload, array(

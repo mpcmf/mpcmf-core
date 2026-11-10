@@ -3,6 +3,7 @@
 namespace mpcmf\system\threads;
 
 use mpcmf\system\helper\io\log;
+use mpcmf\system\threads\exception\threadException;
 
 /**
  * Addressable thread task for the forkserver and spawn start methods
@@ -107,7 +108,7 @@ class threadTask
             [$class, $method] = $data['task'];
             $callable = $method === null ? new $class() : [$class, $method];
             if (!is_callable($callable)) {
-                throw new \RuntimeException("Thread task {$class}::{$method} is not callable");
+                throw new threadException("Thread task {$class}::{$method} is not callable");
             }
         } catch (\Throwable $exception) {
             self::log()->addError("[ERROR] Cannot start thread task: {$exception->getMessage()}");
