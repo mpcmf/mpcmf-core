@@ -6,8 +6,9 @@ namespace mpcmf\system\threads;
  * Thread started as a new php process (spawn start method)
  *
  * The child is `php runner.php spawn`: it loads the application bootstrap, reads the task from fd 3 and runs it.
- * No memory is inherited from the master, only the environment, stdout, stderr and the descriptors the master
- * has open without close-on-exec (streams and sockets of PHP are opened without it).
+ * Nothing is inherited from the master except the environment, stdout, stderr and the async signals setting:
+ * other descriptors of the master (sockets, files, PHP opens them without close-on-exec) are replaced
+ * with /dev/null in the child.
  */
 class spawnThread extends thread
 {
@@ -48,12 +49,15 @@ class spawnThread extends thread
      */
     public function start()
     {
-        $descriptors = [
-            0 => ['file', '/dev/null', 'r'],
-            3 => ['pipe', 'r'],
-        ];
+        $null = fopen('/dev/null', 'r');
+        $descriptors = self::getInheritedDescriptors($null);
+        $descriptors[0] = ['file', '/dev/null', 'r'];
+        $descriptors[3] = ['pipe', 'r'];
         $command = [PHP_BINARY ?: 'php', __DIR__ . '/runner.php', 'spawn'];
         $process = proc_open($command, $descriptors, $pipes, null, $this->env);
+        if ($null !== false) {
+            fclose($null);
+        }
         if (!is_resource($process)) {
             throw new \Exception('proc_open() failed, no new process was created', self::COULD_NOT_FORK);
         }
@@ -67,6 +71,7 @@ class spawnThread extends thread
             'graceful' => $this->gracefulStop,
             'signals' => $this->defaultSignals,
             'title' => isset($this->env[self::ENV_TITLE]) ? $this->env[self::ENV_TITLE] : '',
+            'async' => pcntl_async_signals(),
         ]);
         for ($written = 0; $written < strlen($message); $written += $result) {
             $result = @fwrite($pipes[3], substr($message, $written));
@@ -78,6 +83,31 @@ class spawnThread extends thread
         $this->payload = null;
 
         return $this;
+    }
+
+    /**
+     * Descriptors of this process above stderr, mapped to /dev/null for the child: proc_open() leaves everything
+     * not mapped open across exec
+     *
+     * @param resource|false $null
+     *
+     * @return array
+     */
+    private static function getInheritedDescriptors($null)
+    {
+        $descriptors = [];
+        if ($null === false) {
+
+            return $descriptors;
+        }
+        foreach (@scandir('/proc/self/fd') ?: [] as $fd) {
+            // the descriptor of scandir() itself is closed by now: a closed number may be reused by proc_open()
+            if (ctype_digit($fd) && (int)$fd > 2 && @readlink("/proc/self/fd/{$fd}") !== false) {
+                $descriptors[(int)$fd] = $null;
+            }
+        }
+
+        return $descriptors;
     }
 
     /**

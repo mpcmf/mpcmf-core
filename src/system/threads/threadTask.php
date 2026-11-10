@@ -92,10 +92,13 @@ class threadTask
     /**
      * Child side: run the task, never returns
      *
-     * @param array $message payload, graceful, signals, title
+     * @param array $message payload, graceful, signals, title, async
      */
     public static function run(array $message)
     {
+        // async signals as the master had them when it started the thread, like a forked child inherits them:
+        // signal handlers of the application are called without pcntl_signal_dispatch()
+        pcntl_async_signals(!empty($message['async']));
         if (!empty($message['title'])) {
             cli_set_process_title($message['title'] . thread::CHILD_POSTFIX);
         }
