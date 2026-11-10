@@ -528,7 +528,10 @@ class thread
 
             return;
         }
-        $pid = pcntl_waitpid($this->pid, $status);
+        do {
+            $pid = pcntl_waitpid($this->pid, $status);
+            // a signal handler installed without restarting system calls interrupts the wait, the child is alive
+        } while ($pid === -1 && pcntl_get_last_error() === PCNTL_EINTR);
         $this->exited = true;
         if ($pid === $this->pid) {
             $this->exitCode = pcntl_wifexited($status) ? pcntl_wexitstatus($status) : 128 + pcntl_wtermsig($status);
