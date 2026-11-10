@@ -5,7 +5,7 @@ namespace mpcmf\system\net\curl;
 use React\Promise\Deferred;
 
 /**
- * One request of curlPool (internal).
+ * Request of curlPool
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
@@ -15,28 +15,36 @@ class curlTask
     const ACTIVE = 1;
     const DONE = 2;
 
-    /** @var mixed|null */
     public $id;
 
-    /** @var array task options (Result::getOptions()) */
     public $opts;
 
-    /** @var mixed */
     public $params;
 
-    /** @var Deferred|null */
+    /**
+     * @var Deferred|null
+     */
     public $deferred;
 
-    /** @var \CurlHandle|null */
+    /**
+     * @var \CurlHandle|null
+     */
     public $ch;
 
-    /** @var int */
     public $state = self::QUEUED;
 
-    /** @var float|null absolute microtime() deadline */
+    /**
+     * Absolute microtime() deadline
+     *
+     * @var float|null
+     */
     public $expiresAt;
 
-    /** @var float|null deadline length, for messages */
+    /**
+     * Deadline length, for messages
+     *
+     * @var float|null
+     */
     public $deadline;
 
     public function __construct($id, array $opts, $params)
@@ -47,7 +55,9 @@ class curlTask
     }
 
     /**
-     * @return array query for \MCurl\Result
+     * Query for \MCurl\Result
+     *
+     * @return array
      */
     public function toQuery()
     {

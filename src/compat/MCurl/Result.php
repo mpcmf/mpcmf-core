@@ -3,14 +3,7 @@
 namespace MCurl;
 
 /**
- * Result of one curl transfer.
- *
- * Compatibility class: keeps the FQCN and the observable behaviour of khr/php-mcurl-client 3.1
- * (\MCurl\Result) for application code. Implemented from scratch in mpcmf-core, the engine is
- * mpcmf\system\net\curl\curlPool.
- *
- * Magic properties (via getters): id, ch, info, options, httpCode, headers, body, bodyStream, json,
- * params, errorType, error, errorCode.
+ * Result of a curl transfer (khr/php-mcurl-client compatibility class)
  *
  * @property-read mixed $id
  * @property-read string $body
@@ -22,13 +15,15 @@ namespace MCurl;
 class Result
 {
     /**
-     * Request data: id, opts (task options), params, ch; optional failure (engine-level error).
+     * Request data: id, opts, params, ch and optional failure
      *
      * @var array
      */
     protected $query;
 
-    /** @var array|null */
+    /**
+     * @var array|null
+     */
     protected $rawHeaders;
 
     public function __construct($query)
@@ -37,7 +32,9 @@ class Result
     }
 
     /**
-     * @return mixed|null request id given to add()
+     * Request id given to add()
+     *
+     * @return mixed|null
      */
     public function getId()
     {
@@ -64,7 +61,7 @@ class Result
     }
 
     /**
-     * Options given for this request (without client-level options and result streams)
+     * Options of this request, without client-level options and result streams
      *
      * @return array
      */
@@ -87,8 +84,7 @@ class Result
     }
 
     /**
-     * Response headers, only when headers were enabled for the client:
-     * ['result' => 'HTTP/1.1 200 OK', 'content-type' => 'text/html', ...]
+     * Response headers, when enabled for the client
      *
      * @return array|null
      */
@@ -140,7 +136,9 @@ class Result
     }
 
     /**
-     * json_decode() of the body; arguments after the body are passed to json_decode()
+     * json_decode() of the body
+     *
+     * @param mixed ...$args json_decode() arguments after the body
      *
      * @return mixed
      */
@@ -150,7 +148,9 @@ class Result
     }
 
     /**
-     * @return mixed params given to add()
+     * Params given to add()
+     *
+     * @return mixed
      */
     public function getParams()
     {
@@ -170,8 +170,7 @@ class Result
     }
 
     /**
-     * network - curl error, http - HTTP code >= 400, client - the request was not executed
-     * (rejected curl option, cancel, queue limit), null - no error
+     * network - curl error, http - HTTP code >= 400, client - not executed, null - no error
      *
      * @return string|null
      */
@@ -212,7 +211,9 @@ class Result
     }
 
     /**
-     * @return int|null curl errno for network errors, HTTP code for http errors
+     * Curl errno for network errors, HTTP code for http errors
+     *
+     * @return int|null
      */
     public function getErrorCode()
     {

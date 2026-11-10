@@ -3,7 +3,7 @@
 namespace mpcmf\system\net\curl\exception;
 
 /**
- * The request was cancelled with $promise->cancel() (opt-in, curlPool::setCancellable()), code 42 (CURLE_ABORTED_BY_CALLBACK), error type "client".
+ * Request cancelled with $promise->cancel(), code 42
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */

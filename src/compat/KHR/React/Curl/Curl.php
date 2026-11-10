@@ -5,8 +5,7 @@ namespace KHR\React\Curl;
 use mpcmf\system\net\curl\curlPool;
 
 /**
- * Compatibility class: keeps the FQCN and API of khr/react-curl's Curl, implemented in mpcmf-core
- * on top of mpcmf\system\net\curl\curlPool.
+ * Curl of khr/react-curl on top of curlPool (compatibility class)
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */

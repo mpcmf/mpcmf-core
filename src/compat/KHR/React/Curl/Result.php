@@ -3,17 +3,14 @@
 namespace KHR\React\Curl;
 
 /**
- * Result passed to done callbacks of mpcmf\system\net\reactCurl.
- *
- * Compatibility class: keeps the FQCN of khr/react-curl, implemented in mpcmf-core.
+ * Result of reactCurl tasks (khr/react-curl compatibility class)
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class Result extends \MCurl\Result
 {
     /**
-     * Kept for compatibility: the engine keeps its deferreds internally, so this returns the
-     * deferred only when one was put into params under '__deferred' by the caller.
+     * Deferred the caller put into params under '__deferred'
      *
      * @return \React\Promise\Deferred|null
      */

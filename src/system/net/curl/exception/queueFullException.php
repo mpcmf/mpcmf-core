@@ -3,7 +3,7 @@
 namespace mpcmf\system\net\curl\exception;
 
 /**
- * The queue limit was reached (opt-in, curlPool::setMaxQueue()), code 0, error type "client".
+ * Queue limit reached
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */

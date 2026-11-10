@@ -3,11 +3,7 @@
 namespace KHR\React\Curl;
 
 /**
- * Rejection reason of mpcmf\system\net\reactCurl tasks: network error (code = curl errno),
- * HTTP code >= 400 (message "http error N", code = N) or a request the engine could not execute
- * (subclasses in mpcmf\system\net\curl\exception).
- *
- * Compatibility class: keeps the FQCN of khr/react-curl, implemented in mpcmf-core.
+ * Rejection reason of reactCurl tasks (khr/react-curl compatibility class)
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */

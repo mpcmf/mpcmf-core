@@ -13,26 +13,7 @@ use React\Promise\Deferred;
 use React\Promise\PromiseInterface;
 
 /**
- * Asynchronous HTTP client: a curl_multi pool driven by a ReactPHP event loop.
- *
- * Replaces khr/react-curl + khr/php-mcurl-client (abandoned) under mpcmf\system\net\reactCurl,
- * written from scratch. Keeps their observable behaviour (results, errors, throttling, client
- * options, MCurl\Client setters) and fixes:
- *  - an option failing with TypeError/ValueError rejects only its request with
- *    exception\optionException, the pool keeps working (was: slots leaked, run() never finished);
- *    an option libcurl rejects with false is skipped with a warning and all other options are
- *    applied (was: the rest of the options was lost), see setStrictOptions();
- *  - timers are cancelled with $loop->cancelTimer(): works with react/event-loop 0.4 and 1.x;
- *  - setSleep() with next < 1 no longer divides by zero;
- *  - transfers start on the next loop tick after add() when the pool is running (requests added
- *    in one go start together, as with khr), the poll timer adapts its interval (1 ms after
- *    progress, backs off to 10 ms when idle) instead of a fixed 10 ms;
- *  - exceptions while settling are logged instead of breaking the loop.
- *
- * PHP cannot hand curl sockets to the event loop, so transfers are polled from a periodic timer.
- * Poll modes: adaptive (default), select (curl_multi_select() up to N ms inside the tick: lowest
- * latency, but blocks other loop work), legacy (fixed 10 ms and the call order of khr/react-curl;
- * also used while a blocking setSleep() is active, to keep its timing).
+ * Asynchronous HTTP client: curl_multi pool polled from a ReactPHP loop timer
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
@@ -42,132 +23,167 @@ class curlPool
     const POLL_SELECT = 'select';
     const POLL_LEGACY = 'legacy';
 
-    /** Result written to memory (MCurl\Client compatible) */
+    /**
+     * Result streams (MCurl\Client compatible)
+     */
     const STREAM_MEMORY = 'php://memory';
-
-    /** Result written to temporary files (MCurl\Client compatible) */
     const STREAM_FILE = 'php://temp/maxmemory:0';
 
     const LEGACY_INTERVAL = 0.01;
 
-    /** Ticks without progress before the adaptive interval starts to grow */
+    /**
+     * Idle ticks before the adaptive interval grows
+     */
     const ADAPTIVE_HOLD_TICKS = 5;
 
-    /** @var LoopInterface */
+    /**
+     * @var LoopInterface
+     */
     protected $loop;
 
-    /** @var \CurlMultiHandle */
+    /**
+     * @var \CurlMultiHandle
+     */
     protected $mh;
 
-    /** @var \CurlShareHandle|null */
+    /**
+     * @var \CurlShareHandle|null
+     */
     protected $sh;
 
-    /** @var array client-level options, task options win */
+    /**
+     * Client-level options, task options win
+     *
+     * @var array
+     */
     protected $curlOptions = [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_TIMEOUT => 60,
     ];
 
-    /** @var int */
     protected $maxRequest = 10;
 
-    /** @var sleepThrottle */
+    /**
+     * @var sleepThrottle
+     */
     protected $throttle;
 
-    /** @var string */
     protected $classResult = curlResult::class;
 
-    /** @var string|null */
     protected $baseUrl;
 
-    /** @var string|null */
     protected $streamResult;
 
-    /** @var array */
     protected $streamFilters = [];
 
-    /** @var bool */
     protected $enableHeaders = false;
 
-    /** @var \SplQueue of curlTask */
+    /**
+     * @var \SplQueue
+     */
     protected $queue;
 
-    /** @var int queued tasks (without cancelled/expired ones still in $queue) */
+    /**
+     * Queued tasks, without cancelled and expired ones still in $queue
+     *
+     * @var int
+     */
     protected $queued = 0;
 
-    /** @var curlTask[] by spl_object_id() of the handle */
+    /**
+     * Running tasks by spl_object_id() of the handle
+     *
+     * @var curlTask[]
+     */
     protected $active = [];
 
-    /** @var array[] [curlTask, exception class, failure] waiting to be rejected */
+    /**
+     * [curlTask, exception class, failure] waiting to be rejected
+     *
+     * @var array[]
+     */
     protected $failed = [];
 
-    /** @var bool */
     protected $flushScheduled = false;
 
-    /** @var bool */
     protected $kickScheduled = false;
 
-    /** @var int finished requests, drives the throttle */
+    /**
+     * Finished requests, drive the throttle
+     *
+     * @var int
+     */
     protected $finished = 0;
 
-    /** @var \React\EventLoop\TimerInterface|\React\EventLoop\Timer\TimerInterface|null */
+    /**
+     * @var \React\EventLoop\TimerInterface|\React\EventLoop\Timer\TimerInterface|null
+     */
     protected $timer;
 
-    /** @var float|null */
     protected $timerInterval;
 
-    /** @var float */
     protected $interval;
 
-    /** @var int */
     protected $idleTicks = 0;
 
-    /** @var bool */
     protected $inTick = false;
 
-    /** @var string */
     protected $pollMode = self::POLL_ADAPTIVE;
 
-    /** @var float */
     protected $minInterval = 0.001;
 
-    /** @var float */
     protected $maxInterval = 0.01;
 
-    /** @var float */
     protected $selectTimeout = 0.005;
 
-    /** @var bool legacy pump: transfers were added and not finished yet */
+    /**
+     * Legacy pump: transfers were added and not finished yet
+     *
+     * @var bool
+     */
     protected $legacyRunning = false;
 
-    /** @var curlTask[] legacy pump: finished, not settled yet */
+    /**
+     * Legacy pump: finished, not settled yet
+     *
+     * @var curlTask[]
+     */
     protected $legacyPending = [];
 
-    /** @var int 0 - unlimited */
+    /**
+     * Queue limit, 0 - unlimited
+     *
+     * @var int
+     */
     protected $maxQueue = 0;
 
-    /** @var float|null */
     protected $deadline;
 
-    /** @var bool */
     protected $cancellable = false;
 
-    /** @var bool */
     protected $autoRun = false;
 
-    /** @var bool */
     protected $cookieShare = false;
 
-    /** @var bool */
     protected $strictOptions = false;
 
-    /** @var callable|null function (string $message, array $context) */
+    /**
+     * @var callable|null
+     */
     protected $errorLogger;
 
-    /** @var float seconds, per message key and process */
+    /**
+     * Log rate limit window, seconds
+     *
+     * @var float
+     */
     private static $logWindow = 60.0;
 
-    /** @var array key => [window start, suppressed count] */
+    /**
+     * key => [window start, suppressed count]
+     *
+     * @var array
+     */
     private static $logSeen = [];
 
     /**
@@ -184,12 +200,12 @@ class curlPool
     }
 
     /**
-     * Queue a request.
+     * Queue a request
      *
-     * @param array $opts curl options of this request (returned by Result::getOptions())
-     * @param array|string $params data bound to the request (Result::getParams()); a string is the request id
+     * @param array $opts
+     * @param array|string $params request data or id
      *
-     * @return PromiseInterface resolves with \KHR\React\Curl\Result, rejects with \KHR\React\Curl\Exception
+     * @return PromiseInterface
      */
     public function add($opts = [], $params = [])
     {
@@ -244,8 +260,7 @@ class curlPool
     }
 
     /**
-     * Start (or continue) processing: settles what is ready and keeps polling from a loop timer
-     * until all requests are settled. Requests added while the pool runs start without run().
+     * Process requests until all of them are settled
      */
     public function run()
     {
@@ -259,14 +274,14 @@ class curlPool
         }
         $this->interval = $this->minInterval;
         $this->tick();
-        // like khr: run() on an idle pool keeps polling for one round, requests added right after it start without run()
+        // like khr: an idle pool keeps polling for one round
         if ($this->timer === null) {
             $this->schedule($this->maxInterval);
         }
     }
 
     /**
-     * Client-level curl options, applied to every request after its own options
+     * Set client-level curl options
      *
      * @param array $values
      */
@@ -278,7 +293,9 @@ class curlPool
     }
 
     /**
-     * @return array client-level curl options
+     * Client-level curl options
+     *
+     * @return array
      */
     public function getCurlOption()
     {
@@ -286,9 +303,11 @@ class curlPool
     }
 
     /**
-     * @param int $next sleep after every $next requests (< 1 is treated as 1)
+     * Sleep $second seconds after every $next requests
+     *
+     * @param int $next
      * @param float $second
-     * @param bool $blocking usleep() inside the loop instead of postponing requests
+     * @param bool $blocking usleep() instead of postponing requests
      */
     public function setSleep($next, $second = 1.0, $blocking = true)
     {
@@ -309,7 +328,10 @@ class curlPool
     }
 
     /**
-     * @see curl_share_setopt()
+     * Set an option of the curl share handle
+     *
+     * @param int $option
+     * @param mixed $value
      */
     public function setShareOptions($option, $value)
     {
@@ -327,8 +349,7 @@ class curlPool
     }
 
     /**
-     * Write bodies into streams of this wrapper (self::STREAM_*), see Result::getBodyStream().
-     * Note: with CURLOPT_RETURNTRANSFER on (reactCurl default) the body is returned, the stream stays empty.
+     * Write bodies into a stream of this wrapper (self::STREAM_*)
      *
      * @param string|null $stream
      */
@@ -338,7 +359,9 @@ class curlPool
     }
 
     /**
-     * @param array $filters stream filter names appended to result streams
+     * Stream filters appended to result streams
+     *
+     * @param array $filters
      *
      * @return $this
      */
@@ -350,7 +373,9 @@ class curlPool
     }
 
     /**
-     * @param string|null $baseUrl prefix for CURLOPT_URL of added requests
+     * Prefix for CURLOPT_URL of added requests
+     *
+     * @param string|null $baseUrl
      */
     public function setBaseUrl($baseUrl)
     {
@@ -358,7 +383,9 @@ class curlPool
     }
 
     /**
-     * @param string $name result class, subclass of \MCurl\Result
+     * Result class, subclass of \MCurl\Result
+     *
+     * @param string $name
      */
     public function setClassResult($name)
     {
@@ -366,7 +393,7 @@ class curlPool
     }
 
     /**
-     * MCurl\Client compatibility: true switches to the select poll mode.
+     * Switch to the select poll mode (MCurl\Client compatible)
      *
      * @param bool $select
      */
@@ -380,7 +407,9 @@ class curlPool
     }
 
     /**
-     * @return int queued (not started) requests
+     * Queued, not started requests
+     *
+     * @return int
      */
     public function getCountQuery()
     {
@@ -388,7 +417,9 @@ class curlPool
     }
 
     /**
-     * @return int running transfers
+     * Running transfers
+     *
+     * @return int
      */
     public function getActiveCount()
     {
@@ -396,11 +427,10 @@ class curlPool
     }
 
     /**
-     * Adaptive poll interval: $min after progress, doubling up to $max while nothing happens.
-     * setPollInterval(0.01, 0.01) gives the old fixed 10 ms period.
+     * Adaptive poll interval: $min after progress, doubling up to $max when idle
      *
-     * @param float $min seconds
-     * @param float|null $max seconds, default max($min, 0.01)
+     * @param float $min
+     * @param float|null $max
      */
     public function setPollInterval($min, $max = null)
     {
@@ -410,10 +440,12 @@ class curlPool
     }
 
     /**
-     * @param string $mode self::POLL_ADAPTIVE (default), self::POLL_SELECT (opt-in: blocks the loop
-     *                     in curl_multi_select() up to $selectTimeout while transfers run) or
-     *                     self::POLL_LEGACY (fixed 10 ms, call order of khr/react-curl)
-     * @param float $selectTimeout seconds, for self::POLL_SELECT
+     * Poll mode: self::POLL_ADAPTIVE (default), self::POLL_SELECT or self::POLL_LEGACY
+     *
+     * @param string $mode
+     * @param float $selectTimeout
+     *
+     * @throws \InvalidArgumentException
      */
     public function setPollMode($mode, $selectTimeout = 0.005)
     {
@@ -425,10 +457,9 @@ class curlPool
     }
 
     /**
-     * Opt-in: reject add() with exception\queueFullException when $max requests are queued already.
-     * While the pool runs, requests that will take a free transfer slot on the next tick do not count.
+     * Opt-in: reject add() with queueFullException when $max requests are queued
      *
-     * @param int $max 0 - unlimited (default)
+     * @param int $max
      */
     public function setMaxQueue($max)
     {
@@ -436,11 +467,9 @@ class curlPool
     }
 
     /**
-     * Opt-in: total time limit per request including the queue wait, for requests added afterwards.
-     * Expired queued requests are rejected with exception\deadlineException (code 28), running
-     * ones get CURLOPT_TIMEOUT_MS limited to the time left (curl error 28).
+     * Opt-in: time limit per request including the queue wait
      *
-     * @param float|null $seconds null - off (default)
+     * @param float|null $seconds
      */
     public function setDeadline($seconds)
     {
@@ -448,8 +477,7 @@ class curlPool
     }
 
     /**
-     * Opt-in: $promise->cancel() removes the request from the queue or aborts the transfer and
-     * rejects it with exception\cancelledException. Off by default: cancel() does nothing (as before).
+     * Opt-in: $promise->cancel() aborts the request with cancelledException
      *
      * @param bool $enable
      */
@@ -459,7 +487,7 @@ class curlPool
     }
 
     /**
-     * Opt-in: add() starts processing without an explicit run().
+     * Opt-in: add() starts processing without run()
      *
      * @param bool $enable
      */
@@ -469,9 +497,7 @@ class curlPool
     }
 
     /**
-     * Opt-in: keep cookies in memory, shared by all requests of this pool (curl_share), instead of
-     * reading and rewriting the cookie file on every request. Applies to requests that do not set
-     * their own CURLOPT_COOKIEFILE/CURLOPT_COOKIEJAR; the cookie file is neither read nor written.
+     * Opt-in: keep cookies in memory of the pool (curl_share) instead of the cookie file
      *
      * @param bool $enable
      */
@@ -484,9 +510,7 @@ class curlPool
     }
 
     /**
-     * Opt-in: reject the request (exception\optionException) when libcurl rejects one of its options
-     * with false. Default: the option is skipped with a warning, the request runs with the others.
-     * TypeError/ValueError of an option always reject the request.
+     * Opt-in: reject the request when libcurl rejects one of its options
      *
      * @param bool $enable
      */
@@ -496,10 +520,9 @@ class curlPool
     }
 
     /**
-     * Log lines of the engine (callback exceptions, skipped options) are written at most once per
-     * message key per $seconds per process, with the count of suppressed repeats. Resets the state.
+     * Log a message key at most once per $seconds per process, 0 - no limit
      *
-     * @param float $seconds 0 - no limit
+     * @param float $seconds
      */
     public static function setLogRateLimit($seconds)
     {
@@ -508,8 +531,9 @@ class curlPool
     }
 
     /**
-     * @param callable|null $logger function (string $message, array $context): void, context has 'level'
-     *                              (error|warning) and 'exception'; null - mpcmf log
+     * Logger function (string $message, array $context), null - mpcmf log
+     *
+     * @param callable|null $logger
      */
     public function setErrorLogger($logger)
     {
@@ -517,8 +541,7 @@ class curlPool
     }
 
     /**
-     * Log an error through the configured logger (mpcmf log by default, error_log() as fallback),
-     * rate-limited per $key (default: the message)
+     * Log an error, rate-limited per $key (default: the message)
      *
      * @param string $message
      * @param \Throwable|null $exception
@@ -550,7 +573,8 @@ class curlPool
         }
         $context = ['level' => $level];
         if ($exception !== null) {
-            $context['exception'] = get_class($exception) . ': ' . $exception->getMessage() . ' at ' . $exception->getFile() . ':' . $exception->getLine();
+            $context['exception'] = get_class($exception) . ': ' . $exception->getMessage()
+                . ' at ' . $exception->getFile() . ':' . $exception->getLine();
         }
         if ($this->errorLogger !== null) {
             call_user_func($this->errorLogger, $message, $context);
@@ -590,7 +614,9 @@ class curlPool
     }
 
     /**
-     * Result streams of MCurl\Client: CURLOPT_FILE/CURLOPT_WRITEHEADER are opened at add() time.
+     * Open result streams of MCurl\Client at add() time
+     *
+     * @param array $opts
      *
      * @return string|null error
      */
@@ -620,9 +646,9 @@ class curlPool
     }
 
     /**
-     * Start queued requests allowed by max requests and the throttle.
+     * Start queued requests allowed by max requests and the throttle
      *
-     * @return int started transfers
+     * @return int
      */
     protected function fill()
     {
@@ -652,7 +678,11 @@ class curlPool
     }
 
     /**
-     * @return bool false when the request was rejected
+     * Start a transfer, false when the request is rejected
+     *
+     * @param curlTask $task
+     *
+     * @return bool
      */
     protected function start(curlTask $task)
     {
@@ -674,7 +704,7 @@ class curlPool
             }
         }
         if ($error !== null) {
-            // counts as a finished request, like a failed transfer did
+            // counts as finished, like a failed transfer
             $this->finished++;
             $task->state = curlTask::DONE;
             $this->fail($task, optionException::class, 'client', $error, CURLE_BAD_FUNCTION_ARGUMENT);
@@ -690,7 +720,7 @@ class curlPool
     protected function effectiveOptions(curlTask $task)
     {
         $options = $task->opts + $this->curlOptions;
-        // integer FOLLOWLOCATION (e.g. 20) is rejected by PHP 8.5; libcurl >= 8.13 gives 2 and 3 a meaning
+        // PHP 8.5 rejects an integer FOLLOWLOCATION like 20
         if (isset($options[CURLOPT_FOLLOWLOCATION]) && is_int($options[CURLOPT_FOLLOWLOCATION]) && $options[CURLOPT_FOLLOWLOCATION] > 3) {
             $options[CURLOPT_FOLLOWLOCATION] = true;
         }
@@ -714,14 +744,15 @@ class curlPool
     }
 
     /**
-     * curl_setopt_array() stops at the first option libcurl rejects with false (khr lost the rest
-     * of the options this way). Set every option separately: by default a rejected option is
-     * skipped with a (rate-limited) warning and the request runs with all other options; in strict
-     * mode the request is rejected.
+     * Set options one by one, skipping those libcurl rejects
      *
-     * @return string|null error that rejects the request
+     * @param resource|\CurlHandle $ch
+     * @param array $options
+     * @param curlTask $task
      *
-     * @throws \Throwable TypeError/ValueError of an option
+     * @return string|null error
+     *
+     * @throws \Throwable
      */
     protected function applyOptionsOneByOne($ch, array $options, curlTask $task)
     {
@@ -738,12 +769,20 @@ class curlPool
             return 'curl_setopt_array(): failed to set ' . implode(', ', $skipped);
         }
         foreach ($skipped as $name) {
-            $this->log('warning', "reactCurl: curl rejected {$name}, the option is skipped (url " . ($task->opts[CURLOPT_URL] ?? '') . ')', null, "option:{$name}");
+            $this->log('warning', "reactCurl: curl rejected {$name}, the option is skipped (url " . ($task->opts[CURLOPT_URL] ?? '') . ')',
+                null, "option:{$name}");
         }
 
         return null;
     }
 
+    /**
+     * Name of a curl option constant
+     *
+     * @param int $option
+     *
+     * @return string
+     */
     public static function optionName($option)
     {
         static $names;
@@ -767,7 +806,9 @@ class curlPool
     }
 
     /**
-     * @return curlTask[] finished transfers (handles removed from the multi handle)
+     * Read finished transfers and remove their handles
+     *
+     * @return curlTask[]
      */
     protected function readFinished()
     {
@@ -821,7 +862,8 @@ class curlPool
 
     protected function expire(curlTask $task)
     {
-        $this->fail($task, deadlineException::class, 'network', sprintf('Deadline of %.3f seconds exceeded before the request started', $task->deadline), CURLE_OPERATION_TIMEDOUT);
+        $this->fail($task, deadlineException::class, 'network',
+            sprintf('Deadline of %.3f seconds exceeded before the request started', $task->deadline), CURLE_OPERATION_TIMEDOUT);
     }
 
     protected function flushFailed()
@@ -845,7 +887,7 @@ class curlPool
     }
 
     /**
-     * Reject failures outside of the caller's stack (add() must not call callbacks synchronously)
+     * Reject failures on a future tick, not inside add()
      */
     protected function scheduleFlush()
     {
@@ -874,7 +916,9 @@ class curlPool
         $task->state = curlTask::DONE;
         $task->deferred = null;
         $class = $this->classResult;
-        $result = new $class($task->toQuery() + ['failure' => ['type' => 'client', 'message' => 'Request cancelled', 'code' => CURLE_ABORTED_BY_CALLBACK]]);
+        $result = new $class($task->toQuery() + [
+            'failure' => ['type' => 'client', 'message' => 'Request cancelled', 'code' => CURLE_ABORTED_BY_CALLBACK]
+        ]);
         $task->ch = null;
         $reject(new cancelledException($result));
     }
@@ -902,7 +946,9 @@ class curlPool
     }
 
     /**
-     * @return int free transfer slots the requests added now take on the next tick (0 when add() does not start them)
+     * Free slots the requests added now take on the next tick
+     *
+     * @return int
      */
     protected function slotsOnKick()
     {
@@ -914,8 +960,7 @@ class curlPool
     }
 
     /**
-     * Start what add() queued on the next loop tick, not inside add(): under throttling the
-     * requests added in one go are checked together and start as one batch (as with khr)
+     * Start what add() queued on the next tick, as one batch like khr
      */
     protected function scheduleKick()
     {
@@ -932,7 +977,7 @@ class curlPool
     }
 
     /**
-     * Start what add() queued while the pool is running, without waiting for the next poll round
+     * Start what add() queued while the pool is running
      */
     protected function kick()
     {
@@ -970,7 +1015,7 @@ class curlPool
                 $this->exec();
             }
             $finished = $this->readFinished();
-            // like khr: refill before the callbacks run, then once more for what they queued
+            // like khr: refill before and after the callbacks
             $started = $this->fill();
             if ($started > 0) {
                 $this->exec();
@@ -1039,13 +1084,9 @@ class curlPool
         }
     }
 
-    /*
-     * Legacy pump: fixed 10 ms period and the call order of khr/react-curl + MCurl\Client:
-     * run() = [exec, read, throttle+start] + settle; tick = run() + [exec, read, throttle+start],
-     * the second batch of results is settled on the next tick. The throttle in blocking mode
-     * usleep()s inside these checks, so its effective timing depends on this order.
+    /**
+     * Legacy pump: fixed 10 ms period and the call order of khr/react-curl
      */
-
     protected function legacyRun()
     {
         $this->legacyStep();
@@ -1068,6 +1109,8 @@ class curlPool
     }
 
     /**
+     * Exec, read and start in the legacy order
+     *
      * @return bool something is queued or running
      */
     protected function legacyStep()
