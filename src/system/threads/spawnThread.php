@@ -66,6 +66,7 @@ class spawnThread extends thread
             'graceful' => $this->gracefulStop,
             'signals' => $this->defaultSignals,
             'title' => isset($this->env[self::ENV_TITLE]) ? $this->env[self::ENV_TITLE] : '',
+            'async' => pcntl_async_signals(),
         ]);
         for ($written = 0; $written < strlen($message); $written += $result) {
             $result = @fwrite($pipes[3], substr($message, $written));

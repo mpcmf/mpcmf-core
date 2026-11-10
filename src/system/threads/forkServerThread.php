@@ -52,6 +52,8 @@ class forkServerThread extends thread
             'payload' => $this->payload,
             'graceful' => $this->gracefulStop,
             'signals' => $this->defaultSignals,
+            // a forked child inherits the setting of the master, these children get it from here
+            'async' => pcntl_async_signals(),
         ] + $this->options);
         $this->payload = null;
         $this->onStarted($this->server->getTask($this->taskId)['pid']);

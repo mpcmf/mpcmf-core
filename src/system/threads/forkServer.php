@@ -600,7 +600,7 @@ class forkServer
                             foreach (array_merge($ignored, [SIGCHLD]) as $signal) {
                                 pcntl_signal($signal, SIG_DFL);
                             }
-                            pcntl_async_signals(false);
+                            // async signals as in the master, set by threadTask::run()
                             threadTask::run($message);
                         }
                         $children[$message['id']] = ['pid' => $pid, 'grace' => isset($message['grace']) ? $message['grace'] : 10];
