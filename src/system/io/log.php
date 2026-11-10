@@ -58,7 +58,7 @@ class log
      * @param mixed $message
      * @param array $context
      *
-     * @return bool Whether the record has been processed
+     * @return bool
      */
     public function addDebug($message, array $context = [])
     {
@@ -71,7 +71,7 @@ class log
      * @param mixed $message
      * @param array $context
      *
-     * @return bool Whether the record has been processed
+     * @return bool
      */
     public function addInfo($message, array $context = [])
     {
@@ -84,7 +84,7 @@ class log
      * @param mixed $message
      * @param array $context
      *
-     * @return bool Whether the record has been processed
+     * @return bool
      */
     public function addNotice($message, array $context = [])
     {
@@ -97,7 +97,7 @@ class log
      * @param mixed $message
      * @param array $context
      *
-     * @return bool Whether the record has been processed
+     * @return bool
      */
     public function addWarning($message, array $context = [])
     {
@@ -110,7 +110,7 @@ class log
      * @param mixed $message
      * @param array $context
      *
-     * @return bool Whether the record has been processed
+     * @return bool
      */
     public function addError($message, array $context = [])
     {
@@ -123,7 +123,7 @@ class log
      * @param mixed $message
      * @param array $context
      *
-     * @return bool Whether the record has been processed
+     * @return bool
      */
     public function addCritical($message, array $context = [])
     {
@@ -136,7 +136,7 @@ class log
      * @param mixed $message
      * @param array $context
      *
-     * @return bool Whether the record has been processed
+     * @return bool
      */
     public function addAlert($message, array $context = [])
     {
@@ -149,7 +149,7 @@ class log
      * @param mixed $message
      * @param array $context
      *
-     * @return bool Whether the record has been processed
+     * @return bool
      */
     public function addEmergency($message, array $context = [])
     {

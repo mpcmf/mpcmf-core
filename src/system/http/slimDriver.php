@@ -6,18 +6,22 @@ use Slim\Slim;
 class slimDriver extends Slim 
 {
     /**
-     * Distinct deprecations kept to log each one once per process
+     * Max distinct deprecations remembered
      */
     const LOGGED_DEPRECATIONS_LIMIT = 10000;
 
     /**
-     * Notices of PHP 7 raised as warnings since PHP 8.0 (8.3 for unserialize()), handled as notices again.
-     * "A non-numeric value encountered" is not here: PHP 7 raised it as a warning too.
+     * PHP 7 notices raised as warnings since PHP 8
      */
-    const PHP7_NOTICES_PATTERN = '/^(Undefined (array key|variable|global variable|property)|Trying to access array offset on|Attempt to read property|Array to string conversion|Uninitialized string offset|String offset cast occurred|Resource ID#\d+ used as offset|Illegal string offset|Object of class .+ could not be converted to (int|float)$|compact\(\): Undefined variable|unserialize\(\): Error at offset)/s';
+    const PHP7_NOTICES_PATTERN = '/^(Undefined (array key|variable|global variable|property)|Trying to access array offset on'
+        . '|Attempt to read property|Array to string conversion|Uninitialized string offset|String offset cast occurred'
+        . '|Resource ID#\d+ used as offset|Illegal string offset|Object of class .+ could not be converted to (int|float)$'
+        . '|compact\(\): Undefined variable|unserialize\(\): Error at offset)/s';
 
     /**
-     * @var bool[] "file:line message" of deprecations logged in this process
+     * Deprecations logged in this process
+     *
+     * @var bool[]
      */
     private static $loggedDeprecations = [];
 
@@ -104,10 +108,6 @@ class slimDriver extends Slim
     /**
      * Slim error handler with PHP 7 semantics on PHP 8
      *
-     * Slim turns every reported error into ErrorException (HTTP 500), so deprecations are only logged
-     * (each distinct one once per process) and notices promoted to warnings in PHP 8 are handled as
-     * notices again.
-     *
      * @param int    $errno
      * @param string $errstr
      * @param string $errfile
@@ -139,10 +139,7 @@ class slimDriver extends Slim
     }
 
     /**
-     * Apply pretty exceptions only in debug to avoid accidental information leakage in production
-     *
-     * Added once: run()/runRaw() are called on every request by the long living web server,
-     * and the application may have added it already (webApplicationBase::slim() in mpcmf-web does).
+     * Add pretty exceptions once, only in debug
      */
     protected function addPrettyExceptions()
     {

@@ -17,7 +17,7 @@ trait singleton
      */
     public static function getInstance()
     {
-        // PHP 8.1+: inherited methods share static variables, so keep an instance per called class
+        // static variables are shared by subclasses since PHP 8.1
         static $instances = [];
 
         $calledClass = static::class;

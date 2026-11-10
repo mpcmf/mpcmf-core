@@ -14,10 +14,7 @@ class smartyDriver
     extends \Smarty
 {
     /**
-     * PHP functions available in templates as modifiers and in expressions
-     *
-     * Smarty 4.3+ deprecates unregistered PHP functions in templates. Functions that Smarty
-     * ships as its own modifiers (count, implode, explode, json_encode, nl2br, round, strlen, ...) are not listed.
+     * PHP functions available in templates as modifiers
      *
      * @var string[]
      */
@@ -77,11 +74,6 @@ class smartyDriver
 
     /**
      * Reset template caches before a request of a long-running process
-     *
-     * With caching or force_compile on everything is cleared as before (clearAllCache()): cache ids are unique
-     * per request, and force_compile recompiles only new template objects. Otherwise template objects are kept,
-     * so compiled templates are not included again on every request (PHP leaks memory on each include),
-     * and are dropped only when a file they were compiled from changed, as compile_check does for new objects.
      */
     public function clearRequestCache()
     {
@@ -106,7 +98,7 @@ class smartyDriver
                     if ($type === 'file' || $type === 'php') {
                         $mtimes[$key] = is_file($path) ? filemtime($path) : false;
                     } else {
-                        // other resources are not checked here: clear as before if they have timestamps
+                        // other resources: clear if they have timestamps
                         $mtimes[$key] = \Smarty_Resource::load($this, $type)->checkTimestamps() ? false : null;
                     }
                 }
@@ -297,7 +289,7 @@ class smartyDriver
      */
     public function display($template = null, $cache_id = null, $compile_id = null, $parent = null)
     {
-        // without caching a cache id only makes the template object id unique per data
+        // without caching a cache id only makes the object unique
         if ($cache_id === null && $this->caching) {
             $cache_id = md5(json_encode([$template, $this->getData()]));
         }
