@@ -317,7 +317,7 @@ class reactCurlContractTest extends reactCurlTestCase
         $client->setMaxRequest(2);
         $n = 0;
         for ($i = 0; $i < 6; $i++) {
-            $client->prepareTask(self::httpBase() . '/slow?s=0.3')->then(function () use (&$n) {
+            $client->prepareTask(self::delayUrl(0.3))->then(function () use (&$n) {
                 $n++;
             });
         }
