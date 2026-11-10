@@ -241,7 +241,9 @@ class forkServer
      */
     public function poll($timeout = 0.0)
     {
-        if ($this->socket === null || $this->dead) {
+        // a forked copy of the master shares the socket but not the child: waitpid() fails there (ECHILD),
+        // which must not be taken for the death of the server, and its messages belong to the original
+        if ($this->socket === null || $this->dead || $this->ownerPid !== getmypid()) {
             return;
         }
         $this->read($timeout);
@@ -368,6 +370,10 @@ class forkServer
      */
     private function send(array $message)
     {
+        if ($this->ownerPid !== getmypid()) {
+            return false;
+        }
+
         return self::write($this->socket, $message);
     }
 
