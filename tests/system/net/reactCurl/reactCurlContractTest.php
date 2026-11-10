@@ -8,6 +8,8 @@ use KHR\React\Curl\Result as curlResult;
 /**
  * Characterization of the observable reactCurl contract (as of khr/react-curl@95626ed +
  * khr/php-mcurl-client 3.1.0). Must pass unchanged for any replacement implementation.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class reactCurlContractTest extends reactCurlTestCase
 {

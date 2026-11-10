@@ -6,6 +6,8 @@ use React\Promise\Deferred;
 
 /**
  * One request of curlPool (internal).
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class curlTask
 {

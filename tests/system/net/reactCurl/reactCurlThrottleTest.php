@@ -8,6 +8,8 @@ namespace mpcmf\tests\system\net\reactCurl;
  *
  * Request arrival times are taken on the server side (accept time, see delayUrl()) and grouped
  * into batches.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class reactCurlThrottleTest extends reactCurlTestCase
 {

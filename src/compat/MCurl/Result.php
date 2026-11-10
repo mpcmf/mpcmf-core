@@ -16,6 +16,8 @@ namespace MCurl;
  * @property-read string $body
  * @property-read int $httpCode
  * @property-read array|null $headers
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class Result
 {

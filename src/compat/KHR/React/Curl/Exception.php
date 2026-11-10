@@ -8,6 +8,8 @@ namespace KHR\React\Curl;
  * (subclasses in mpcmf\system\net\curl\exception).
  *
  * Compatibility class: keeps the FQCN of khr/react-curl, implemented in mpcmf-core.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class Exception extends \RuntimeException
 {

@@ -33,6 +33,8 @@ use React\Promise\PromiseInterface;
  * Poll modes: adaptive (default), select (curl_multi_select() up to N ms inside the tick: lowest
  * latency, but blocks other loop work), legacy (fixed 10 ms and the call order of khr/react-curl;
  * also used while a blocking setSleep() is active, to keep its timing).
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class curlPool
 {

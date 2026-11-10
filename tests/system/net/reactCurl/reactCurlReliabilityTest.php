@@ -11,6 +11,8 @@ use mpcmf\system\net\curl\exception\queueFullException;
 /**
  * Fixes and opt-in features of the own engine (mpcmf\system\net\curl\curlPool).
  * Skipped when running against khr/react-curl.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class reactCurlReliabilityTest extends reactCurlTestCase
 {

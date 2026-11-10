@@ -7,6 +7,8 @@ use mpcmf\system\net\curl\curlPool;
 /**
  * Compatibility class: keeps the FQCN and API of khr/react-curl's Curl, implemented in mpcmf-core
  * on top of mpcmf\system\net\curl\curlPool.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class Curl
 {

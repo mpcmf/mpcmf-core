@@ -9,6 +9,8 @@ namespace mpcmf\system\threads;
  * Nothing is inherited from the master except the environment, stdout, stderr and the async signals setting:
  * other descriptors of the master (sockets, files, PHP opens them without close-on-exec) are replaced
  * with /dev/null in the child.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class spawnThread extends thread
 {

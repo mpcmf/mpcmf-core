@@ -10,6 +10,8 @@ use PHPUnit\Framework\TestCase;
  *
  * The tests are written against the public behaviour only, so the same suite runs against the
  * historical khr/react-curl based implementation (PHP 7.4+) and the own engine (PHP 8.1+).
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 abstract class reactCurlTestCase extends TestCase
 {

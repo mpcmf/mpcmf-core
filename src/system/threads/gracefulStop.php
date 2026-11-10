@@ -32,6 +32,8 @@ use mpcmf\system\helper\service\signalHandler;
  *
  * State belongs to the process: a forked child starts without the stop flag, enable() and critical sections.
  * Signal handlers only set flags or exit, they may run anywhere.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class gracefulStop
 {

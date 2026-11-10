@@ -14,6 +14,8 @@ use mpcmf\system\threads\exception\threadException;
  * The server checks getppid() and terminates its children when the master is gone, the master reaps the server
  * with waitpid(). The server never runs destructors or shutdown functions of objects inherited from the master:
  * it ends with SIGKILL to itself when all its children are reaped.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class forkServer
 {

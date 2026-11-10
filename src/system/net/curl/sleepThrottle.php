@@ -17,6 +17,8 @@ namespace mpcmf\system\net\curl;
  *  - blocking mode usleep()s inside the check instead of postponing the batch.
  *
  * Fixed: `next` < 1 no longer divides by zero (treated as 1).
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class sleepThrottle
 {

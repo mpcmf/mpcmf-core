@@ -6,6 +6,8 @@ namespace mpcmf\system\threads;
  * Thread forked by the fork server (forkserver start method)
  *
  * The child is not a child of the master: its state, exit code and signals go through the fork server.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class forkServerThread extends thread
 {

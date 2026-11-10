@@ -6,6 +6,8 @@ namespace KHR\React\Curl;
  * Result passed to done callbacks of mpcmf\system\net\reactCurl.
  *
  * Compatibility class: keeps the FQCN of khr/react-curl, implemented in mpcmf-core.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class Result extends \MCurl\Result
 {

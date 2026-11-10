@@ -8,6 +8,8 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Repeated stop signals and critical section transitions of gracefulStop, in forked children
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class gracefulStopTest extends TestCase
 {

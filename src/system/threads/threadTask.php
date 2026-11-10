@@ -10,6 +10,8 @@ use mpcmf\system\threads\exception\threadException;
  *
  * A child of these start methods does not share memory with the master, so the task must be addressable by name:
  * 'class::method' or [class, 'method'] (public static method) or an invokable class name. Arguments are serialized.
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class threadTask
 {
