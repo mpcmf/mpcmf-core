@@ -11,14 +11,17 @@ use mpcmf\system\helper\service\signalHandler;
  * (console commands exit with 128 + signal) or the kernel terminates the process. Two ways to stop gracefully:
  *
  * enable(): SIGTERM/SIGINT only set the stop flag, the application checks isRequested() between units of work
- * and exits itself. A repeated signal during the stop exits at once with 128 + signal. A deadline forces
- * the exit with 128 + signal that many seconds after the first signal.
+ * and exits itself. A deadline forces the exit with 128 + signal that many seconds after the first signal.
  *
  * Critical sections, enterCritical()/leaveCritical() or critical(): without enable() a stop signal outside
- * a critical section terminates the process as usual, inside one it is deferred until the outermost section is left
- * (a repeated signal exits at once). Code that cannot be interrupted, like processing of a queue message
- * up to its ack, is a critical section; waiting for the next message is not. With enable() critical sections change
- * nothing, the stop flag is set in any case.
+ * a critical section terminates the process as usual, inside one it is deferred until the outermost section is left.
+ * Code that cannot be interrupted, like processing of a queue message up to its ack, is a critical section; waiting
+ * for the next message is not. With enable() critical sections change nothing, the stop flag is set in any case.
+ *
+ * A repeated stop signal during the stop, in both modes: SIGTERM is ignored - process managers repeat it (processManager
+ * signals the whole group every second until SIGKILL, systemd KillMode=control-group plus a master forwarding it
+ * to its workers delivers it twice), the stop is bounded by the deadline and the manager's SIGKILL; SIGINT exits
+ * at once with 130 - a human pressing Ctrl+C twice. setForceOnRepeat() overrides this for both signals.
  *
  * The deadline uses pcntl_alarm(): it is armed at the first stop signal, an earlier alarm of the application is kept
  * and its SIGALRM is processed as before. SIGALRM handlers set by pcntl_signal() directly are not replaced, and
@@ -50,11 +53,11 @@ class gracefulStop
     private static $enabled = false;
 
     /**
-     * Exit on a repeated stop signal
+     * Exit on a repeated stop signal: null - SIGINT exits, SIGTERM is ignored (default), true - both exit, false - none
      *
-     * @var bool
+     * @var bool|null
      */
-    private static $forceOnRepeat = true;
+    private static $forceOnRepeat;
 
     /**
      * Seconds from the first stop signal to the forced exit, null - no deadline
@@ -128,8 +131,8 @@ class gracefulStop
     /**
      * SIGTERM and SIGINT only request a stop from now on, idempotent
      *
-     * A repeated signal during the stop exits with 128 + signal at once. Async signals are turned on, so the flag
-     * is set and the deadline is checked where the signal arrives.
+     * A repeated SIGINT during the stop exits with 130 at once, a repeated SIGTERM is ignored (see setForceOnRepeat()).
+     * Async signals are turned on, so the flag is set and the deadline is checked where the signal arrives.
      *
      * @param int|null $deadline Seconds from the first stop signal to the forced exit with 128 + signal,
      *                           null keeps the deadline set before (none by default)
@@ -210,12 +213,17 @@ class gracefulStop
     }
 
     /**
-     * Whether a repeated stop signal exits at once (by default), for code that gets the same signal twice
-     * by design: a pool master forwards SIGTERM to threads, which may have got it from the process manager already
+     * Whether a stop signal repeated during the stop exits at once with 128 + signal, in enable() mode and
+     * in critical sections
      *
-     * @param bool $force
+     * null (default): SIGINT exits, SIGTERM is ignored - process managers and masters forwarding the signal deliver
+     * SIGTERM more than once, a human presses Ctrl+C twice to abort. true: both exit (a supervisor which sends
+     * SIGTERM once and means "now" by the second one). false: neither exits, the process stops only by itself,
+     * the deadline or SIGKILL (a pool master that must outlive its threads to kill them after the grace period).
+     *
+     * @param bool|null $force
      */
-    public static function setForceOnRepeat(bool $force): void
+    public static function setForceOnRepeat(?bool $force): void
     {
         self::checkProcess();
         self::$forceOnRepeat = $force;
@@ -308,7 +316,7 @@ class gracefulStop
     {
         self::checkProcess();
         if (self::$enabled) {
-            if (self::$requested && self::$signal !== null && self::$forceOnRepeat) {
+            if (self::$requested && self::$signal !== null && self::exitsOnRepeat($signal)) {
                 exit(128 + $signal);
             }
             self::$requested = true;
@@ -322,7 +330,11 @@ class gracefulStop
         }
         if (self::$depth > 0 && isset(self::$deferrable[$signal])) {
             if (self::$deferred !== null) {
-                exit(128 + $signal);
+                if (self::exitsOnRepeat($signal)) {
+                    exit(128 + $signal);
+                }
+
+                return;
             }
             self::$deferred = $signal;
             self::$requested = true;
@@ -416,6 +428,16 @@ class gracefulStop
 
     /**
      * @param int $signal
+     *
+     * @return bool
+     */
+    private static function exitsOnRepeat($signal)
+    {
+        return self::$forceOnRepeat !== null ? self::$forceOnRepeat : $signal === SIGINT;
+    }
+
+    /**
+     * @param int $signal
      */
     private static function register($signal)
     {
@@ -492,7 +514,7 @@ class gracefulStop
         }
         self::$pid = $pid;
         self::$enabled = false;
-        self::$forceOnRepeat = true;
+        self::$forceOnRepeat = null;
         self::$deadline = null;
         self::$requested = false;
         self::$signal = null;

@@ -372,9 +372,9 @@ class thread
         }
 
         if ($this->gracefulStop) {
+            // a repeated SIGTERM is ignored: the pool sends SIGTERM to a thread which may have got it
+            // from the process manager already
             gracefulStop::enable();
-            // the pool sends SIGTERM to a thread which may have got it from the process manager already
-            gracefulStop::setForceOnRepeat(false);
         } elseif ($forked) {
             // the default handler: gracefulStop of the callback suppresses it
             $signalHandler->setDefaultHandler(SIGTERM, [__CLASS__, 'signalHandler']);
