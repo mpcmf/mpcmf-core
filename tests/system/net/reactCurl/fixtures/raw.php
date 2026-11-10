@@ -1,9 +1,6 @@
 <?php
-// Raw TCP fixture: port+0 accepts and closes (empty reply), port+1 accepts and never answers,
-// port+2 sends a truncated body and closes, port+3 is a non-blocking HTTP server: GET /?s=<seconds>
-// answers after s seconds with the time the connection was accepted (%.6f) as the body.
-// Unlike `php -S`, whose worker sleeps through a slow request and holds the connections it has
-// already accepted, delayed answers here never hold other requests.
+// Raw TCP fixture: port+0 closes, port+1 never answers, port+2 truncates the body,
+// port+3 answers GET /?s=<seconds> after s seconds with the accept time
 $base = (int)($argv[1] ?? 19001);
 $servers = [];
 foreach ([0, 1, 2, 3] as $shift) {
@@ -74,7 +71,8 @@ while (true) {
         if ($connection[3] !== null && $connection[3] <= $now) {
             $body = sprintf('%.6f', $connection[1]);
             stream_set_blocking($connection[0], true);
-            @fwrite($connection[0], "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " . strlen($body) . "\r\nConnection: close\r\n\r\n" . $body);
+            @fwrite($connection[0], "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " . strlen($body)
+                . "\r\nConnection: close\r\n\r\n" . $body);
             fclose($connection[0]);
             unset($timed[$id]);
         }

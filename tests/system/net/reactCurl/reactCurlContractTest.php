@@ -6,8 +6,7 @@ use KHR\React\Curl\Exception as curlException;
 use KHR\React\Curl\Result as curlResult;
 
 /**
- * Characterization of the observable reactCurl contract (as of khr/react-curl@95626ed +
- * khr/php-mcurl-client 3.1.0). Must pass unchanged for any replacement implementation.
+ * reactCurl contract tests (khr/react-curl@95626ed + khr/php-mcurl-client 3.1.0)
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
@@ -105,9 +104,11 @@ class reactCurlContractTest extends reactCurlTestCase
 
     public function testUserOptionsKeepTheirPositionAndAppearInGetOptions()
     {
-        $outcome = $this->runOne(self::httpBase() . '/echo', 'GET', null, [CURLOPT_PRIVATE => 'job-42', CURLOPT_URL => 'ignored', CURLOPT_CUSTOMREQUEST => 'PUT']);
+        $options = [CURLOPT_PRIVATE => 'job-42', CURLOPT_URL => 'ignored', CURLOPT_CUSTOMREQUEST => 'PUT'];
+        $outcome = $this->runOne(self::httpBase() . '/echo', 'GET', null, $options);
         $result = $outcome['fulfilled'];
-        $this->assertSame([CURLOPT_PRIVATE => 'job-42', CURLOPT_URL => self::httpBase() . '/echo', CURLOPT_CUSTOMREQUEST => 'GET'], $result->getOptions());
+        $expected = [CURLOPT_PRIVATE => 'job-42', CURLOPT_URL => self::httpBase() . '/echo', CURLOPT_CUSTOMREQUEST => 'GET'];
+        $this->assertSame($expected, $result->getOptions());
         $this->assertSame('job-42', curl_getinfo($result->getCh(), CURLINFO_PRIVATE));
         $this->assertSame('GET', json_decode($result->getBody(), true)['m']);
     }
@@ -155,7 +156,7 @@ class reactCurlContractTest extends reactCurlTestCase
     }
 
     /**
-     * P11: POST redirected with 301/302/303 stays POST (CUSTOMREQUEST) but loses its body.
+     * P11: POST redirected with 301/302/303 loses its body
      */
     public function testPostRedirectQuirk()
     {
@@ -213,8 +214,6 @@ class reactCurlContractTest extends reactCurlTestCase
     }
 
     /**
-     * Messages come from libcurl and differ between libcurl versions, codes (curl_errno) are stable.
-     *
      * @dataProvider networkErrorProvider
      */
     public function testNetworkErrorsReject($target, array $codes, $method, array $options, $httpCode)
@@ -292,8 +291,7 @@ class reactCurlContractTest extends reactCurlTestCase
     }
 
     /**
-     * linkExpander::expandBatch shape: run() on the idle client first, tasks added right after it
-     * without another run() still start (khr kept polling for one round).
+     * Tasks added right after run() on the idle client start
      */
     public function testRunOnIdleClientStartsTasksAddedRightAfter()
     {
@@ -358,10 +356,22 @@ class reactCurlContractTest extends reactCurlTestCase
     {
         return [
             'http' => [['proxy_type' => 'http', 'initial' => '1.2.3.4:3128'], [CURLOPT_PROXYTYPE => CURLPROXY_HTTP, CURLOPT_PROXY => '1.2.3.4:3128']],
-            'https' => [['proxy_type' => 'https', 'initial' => '1.2.3.4:3128'], [CURLOPT_PROXYTYPE => CURLPROXY_HTTP, CURLOPT_PROXY => '1.2.3.4:3128']],
-            'socks4' => [['proxy_type' => 'socks4', 'initial' => '1.2.3.4:1080'], [CURLOPT_PROXYTYPE => CURLPROXY_SOCKS4, CURLOPT_PROXY => '1.2.3.4:1080']],
-            'socks5 basic auth' => [['proxy_type' => 'socks5', 'initial' => 'u:p@1.2.3.4:1080', 'auth_type' => 'basic'], [CURLOPT_PROXYTYPE => CURLPROXY_SOCKS5, CURLOPT_PROXY => 'u:p@1.2.3.4:1080', CURLOPT_PROXYAUTH => CURLAUTH_BASIC]],
-            'http ntlm auth' => [['proxy_type' => 'http', 'initial' => 'u:p@1.2.3.4:3128', 'auth_type' => 'ntlm'], [CURLOPT_PROXYTYPE => CURLPROXY_HTTP, CURLOPT_PROXY => 'u:p@1.2.3.4:3128', CURLOPT_PROXYAUTH => CURLAUTH_NTLM]],
+            'https' => [
+                ['proxy_type' => 'https', 'initial' => '1.2.3.4:3128'],
+                [CURLOPT_PROXYTYPE => CURLPROXY_HTTP, CURLOPT_PROXY => '1.2.3.4:3128'],
+            ],
+            'socks4' => [
+                ['proxy_type' => 'socks4', 'initial' => '1.2.3.4:1080'],
+                [CURLOPT_PROXYTYPE => CURLPROXY_SOCKS4, CURLOPT_PROXY => '1.2.3.4:1080'],
+            ],
+            'socks5 basic auth' => [
+                ['proxy_type' => 'socks5', 'initial' => 'u:p@1.2.3.4:1080', 'auth_type' => 'basic'],
+                [CURLOPT_PROXYTYPE => CURLPROXY_SOCKS5, CURLOPT_PROXY => 'u:p@1.2.3.4:1080', CURLOPT_PROXYAUTH => CURLAUTH_BASIC],
+            ],
+            'http ntlm auth' => [
+                ['proxy_type' => 'http', 'initial' => 'u:p@1.2.3.4:3128', 'auth_type' => 'ntlm'],
+                [CURLOPT_PROXYTYPE => CURLPROXY_HTTP, CURLOPT_PROXY => 'u:p@1.2.3.4:3128', CURLOPT_PROXYAUTH => CURLAUTH_NTLM],
+            ],
             'unknown type' => [['proxy_type' => 'ftp', 'initial' => '1.2.3.4:21'], [CURLOPT_PROXY => '1.2.3.4:21']],
         ];
     }
@@ -418,7 +428,7 @@ class reactCurlContractTest extends reactCurlTestCase
         $this->assertSame('echo', $headers['x-fixture']);
         $this->assertSame('application/json', $headers['content-type']);
         $this->assertSame([CURLOPT_CUSTOMREQUEST, CURLOPT_URL], array_keys($result->getOptions()), 'streams are hidden from getOptions');
-        // RETURNTRANSFER (client option, applied after CURLOPT_FILE) wins: the stream stays empty
+        // RETURNTRANSFER wins: the stream stays empty
         $this->assertSame('', $result->getBody());
         $this->assertIsResource($result->getBodyStream());
         $this->assertSame('', stream_get_contents($result->getBodyStream()));

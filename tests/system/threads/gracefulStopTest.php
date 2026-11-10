@@ -7,7 +7,7 @@ use mpcmf\system\threads\gracefulStop;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Repeated stop signals and critical section transitions of gracefulStop, in forked children
+ * gracefulStop tests in forked children
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
@@ -47,7 +47,7 @@ class gracefulStopTest extends TestCase
             while (!gracefulStop::isRequested()) {
                 usleep(1000);
             }
-            // the unit of work after the stop request, repeated signals arrive here
+            // repeated signals arrive here
             self::work(0.8);
             exit(0);
         }, $signals);
@@ -103,7 +103,7 @@ class gracefulStopTest extends TestCase
     }
 
     /**
-     * A stop signal at a random moment into a loop of short critical sections terminates the process every time
+     * A stop signal in a loop of critical sections always terminates
      *
      * @testWith [false]
      *           [true]
@@ -143,7 +143,7 @@ class gracefulStopTest extends TestCase
     }
 
     /**
-     * Fork, run the callback in the child, send the signals 0.2 s apart starting 0.3 s after the fork
+     * Fork, run the callback in the child and send the signals
      *
      * @param callable   $child
      * @param int[]      $signals
