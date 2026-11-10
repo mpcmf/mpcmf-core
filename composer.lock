@@ -396,12 +396,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/mpcmf/mpcmf-signalHandler.git",
-                "reference": "d48e1032afd50b4bda91538c7d813b3bfeaec5d4"
+                "reference": "ef9288ced5ed65ad9e6e2c472e95664960f0135f"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mpcmf/mpcmf-signalHandler/zipball/d48e1032afd50b4bda91538c7d813b3bfeaec5d4",
-                "reference": "d48e1032afd50b4bda91538c7d813b3bfeaec5d4",
+                "url": "https://api.github.com/repos/mpcmf/mpcmf-signalHandler/zipball/ef9288ced5ed65ad9e6e2c472e95664960f0135f",
+                "reference": "ef9288ced5ed65ad9e6e2c472e95664960f0135f",
                 "shasum": ""
             },
             "default-branch": true,
@@ -425,7 +425,7 @@
                 "issues": "https://github.com/mpcmf/mpcmf-signalHandler/issues",
                 "source": "https://github.com/mpcmf/mpcmf-signalHandler/tree/master"
             },
-            "time": "2026-11-01T16:51:30+00:00"
+            "time": "2026-11-09T23:58:11+00:00"
         },
         {
             "name": "nervetattoo/elasticsearch",
