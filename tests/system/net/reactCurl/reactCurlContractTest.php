@@ -289,6 +289,27 @@ class reactCurlContractTest extends reactCurlTestCase
         $this->assertSame(10, $done);
     }
 
+    /**
+     * linkExpander::expandBatch shape: run() on the idle client first, tasks added right after it
+     * without another run() still start (khr kept polling for one round).
+     */
+    public function testRunOnIdleClientStartsTasksAddedRightAfter()
+    {
+        $loop = $this->createLoop();
+        $client = $this->createClient($loop);
+        $client->run();
+        $n = 0;
+        for ($i = 0; $i < 5; $i++) {
+            $client->prepareTask(self::httpBase() . '/ok?i=' . $i)->then(function () use (&$n) {
+                $n++;
+            });
+        }
+        $this->runLoop($loop, function () use (&$n) {
+            return $n >= 5;
+        }, 3);
+        $this->assertSame(5, $n);
+    }
+
     public function testMaxRequestLimitsParallelTransfers()
     {
         $loop = $this->createLoop();

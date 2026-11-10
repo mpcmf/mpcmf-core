@@ -253,6 +253,10 @@ class curlPool
         }
         $this->interval = $this->minInterval;
         $this->tick();
+        // like khr: run() on an idle pool keeps polling for one round, requests added right after it start without run()
+        if ($this->timer === null) {
+            $this->schedule($this->maxInterval);
+        }
     }
 
     /**
