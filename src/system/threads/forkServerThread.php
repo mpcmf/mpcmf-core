@@ -5,8 +5,6 @@ namespace mpcmf\system\threads;
 /**
  * Thread forked by the fork server (forkserver start method)
  *
- * The child is not a child of the master: its state, exit code and signals go through the fork server.
- *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class forkServerThread extends thread
@@ -54,7 +52,7 @@ class forkServerThread extends thread
             'payload' => $this->payload,
             'graceful' => $this->gracefulStop,
             'signals' => $this->defaultSignals,
-            // a forked child inherits the setting of the master, these children get it from here
+            // async signals setting of the master
             'async' => pcntl_async_signals(),
         ] + $this->options);
         $this->payload = null;

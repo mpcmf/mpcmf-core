@@ -3,12 +3,7 @@
 namespace mpcmf\system\threads;
 
 /**
- * Thread started as a new php process (spawn start method)
- *
- * The child is `php runner.php spawn`: it loads the application bootstrap, reads the task from fd 3 and runs it.
- * Nothing is inherited from the master except the environment, stdout, stderr and the async signals setting:
- * other descriptors of the master (sockets, files, PHP opens them without close-on-exec) are replaced
- * with /dev/null in the child.
+ * Thread started as a new php process (spawn start method): php runner.php spawn
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
@@ -67,7 +62,7 @@ class spawnThread extends thread
         $status = proc_get_status($process);
         $this->onStarted($status['pid']);
 
-        // blocks until the child reads it if the message is larger than the pipe buffer
+        // blocks if the message exceeds the pipe buffer
         $message = serialize([
             'payload' => $this->payload,
             'graceful' => $this->gracefulStop,
@@ -88,8 +83,7 @@ class spawnThread extends thread
     }
 
     /**
-     * Descriptors of this process above stderr, mapped to /dev/null for the child: proc_open() leaves everything
-     * not mapped open across exec
+     * Descriptors above stderr, mapped to /dev/null for the child
      *
      * @param resource|false $null
      *
@@ -103,7 +97,7 @@ class spawnThread extends thread
             return $descriptors;
         }
         foreach (@scandir('/proc/self/fd') ?: [] as $fd) {
-            // the descriptor of scandir() itself is closed by now: a closed number may be reused by proc_open()
+            // skip the closed descriptor of scandir() itself
             if (ctype_digit($fd) && (int)$fd > 2 && @readlink("/proc/self/fd/{$fd}") !== false) {
                 $descriptors[(int)$fd] = $null;
             }

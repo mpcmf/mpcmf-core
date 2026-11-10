@@ -61,7 +61,7 @@ class thread
     protected $pid;
 
     /**
-     * Child has been reaped (or is not our child anymore), its pid may belong to another process now
+     * Child has been reaped, its pid may belong to another process now
      *
      * @var bool
      */
@@ -80,7 +80,7 @@ class thread
     protected $masterHandlerAdded = false;
 
     /**
-     * Graceful stop mode: the child gets SIGTERM/SIGINT as a stop request instead of being terminated by the master
+     * Graceful stop mode: SIGTERM/SIGINT only request a stop in the child
      *
      * @var bool
      */
@@ -217,7 +217,7 @@ class thread
             return true;
         }
 
-        // reaped now, or -1 (ECHILD): reaped elsewhere. Probing the pid further would hit a reused pid
+        // reaped now, or -1 (ECHILD): reaped elsewhere
         $this->exited = true;
         if ($pid === $this->pid) {
             $this->exitCode = pcntl_wifexited($status) ? pcntl_wexitstatus($status) : 128 + pcntl_wtermsig($status);
@@ -227,7 +227,7 @@ class thread
     }
 
     /**
-     * Exit code of the finished thread, signal number + 128 if it was killed, null if unknown or still running
+     * Exit code of the finished thread, 128 + signal if killed, null if unknown
      *
      * @return int|null
      */
@@ -239,10 +239,6 @@ class thread
     /**
      * Enable graceful stop mode, must be called before start()
      *
-     * In the child SIGTERM/SIGINT only set a flag (see isStopRequested()) and signals are dispatched asynchronously,
-     * so the callback can finish its current work. The master does not forward SIGTERM to the child, the owner
-     * (threadPool) decides when to stop it.
-     *
      * @param bool $enabled
      */
     public function setGracefulStop($enabled = true)
@@ -252,8 +248,6 @@ class thread
 
     /**
      * Reset signals to SIG_DFL in the child, must be called before start()
-     *
-     * Without it the child keeps handlers inherited from the master, and signals the master handled are swallowed.
      *
      * @param int[] $signals
      */
@@ -345,7 +339,7 @@ class thread
     {
         $this->pid = $pid;
         $this->startedAt = time();
-        // the same object may be started again after its previous child exited
+        // the same object may be started again
         $this->exited = false;
         $this->exitCode = null;
 
@@ -361,7 +355,7 @@ class thread
      * @internal used by thread start methods
      *
      * @param array $arguments
-     * @param bool  $forked The child is a fork of the master and inherits its signal handlers
+     * @param bool  $forked the child is a fork of the master
      */
     public function runInChild(array $arguments, $forked = true)
     {
@@ -372,8 +366,7 @@ class thread
         }
 
         if ($this->gracefulStop) {
-            // a repeated SIGTERM is ignored: the pool sends SIGTERM to a thread which may have got it
-            // from the process manager already
+            // a repeated SIGTERM is ignored
             gracefulStop::enable();
             register_shutdown_function([__CLASS__, 'blockStopSignals'], getmypid());
         } elseif ($forked) {
@@ -392,7 +385,8 @@ class thread
             call_user_func_array($this->runnable, $arguments);
         } catch (\Throwable $exception) {
             self::log()->addError("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}");
-            MPCMF_DEBUG && error_log("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}\nStack trace:\n{$exception->getTraceAsString()}");
+            MPCMF_DEBUG && error_log("[EXCEPTION] {$exception->getMessage()} in {$exception->getFile()}:{$exception->getLine()}"
+                . "\nStack trace:\n{$exception->getTraceAsString()}");
 
             exit(1);
         }
@@ -400,15 +394,7 @@ class thread
     }
 
     /**
-     * Shutdown function of a graceful child: it has stopped by now, whatever ended it (return or exit())
-     *
-     * A stop signal arriving during the shutdown (a repeated SIGTERM of the process manager or the master) must not
-     * turn its exit code into 143. PHP sets SIG_DFL back and unblocks every signal that has a handler at the request
-     * shutdown, so the stop signals get SIG_DFL here, which PHP leaves alone, and are blocked: a signal arriving from
-     * now on stays pending until the exit. pcntl_signal() unblocks the signal it sets, so they are ignored first:
-     * only a signal arriving within the microseconds between blocking and SIG_DFL of that signal still terminates.
-     * Later shutdown functions and destructors run with them blocked, a hanging one is killed by the pool after
-     * the grace period.
+     * Shutdown function of a graceful child: block stop signals until the exit
      *
      * @internal
      *
@@ -420,6 +406,7 @@ class thread
 
             return;
         }
+        // ignored first: pcntl_signal() unblocks the signal it sets
         foreach (gracefulStop::SIGNALS as $signal) {
             pcntl_signal($signal, SIG_IGN);
         }
@@ -461,8 +448,7 @@ class thread
     public function kill($_signal = SIGKILL, $_wait = false)
     {
         MPCMF_DEBUG && self::log()->addDebug("Killing process with pid {$this->pid}...", [__METHOD__]);
-        // once: signals are delivered asynchronously now, and a repeated SIGTERM would not stop a child
-        // in a critical section any faster. Only an alive, not yet reaped child is guaranteed to own the pid
+        // once: a repeated SIGTERM would not stop it faster
         $this->signal($_signal);
         if ($_wait) {
             MPCMF_DEBUG && self::log()->addDebug("Waiting process [pid {$this->pid}]...", [__METHOD__]);
@@ -529,7 +515,7 @@ class thread
         }
         do {
             $pid = pcntl_waitpid($this->pid, $status);
-            // a signal handler installed without restarting system calls interrupts the wait, the child is alive
+            // interrupted by a signal handler, the child is alive
         } while ($pid === -1 && pcntl_get_last_error() === PCNTL_EINTR);
         $this->exited = true;
         if ($pid === $this->pid) {

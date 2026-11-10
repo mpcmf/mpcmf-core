@@ -6,14 +6,7 @@ use mpcmf\system\helper\io\log;
 use mpcmf\system\threads\exception\threadException;
 
 /**
- * Fork server (forkserver start method)
- *
- * The server is a fork of the master made at an explicit point (threadPool::startForkServer()), before the master
- * opens connections; it forks thread children from itself, so children inherit the master state of that moment.
- * The master talks to it over a socket pair: start a task, signal a task; the server reports pids and exit codes.
- * The server checks getppid() and terminates its children when the master is gone, the master reaps the server
- * with waitpid(). The server never runs destructors or shutdown functions of objects inherited from the master:
- * it ends with SIGKILL to itself when all its children are reaped.
+ * Fork server (forkserver start method): forks thread children from a copy of the master
  *
  * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
@@ -221,7 +214,7 @@ class forkServer
     }
 
     /**
-     * Ask the server to signal a running child: the server owns the pid, so it cannot hit a reused one
+     * Ask the server to signal a running child
      *
      * @param int $id
      * @param int $signal
@@ -244,13 +237,12 @@ class forkServer
      */
     public function poll($timeout = 0.0)
     {
-        // a forked copy of the master shares the socket but not the child: waitpid() fails there (ECHILD),
-        // which must not be taken for the death of the server, and its messages belong to the original
+        // a forked copy of the master: the server is not ours
         if ($this->socket === null || $this->dead || $this->ownerPid !== getmypid()) {
             return;
         }
         $this->read($timeout);
-        // the server is our child: reaping it is the reliable death check
+        // reaping the server is the reliable death check
         if (pcntl_waitpid($this->pid, $status, WNOHANG) !== 0) {
             // exit reports the server sent before it died
             while ($this->read(0)) {
@@ -298,7 +290,7 @@ class forkServer
 
     public function __destruct()
     {
-        // forked copies of the master must not stop the server of the original
+        // a forked copy must not stop the server of the original
         if ($this->ownerPid !== getmypid()) {
             return;
         }
@@ -339,7 +331,7 @@ class forkServer
     }
 
     /**
-     * Server is gone: its children are orphans now, kill the ones that still are the processes we know
+     * Server is gone: kill its orphaned children
      *
      * @param int $status
      */
@@ -352,7 +344,7 @@ class forkServer
             if ($task['exited']) {
                 continue;
             }
-            // pid + start time identify the process, a reused pid has another start time
+            // a reused pid has another start time
             if (isset($task['starttime']) && self::getStartTime($task['pid']) === $task['starttime']) {
                 posix_kill($task['pid'], SIGKILL);
                 $killed++;
@@ -467,12 +459,12 @@ class forkServer
             },
         ];
         foreach ($classes as $class => $isOpen) {
-            // factory() keeps its instances in a static variable, a class that is not loaded has none
+            // a class that is not loaded has no instances
             if (!class_exists($class, false) || !method_exists($class, 'factory')) {
                 continue;
             }
             $instances = (new \ReflectionMethod($class, 'factory'))->getStaticVariables();
-            // [called class => [section => instance]]: factory() keeps instances per called class
+            // [called class => [section => instance]]
             foreach (isset($instances['instances']) ? $instances['instances'] : [] as $calledClass => $sections) {
                 foreach ($sections as $section => $instance) {
                     $count = (int)$isOpen($instance);
@@ -504,7 +496,7 @@ class forkServer
     }
 
     /**
-     * Server side: run the loop and die without running destructors and shutdown functions of inherited objects
+     * Server side: run the loop and die by SIGKILL
      *
      * @param resource $socket
      * @param string   $title
@@ -521,7 +513,7 @@ class forkServer
     }
 
     /**
-     * Server loop, returns when the master is gone or asked to stop and all children are reaped
+     * Server loop, returns when all children are reaped after the stop
      *
      * @param resource $socket
      * @param string   $title
@@ -530,13 +522,13 @@ class forkServer
     {
         $masterPid = posix_getppid();
         cli_set_process_title($title . '#fork_server');
-        // drop handlers inherited from the master, SIGPIPE stays as php cli set it
+        // drop handlers inherited from the master, except SIGPIPE
         for ($signal = 1; $signal < 32; $signal++) {
             if (!in_array($signal, [SIGKILL, SIGSTOP, SIGPIPE], true)) {
                 @pcntl_signal($signal, SIG_DFL);
             }
         }
-        // the server lives in the master's process group: group signals must not kill it before its children
+        // group signals must not kill the server before its children
         $ignored = [SIGTERM, SIGINT, SIGHUP, SIGQUIT, SIGUSR1, SIGUSR2];
         foreach ($ignored as $signal) {
             pcntl_signal($signal, SIG_IGN);
@@ -591,7 +583,7 @@ class forkServer
             }
             $data = fread($socket, 65536);
             if ($data === false || $data === '') {
-                // master closed the socket but is alive: finish the children and exit
+                // master closed the socket: finish the children and exit
                 $shutdown = true;
                 usleep(100000);
                 continue;
