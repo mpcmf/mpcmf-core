@@ -239,25 +239,31 @@ class gracefulStop
         if (self::$depth === 0 && self::$deferred !== null && !self::$enabled) {
             self::terminate(self::$deferred);
         }
-        if (self::$depth++ > 0 || self::$enabled) {
+        if (self::$depth > 0 || self::$enabled) {
+            self::$depth++;
 
             return;
         }
 
+        // a signal arriving while the handlers are switched would find neither the old nor the new action;
+        // pcntl_signal() unblocks the signal it sets (zend_sigaction), so the state is set before the handler
+        $mask = self::blockSignals();
+        self::$depth = 1;
         $signalHandler = signalHandler::getInstance();
         foreach (self::SIGNALS as $signal) {
             if ($signalHandler->isHandling($signal)) {
                 // only the terminal action is deferred, handlers of the application run as usual
                 if ($signalHandler->getDefaultHandler($signal) !== null && !$signalHandler->isDefaultHandlerSuppressed($signal)) {
+                    self::$deferrable[$signal] = 'default';
                     self::register($signal);
                     $signalHandler->suppressDefaultHandler($signal);
-                    self::$deferrable[$signal] = 'default';
                 }
             } elseif (pcntl_signal_get_handler($signal) === SIG_DFL) {
-                pcntl_signal($signal, [self::class, 'onSignal']);
                 self::$deferrable[$signal] = 'kernel';
+                pcntl_signal($signal, [self::class, 'onSignal']);
             }
         }
+        self::unblockSignals($mask);
     }
 
     /**
@@ -381,13 +387,17 @@ class gracefulStop
 
             return;
         }
-        if (self::$depth === 1 && !self::$enabled) {
-            // signals are dispatched here if async signals are off
-            pcntl_signal_dispatch();
-        }
-        if (--self::$depth > 0) {
+        if (self::$depth > 1) {
+            self::$depth--;
 
             return;
+        }
+        // stop signals wait until the old actions are back; pcntl_signal() unblocks the signal it sets
+        // (zend_sigaction), by then SIG_DFL is set and the depth does not matter
+        $mask = self::$deferrable ? self::blockSignals() : null;
+        if (!self::$enabled) {
+            // signals that arrived inside the section are deferred by it, also those not dispatched yet
+            pcntl_signal_dispatch();
         }
         $signalHandler = signalHandler::getInstance();
         foreach (self::$deferrable as $signal => $how) {
@@ -398,6 +408,8 @@ class gracefulStop
             }
         }
         self::$deferrable = [];
+        self::$depth = 0;
+        self::unblockSignals($mask);
         if ($apply && self::$deferred !== null && !self::$enabled) {
             self::terminate(self::$deferred);
         }
@@ -434,6 +446,30 @@ class gracefulStop
     private static function exitsOnRepeat($signal)
     {
         return self::$forceOnRepeat !== null ? self::$forceOnRepeat : $signal === SIGINT;
+    }
+
+    /**
+     * Block the stop signals, the kernel keeps them pending
+     *
+     * @return array|null the previous signal mask
+     */
+    private static function blockSignals()
+    {
+        $previous = [];
+
+        return pcntl_sigprocmask(SIG_BLOCK, self::SIGNALS, $previous) ? $previous : null;
+    }
+
+    /**
+     * Restore the signal mask, pending stop signals are delivered now
+     *
+     * @param array|null $previous
+     */
+    private static function unblockSignals($previous)
+    {
+        if ($previous !== null) {
+            pcntl_sigprocmask(SIG_SETMASK, $previous);
+        }
     }
 
     /**
