@@ -9,8 +9,9 @@ use mpcmf\system\net\curl\exception\optionException;
 use mpcmf\system\net\curl\exception\queueFullException;
 
 /**
- * Fixes and opt-in features of the own engine (mpcmf\system\net\curl\curlPool).
- * Skipped when running against khr/react-curl.
+ * curlPool fixes and opt-in features, skipped on khr/react-curl
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class reactCurlReliabilityTest extends reactCurlTestCase
 {
@@ -51,7 +52,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     }
 
     /**
-     * P1: TypeError/ValueError from curl_setopt_array() rejects only that task.
+     * P1: TypeError/ValueError from curl_setopt_array() rejects only that task
      */
     public function testInvalidOptionTypeRejectsOnlyItsTask()
     {
@@ -94,8 +95,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     }
 
     /**
-     * An option libcurl rejects with false (e.g. HTTP/2 without nghttp2) is skipped with a warning,
-     * all other options are applied and the request runs (khr lost the rest of the options).
+     * An option libcurl rejects is skipped, the others are applied
      */
     public function testOptionRejectedByLibcurlIsSkippedWithWarning()
     {
@@ -110,8 +110,9 @@ class reactCurlReliabilityTest extends reactCurlTestCase
         });
         $echo = [];
         for ($i = 0; $i < 3; $i++) {
-            // task options come first, the client options (UA, ...) are the tail after the bad one
-            $client->prepareTask(self::httpBase() . '/echo', 'POST', 'a=' . $i, [CURLOPT_HTTP_VERSION => 99, CURLOPT_REFERER => 'tail-referer'])->then(function ($result) use (&$echo) {
+            // client options are the tail after the bad one
+            $options = [CURLOPT_HTTP_VERSION => 99, CURLOPT_REFERER => 'tail-referer'];
+            $client->prepareTask(self::httpBase() . '/echo', 'POST', 'a=' . $i, $options)->then(function ($result) use (&$echo) {
                 $echo[] = json_decode($result->getBody(), true);
             });
         }
@@ -125,7 +126,10 @@ class reactCurlReliabilityTest extends reactCurlTestCase
             $this->assertStringStartsWith('Mozilla/5.0 (X11; Linux x86_64)', $request['ua']);
         }
         $this->assertCount(1, $logged, 'rate-limited: one line per option per 60 s');
-        $this->assertStringStartsWith('warning: reactCurl: curl rejected CURLOPT_HTTP_VERSION (' . CURLOPT_HTTP_VERSION . '), the option is skipped', $logged[0]);
+        $this->assertStringStartsWith(
+            'warning: reactCurl: curl rejected CURLOPT_HTTP_VERSION (' . CURLOPT_HTTP_VERSION . '), the option is skipped',
+            $logged[0]
+        );
     }
 
     public function testStrictOptionsRejectTheTask()
@@ -184,7 +188,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
         $client->prepareTask(self::httpBase() . '/ok');
         $client->prepareTask(self::httpBase() . '/ok');
         $inside = false;
-        // started on the next tick: the bad option is found after the queue limit rejected the last two
+        // the queue limit rejects the last two first
         $this->runLoop($loop, function () use (&$calledInside) {
             return count($calledInside) >= 3;
         });
@@ -192,7 +196,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     }
 
     /**
-     * P2: exceptions thrown in done/error callbacks are logged, control flow is unchanged.
+     * P2: exceptions in done/error callbacks are logged
      */
     public function testCallbackExceptionsAreLoggedNotPropagated()
     {
@@ -228,14 +232,21 @@ class reactCurlReliabilityTest extends reactCurlTestCase
         });
         sort($logged);
         $this->assertCount(2, $logged, implode("\n", $logged));
-        $this->assertMatchesRegularExpression('~^reactCurl: uncaught exception in done callback for ' . preg_quote(self::httpBase(), '~') . '/ok(\\?repeat=\\d)? \\| LogicException: bug in done~', $logged[0]);
-        $this->assertStringStartsWith('reactCurl: uncaught exception in error callback for ' . self::httpBase() . '/code?c=500 | LogicException: bug in error', $logged[1]);
+        $this->assertMatchesRegularExpression(
+            '~^reactCurl: uncaught exception in done callback for ' . preg_quote(self::httpBase(), '~')
+                . '/ok(\\?repeat=\\d)? \\| LogicException: bug in done~',
+            $logged[0]
+        );
+        $this->assertStringStartsWith(
+            'reactCurl: uncaught exception in error callback for ' . self::httpBase() . '/code?c=500 | LogicException: bug in error',
+            $logged[1]
+        );
         $this->assertSame(1, $errorCallbackCalls, 'a throwing done callback does not trigger the error callback');
         $this->assertSame(['own then() still called'], $chained);
     }
 
     /**
-     * P9: setSleep(0, ...) used to divide by zero.
+     * P9: setSleep(0, ...) does not divide by zero
      */
     public function testSleepAfterZeroRequestsMeansEveryRequest()
     {
@@ -257,7 +268,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     }
 
     /**
-     * P4: integer FOLLOWLOCATION from application options is normalized (PHP 8.5 rejects it).
+     * P4: integer FOLLOWLOCATION is normalized
      */
     public function testIntegerFollowLocationStillFollows()
     {
@@ -267,7 +278,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     }
 
     /**
-     * P3: with react/event-loop >= 0.5 `$timer->cancel()` does not exist; the loop must end by itself.
+     * P3: the loop ends by itself
      */
     public function testLoopEndsByItselfWhenWorkIsDone()
     {
@@ -292,7 +303,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     }
 
     /**
-     * P10 stays as before by default: prepareTask() while the client is idle needs run().
+     * P10: prepareTask() on the idle client needs run()
      */
     public function testIdleClientNeedsRunUnlessAutoRun()
     {
@@ -315,9 +326,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     }
 
     /**
-     * A task added while another one runs starts on its own: it finishes first. Not started until
-     * run() or until the running task is done, it would finish second or never; the slow task
-     * takes 1 s so that a fast request delayed by load still finishes first.
+     * A task added while another one runs starts on its own
      */
     public function testTasksAddedWhileRunningStartWithoutRun()
     {
@@ -342,7 +351,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     public static function pollModeProvider()
     {
         return [
-            // literals: the provider also runs when the engine is absent (khr), see setUp()
+            // literals: the provider also runs on khr
             'adaptive' => ['adaptive', null, 0.008],
             'fixed 10ms' => ['adaptive', [0.01, 0.01], 0.03],
             'select' => ['select', null, 0.006],
@@ -351,7 +360,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     }
 
     /**
-     * P6: sequential requests (C=1) - latency per request by poll mode.
+     * P6: sequential request latency by poll mode
      *
      * @dataProvider pollModeProvider
      */
@@ -448,9 +457,7 @@ class reactCurlReliabilityTest extends reactCurlTestCase
     }
 
     /**
-     * The deadline counts from prepareTask(): a request held by the throttle expires in the queue
-     * on time. Measured from prepareTask() to the rejection, not for the whole loop (the other
-     * requests of the test take their own time under load).
+     * The deadline counts from prepareTask()
      */
     public function testDeadlineIncludesQueueWait()
     {
@@ -478,14 +485,14 @@ class reactCurlReliabilityTest extends reactCurlTestCase
             'err ' . deadlineException::class . ' 28',
             'ok ' . self::httpBase() . '/ok?first-batch',
         ], $log);
-        // expired only when the throttle lets it go: ~2.0; a deadline counted from the start of the transfer gives 'ok throttled' above
+        // expired when the throttle lets it go: ~2.0
         $this->assertGreaterThanOrEqual(0.79, $rejectedAfter);
         $this->assertLessThan(1.5, $rejectedAfter);
     }
 
     public function testCookieShareKeepsCookiesInMemory()
     {
-        // handles of earlier tests write the shared jar when they are released
+        // earlier handles write the shared jar on release
         gc_collect_cycles();
         @unlink('/tmp/mpcmf.cookie');
         $loop = $this->createLoop();

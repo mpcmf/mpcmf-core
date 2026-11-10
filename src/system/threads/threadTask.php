@@ -3,12 +3,12 @@
 namespace mpcmf\system\threads;
 
 use mpcmf\system\helper\io\log;
+use mpcmf\system\threads\exception\threadException;
 
 /**
  * Addressable thread task for the forkserver and spawn start methods
  *
- * A child of these start methods does not share memory with the master, so the task must be addressable by name:
- * 'class::method' or [class, 'method'] (public static method) or an invokable class name. Arguments are serialized.
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class threadTask
 {
@@ -25,7 +25,7 @@ class threadTask
     public static function normalize($task)
     {
         if (is_object($task)) {
-            throw new \InvalidArgumentException('Closures and objects cannot be passed to a forkserver/spawn child, use "class::method", [class::class, "method"] (public static method) or an invokable class name');
+            throw new \InvalidArgumentException('Thread task cannot be a closure or an object');
         }
         if (is_string($task) && strpos($task, '::') !== false) {
             $task = explode('::', $task, 2);
@@ -54,7 +54,7 @@ class threadTask
             return [$class, $method];
         }
 
-        throw new \InvalidArgumentException('Thread task must be "class::method", [class::class, "method"] or an invokable class name');
+        throw new \InvalidArgumentException('Thread task must be a static method or an invokable class name');
     }
 
     /**
@@ -96,8 +96,7 @@ class threadTask
      */
     public static function run(array $message)
     {
-        // async signals as the master had them when it started the thread, like a forked child inherits them:
-        // signal handlers of the application are called without pcntl_signal_dispatch()
+        // async signals setting of the master
         pcntl_async_signals(!empty($message['async']));
         if (!empty($message['title'])) {
             cli_set_process_title($message['title'] . thread::CHILD_POSTFIX);
@@ -107,7 +106,7 @@ class threadTask
             [$class, $method] = $data['task'];
             $callable = $method === null ? new $class() : [$class, $method];
             if (!is_callable($callable)) {
-                throw new \RuntimeException("Thread task {$class}::{$method} is not callable");
+                throw new threadException("Thread task {$class}::{$method} is not callable");
             }
         } catch (\Throwable $exception) {
             self::log()->addError("[ERROR] Cannot start thread task: {$exception->getMessage()}");

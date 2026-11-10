@@ -67,7 +67,7 @@ abstract class modelBase
      */
     public static function validate($fields, $onlyExistingFields = false)
     {
-        // PHP 8.1+: inherited methods share static variables, so cache per called class
+        // static variables are shared by subclasses since PHP 8.1
         static $maps = [];
         $map = $maps[static::class] ?? null;
         if($map === null) {

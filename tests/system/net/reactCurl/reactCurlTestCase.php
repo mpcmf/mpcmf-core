@@ -6,14 +6,17 @@ use mpcmf\system\net\reactCurl;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Base for reactCurl tests: local HTTP/TCP fixtures and loop helpers.
+ * Base for reactCurl tests: local fixtures and loop helpers
  *
- * The tests are written against the public behaviour only, so the same suite runs against the
- * historical khr/react-curl based implementation (PHP 7.4+) and the own engine (PHP 8.1+).
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 abstract class reactCurlTestCase extends TestCase
 {
-    /** @var array|null */
+    /**
+     * Fixture processes
+     *
+     * @var array|null
+     */
     private static $processes;
 
     protected static function httpBase()
@@ -30,8 +33,7 @@ abstract class reactCurlTestCase extends TestCase
     }
 
     /**
-     * Answers after $seconds without holding other requests (a slow `php -S` request may hold the
-     * ones its worker has already accepted); the body is the time the connection was accepted.
+     * URL answered after $seconds by the non-blocking fixture
      */
     protected static function delayUrl($seconds, $query = '')
     {
@@ -109,7 +111,7 @@ abstract class reactCurlTestCase extends TestCase
     }
 
     /**
-     * True when running against the own engine (not khr/react-curl).
+     * Check if the own engine is tested, not khr/react-curl
      */
     protected static function isOwnEngine()
     {
@@ -142,8 +144,7 @@ abstract class reactCurlTestCase extends TestCase
     }
 
     /**
-     * Runs the loop until $isDone() returns true (checked every 5 ms) or the limit is hit.
-     * Returns wall time. The loop is stopped explicitly: a guard timer would keep it alive.
+     * Run the loop until $isDone() returns true or the limit is hit
      */
     protected function runLoop($loop, callable $isDone, $limit = 10.0)
     {
@@ -163,8 +164,7 @@ abstract class reactCurlTestCase extends TestCase
     }
 
     /**
-     * Runs PHP code in a separate process (same autoloader), returns [exit code, output, wall time].
-     * Used where a broken implementation would hang the loop forever.
+     * Run PHP code in a separate process
      */
     protected function runIsolated($code, $timeout = 10.0)
     {
@@ -198,7 +198,7 @@ abstract class reactCurlTestCase extends TestCase
     }
 
     /**
-     * Runs one task through a fresh client, returns ['fulfilled' => Result] or ['rejected' => Exception].
+     * Run one task through a fresh client
      */
     protected function runOne($url, $method = 'GET', $params = null, array $options = [])
     {

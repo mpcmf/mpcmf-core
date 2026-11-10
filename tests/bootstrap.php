@@ -1,9 +1,6 @@
 <?php
 /**
- * PHPUnit bootstrap.
- *
- * MPCMF_TEST_AUTOLOAD may point to an alternative autoloader, e.g. to run the reactCurl
- * characterization tests against another implementation or another vendor directory.
+ * PHPUnit bootstrap, MPCMF_TEST_AUTOLOAD overrides the autoloader
  */
 error_reporting(E_ALL);
 

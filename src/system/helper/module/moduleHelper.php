@@ -35,7 +35,7 @@ trait moduleHelper
      */
     public function getTemplatesDirectory()
     {
-        // PHP 8.1+: inherited methods share static variables, so cache per called class
+        // static variables are shared by subclasses since PHP 8.1
         static $templateDirectories = [];
 
         $calledClass = static::class;

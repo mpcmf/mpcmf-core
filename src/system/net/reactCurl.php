@@ -9,12 +9,7 @@ use React\EventLoop\LoopInterface;
 use React\Promise\PromiseInterface;
 
 /**
- * Asynchronous HTTP client on a ReactPHP event loop.
- *
- * Engine: mpcmf\system\net\curl\curlPool (own implementation, replaces khr/react-curl and
- * khr/php-mcurl-client; KHR\React\Curl\{Curl,Result,Exception} and MCurl\Result are kept as
- * compatibility classes). Done callbacks get \KHR\React\Curl\Result, error callbacks get
- * \KHR\React\Curl\Exception (network error: code = curl errno; HTTP >= 400: "http error N").
+ * Curl wrapper
  *
  * @author Gregory Ostrovsky <greevex@gmail.com>
  */
@@ -30,10 +25,10 @@ class reactCurl
     /** @var  callable */
     protected $progressCallback;
 
-    /** @var callable|null done callback that logs exceptions it throws */
+    /** @var callable|null */
     private $guardedDoneCallback;
 
-    /** @var callable|null error callback that logs exceptions it throws */
+    /** @var callable|null */
     private $guardedErrorCallback;
 
     protected $baseConfig = [
@@ -95,12 +90,9 @@ class reactCurl
     }
 
     /**
-     * Throttling: after every $next started requests wait $second seconds before the next batch
-     * (default: 1 request, 0.9 s, non-blocking => up to max_requests every 0.9 s).
-     *
-     * @param int $next Sleep after * requests (< 1 is treated as 1)
-     * @param float $second 0 - no throttling
-     * @param bool $blocking usleep() inside the event loop instead of postponing requests
+     * @param int $next Sleep after * requests
+     * @param float $second
+     * @param bool $blocking async mode
      */
     public function setSleep($next, $second = 1.0, $blocking = false)
     {
@@ -153,7 +145,7 @@ class reactCurl
      * @param array|string $params
      * @param array        $options
      *
-     * @return PromiseInterface resolves with \KHR\React\Curl\Result, rejects with \KHR\React\Curl\Exception
+     * @return PromiseInterface
      */
     public function prepareTask($url, $method = 'GET', $params = null, array $options = [])
     {
@@ -194,10 +186,6 @@ class reactCurl
     }
 
     /**
-     * Client: setCurlOption() (options for every request), setSleep(), setMaxRequest(),
-     * enableHeaders(), opt-in features (setPollInterval(), setPollMode(), setMaxQueue(),
-     * setDeadline(), setCancellable(), setAutoRun(), setCookieShare()).
-     *
      * @return curlPool
      */
     public function getCurlClient()
@@ -246,9 +234,10 @@ class reactCurl
     }
 
     /**
-     * Poll interval of the adaptive timer, setPollInterval(0.01, 0.01) - old fixed 10 ms
+     * Adaptive poll interval
      *
-     * @see curlPool::setPollInterval()
+     * @param float $min
+     * @param float|null $max
      */
     public function setPollInterval($min, $max = null)
     {
@@ -256,7 +245,10 @@ class reactCurl
     }
 
     /**
-     * @see curlPool::setPollMode()
+     * Poll mode, see curlPool::POLL_*
+     *
+     * @param string $mode
+     * @param float $selectTimeout
      */
     public function setPollMode($mode, $selectTimeout = 0.005)
     {
@@ -264,9 +256,9 @@ class reactCurl
     }
 
     /**
-     * Opt-in: reject new tasks with curl\exception\queueFullException when $max tasks are queued
+     * Opt-in: queue limit of tasks
      *
-     * @see curlPool::setMaxQueue()
+     * @param int $max
      */
     public function setMaxQueue($max)
     {
@@ -276,7 +268,7 @@ class reactCurl
     /**
      * Opt-in: time limit per task including the queue wait
      *
-     * @see curlPool::setDeadline()
+     * @param float|null $seconds
      */
     public function setDeadline($seconds)
     {
@@ -286,7 +278,7 @@ class reactCurl
     /**
      * Opt-in: $promise->cancel() aborts the task
      *
-     * @see curlPool::setCancellable()
+     * @param bool $enable
      */
     public function setCancellable($enable = true)
     {
@@ -296,7 +288,7 @@ class reactCurl
     /**
      * Opt-in: prepareTask() starts processing without run()
      *
-     * @see curlPool::setAutoRun()
+     * @param bool $enable
      */
     public function setAutoRun($enable = true)
     {
@@ -304,9 +296,9 @@ class reactCurl
     }
 
     /**
-     * Opt-in: in-memory cookies shared by the requests of this client instead of the cookie file
+     * Opt-in: in-memory cookies instead of the cookie file
      *
-     * @see curlPool::setCookieShare()
+     * @param bool $enable
      */
     public function setCookieShare($enable = true)
     {
@@ -314,9 +306,9 @@ class reactCurl
     }
 
     /**
-     * Opt-in: reject tasks whose curl options libcurl rejects (default: skip the option, warn)
+     * Opt-in: reject tasks whose curl options libcurl rejects
      *
-     * @see curlPool::setStrictOptions()
+     * @param bool $enable
      */
     public function setStrictOptions($enable = true)
     {
@@ -324,10 +316,9 @@ class reactCurl
     }
 
     /**
-     * Logger for exceptions thrown by done/error callbacks and skipped options (rate-limited,
-     * see curlPool::setLogRateLimit()): function (string $message, array $context)
+     * Logger of callback exceptions and skipped options, null - mpcmf log
      *
-     * @param callable|null $logger null - mpcmf log
+     * @param callable|null $logger
      */
     public function setErrorLogger($logger)
     {
@@ -335,12 +326,16 @@ class reactCurl
     }
 
     /**
-     * Exceptions thrown by done/error callbacks were swallowed silently by the promise: log them,
-     * then rethrow so the promise chain behaves exactly as before.
+     * Log exceptions of a done/error callback and rethrow them
+     *
+     * @param callable|null $callback
+     * @param string $kind
+     *
+     * @return callable|null
      */
-    private function guardCallback($callback, $kind)
+    protected function guardCallback($callback, $kind)
     {
-        if (!is_callable($callback)) {
+        if(!is_callable($callback)) {
             return $callback;
         }
         $pool = $this->curl->client;

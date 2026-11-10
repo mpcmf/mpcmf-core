@@ -77,13 +77,11 @@ class action
     /**
      * Check that [className, method] points to a public method
      *
-     * PHP 8.0+: is_callable([className, nonStaticMethod]) returns false
-     *
      * @param array $callable
      *
      * @return bool
      */
-    private static function isCallableMethod(array $callable)
+    protected static function isCallableMethod(array $callable)
     {
         if(is_callable($callable)) {
 

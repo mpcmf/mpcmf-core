@@ -2,6 +2,8 @@
 
 namespace mpcmf\system\threads;
 
+use mpcmf\system\threads\exception\threadException;
+
 /**
  * Thread Pool class
  *
@@ -153,7 +155,7 @@ class threadPool
         $stopRequested = $this->isStopRequested();
 
         /**
-         * @note release finished threads: the child is already reaped, there is nothing to kill
+         * @note release finished threads, they are already reaped
          */
         foreach($this->pool as $thread_key => $thread) {
             if(!$thread->isAlive()) {
@@ -206,10 +208,10 @@ class threadPool
     /**
      * Add thread with arguments in pool
      *
-     * @param callable|string|array $thread With forkserver/spawn start methods an addressable task, see setStartMethod()
+     * @param callable|string|array $thread
      * @param array|null $arguments
      * @return bool
-     * @throws \InvalidArgumentException Task or arguments cannot be passed to a forkserver/spawn child
+     * @throws \InvalidArgumentException
      */
     public function add($thread, $arguments = null)
     {
@@ -284,13 +286,7 @@ class threadPool
     /**
      * Enable graceful stop
      *
-     * SIGTERM/SIGINT to the master only request a stop (see isStopRequested()): add() refuses new threads,
-     * queued threads are dropped, running threads get SIGTERM and SIGKILL after $grace seconds.
-     * Threads get SIGTERM/SIGINT as a stop request too (see thread::isStopRequested()).
-     * The master process is not terminated, the application decides when to exit: signals are handled
-     * by gracefulStop, which is enabled for the process, a repeated signal does not exit.
-     *
-     * @param int $grace Seconds between SIGTERM and SIGKILL
+     * @param int $grace seconds between SIGTERM and SIGKILL
      */
     public function enableGracefulStop($grace = 10)
     {
@@ -298,12 +294,12 @@ class threadPool
         $this->stopGrace = (int)$grace;
 
         gracefulStop::enable();
-        // the pool owns the shutdown: it stops threads and kills them after the grace period
+        // the pool owns the shutdown
         gracefulStop::setForceOnRepeat(false);
     }
 
     /**
-     * Request a stop of the pool, SIGTERM/SIGINT in graceful stop mode request it too (see gracefulStop)
+     * Request a stop of the pool
      */
     public function requestStop()
     {
@@ -337,9 +333,7 @@ class threadPool
     }
 
     /**
-     * Reset signals to SIG_DFL in children, so signals handled by the master are not swallowed there
-     *
-     * In graceful stop mode SIGTERM/SIGINT are handled by the thread anyway.
+     * Reset signals to SIG_DFL in children
      *
      * @param int[] $signals
      */
@@ -355,7 +349,7 @@ class threadPool
      * @param thread     $thread
      * @param int        $grace
      */
-    private function terminate($thread_key, thread $thread, $grace)
+    protected function terminate($thread_key, thread $thread, $grace)
     {
         if(!isset($this->terminatedAt[$thread_key])) {
             $thread->signal(SIGTERM);
@@ -368,21 +362,15 @@ class threadPool
     /**
      * Set how children are started, must be called before the first add()
      *
-     * START_FORK (default): pcntl_fork() of the master, the task is any callable, the child inherits everything.
-     * START_FORKSERVER: a fork of the fork server, which is a fork of the master made by startForkServer().
-     * START_SPAWN: a new php process per thread, loads the application bootstrap itself.
-     * With forkserver/spawn the task must be addressable: 'class::method', [class::class, 'method']
-     * (public static method) or an invokable class name, and its arguments must be serializable.
-     *
      * @param string $method
      *
-     * @throws \LogicException
+     * @throws threadException
      * @throws \InvalidArgumentException
      */
     public function setStartMethod($method)
     {
         if($this->used) {
-            throw new \LogicException('Start method must be set before the first add() and startForkServer()');
+            throw new threadException('Start method must be set before the first thread');
         }
         if(!in_array($method, array(self::START_FORK, self::START_FORKSERVER, self::START_SPAWN), true)) {
             throw new \InvalidArgumentException("Unknown thread start method: {$method}");
@@ -400,7 +388,6 @@ class threadPool
 
     /**
      * Bootstrap file loaded by spawn children, default APP_ROOT/loader.php
-     * (or vendor/autoload.php and environment.php, as bin/mpcmf does)
      *
      * @param string $file
      */
@@ -410,19 +397,14 @@ class threadPool
     }
 
     /**
-     * Fork the fork server from the current process, required before add() with the forkserver start method
+     * Fork the fork server from the current process, required before add() with forkserver
      *
-     * Threads inherit the state of this process at the moment of the call (loaded classes, config, constants),
-     * so call it after the application initialization and before opening connections: connections the
-     * framework knows to be open are reported to the log as a warning. A dead server is replaced.
-     *
-     * @throws \LogicException
-     * @throws \RuntimeException
+     * @throws threadException
      */
     public function startForkServer()
     {
         if($this->startMethod !== self::START_FORKSERVER) {
-            throw new \LogicException('Fork server is used only with the forkserver start method');
+            throw new threadException('Fork server is used only with the forkserver start method');
         }
         $this->used = true;
         if($this->forkServer !== null && $this->forkServer->isAlive()) {
@@ -469,10 +451,9 @@ class threadPool
      *
      * @return thread
      * @throws \InvalidArgumentException
-     * @throws \LogicException
-     * @throws \RuntimeException
+     * @throws threadException
      */
-    private function createThread($task, $arguments)
+    protected function createThread($task, $arguments)
     {
         if($this->startMethod === self::START_FORK) {
             return new thread($task);
@@ -482,10 +463,10 @@ class threadPool
             return new spawnThread($payload, $this->getChildEnv());
         }
         if($this->forkServer === null) {
-            throw new \LogicException('Fork server is not started, call startForkServer() before add()');
+            throw new threadException('Fork server is not started');
         }
         if(!$this->forkServer->isAlive()) {
-            throw new \RuntimeException('Fork server is dead, no new threads can be started');
+            throw new threadException('Fork server is dead, no new threads can be started');
         }
 
         return new forkServerThread($this->forkServer, $payload, array(
@@ -499,7 +480,7 @@ class threadPool
      *
      * @return string
      */
-    private function getChildTitle()
+    protected function getChildTitle()
     {
         $title = (string)cli_get_process_title();
         if($title === '' && is_readable('/proc/self/cmdline')) {
@@ -514,7 +495,7 @@ class threadPool
      *
      * @return array
      */
-    private function getChildEnv()
+    protected function getChildEnv()
     {
         $env = getenv();
         $env[spawnThread::ENV_TITLE] = $this->getChildTitle();

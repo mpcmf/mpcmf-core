@@ -6,7 +6,9 @@ use mpcmf\system\http\slimDriver;
 use PHPUnit\Framework\TestCase;
 
 /**
- * slimDriver::handleErrors(): PHP 7 error levels on PHP 8 and deprecations logged once per process
+ * slimDriver::handleErrors() tests
+ *
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class slimDriverTest extends TestCase
 {

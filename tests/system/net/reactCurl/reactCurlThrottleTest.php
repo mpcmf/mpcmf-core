@@ -3,17 +3,14 @@
 namespace mpcmf\tests\system\net\reactCurl;
 
 /**
- * Characterization of the setSleep()/setMaxRequest() throttling. Scrapers rely on it for ban
- * avoidance, so batch sizes and gaps must stay as in khr/php-mcurl-client.
+ * setSleep()/setMaxRequest() throttling tests, as in khr/php-mcurl-client
  *
- * Request arrival times are taken on the server side (accept time, see delayUrl()) and grouped
- * into batches.
+ * @author Dmitry Emelyanov <gilberg.vrn@gmail.com>
  */
 class reactCurlThrottleTest extends reactCurlTestCase
 {
     /**
-     * Arrivals are grouped into batches by gaps longer than half of the sleep: requests of one batch
-     * arrive within milliseconds (tens under load), the next batch starts a whole sleep later.
+     * Measure server arrivals grouped into batches
      *
      * @param callable|null $watch gets the loop before it runs
      *
@@ -80,7 +77,7 @@ class reactCurlThrottleTest extends reactCurlTestCase
         list($sizes, $gaps) = $this->measure(function () {
         }, 12, 0.9);
         $this->assertSame([10, 2], $sizes);
-        // no throttle gives ~0, a 1 s default gives >= 1.0; below 0.9: the first batch connected later than its mark
+        // no throttle ~0, 1 s default >= 1.0
         $this->assertGaps($gaps, 0.85, 0.99);
     }
 
@@ -96,10 +93,7 @@ class reactCurlThrottleTest extends reactCurlTestCase
     }
 
     /**
-     * Blocking mode usleep()s inside every throttle check made while the sleep is pending, and
-     * every such check moves the mark: the gap is a multiple of the sleep (one check per
-     * curl_multi_exec round needed to finish the batch, 1x-3x here). How many requests of a batch
-     * are finished at a check depends on the machine, so only the first batch has a fixed size.
+     * Blocking mode: only the first batch has a fixed size
      */
     public function testBlockingSleep()
     {
@@ -123,13 +117,12 @@ class reactCurlThrottleTest extends reactCurlTestCase
         foreach ($gaps as $gap) {
             $this->assertLessThan(0.05, abs($gap / 0.3 - round($gap / 0.3)) * 0.3, 'gap is a multiple of the sleep: ' . json_encode($gaps));
         }
-        // the non-blocking mode keeps the loop running (stalls of a few ms), blocking stalls it for ~0.3 s
+        // blocking mode stalls the loop for ~0.3 s
         $this->assertGreaterThan(0.25, $stall, 'longest loop stall');
     }
 
     /**
-     * Sleep after every third request. With one slot the finished requests are seen one by one,
-     * so the batches are exact.
+     * Sleep after every third request with one slot
      */
     public function testSleepAfterEveryThirdRequest()
     {
@@ -143,10 +136,7 @@ class reactCurlThrottleTest extends reactCurlTestCase
     }
 
     /**
-     * With next > 1 the modulo arithmetic lets more than `next` requests through before the first
-     * sleep - kept as is. In a live run the outcome depends on whether two transfers are seen
-     * finished in the same round (6 of 7 when they are, other splits when not), so the arithmetic
-     * is fed that sequence directly: 2 slots, sleep after 3, both transfers of a pair finish together.
+     * Sleep after 3 with 2 slots lets 6 through when pairs finish together
      */
     public function testSleepAfterEveryThirdRequestLetsSixThroughWhenPairsFinishTogether()
     {
@@ -154,7 +144,7 @@ class reactCurlThrottleTest extends reactCurlTestCase
         $throttle = new \mpcmf\system\net\curl\sleepThrottle();
         $throttle->configure(3, 1000, false);
         $allowed = [];
-        // [free slots, finished]: start, both running, pair done, one restarted, pair done, pair done
+        // [free slots, finished]
         foreach ([[2, 0], [0, 0], [2, 2], [1, 2], [2, 4], [2, 6]] as list($free, $finished)) {
             $allowed[] = max(0, $throttle->allow($free, $finished));
         }
@@ -163,11 +153,7 @@ class reactCurlThrottleTest extends reactCurlTestCase
     }
 
     /**
-     * While all slots are busy the sleep mark moves forward in steps of `sleep`, so the next
-     * batch starts at the first step after the slots were freed: 0.6 s sleep, 0.9 s requests -
-     * marks at 0, 0.6 (slots busy), slots freed at 0.9, next batch at 1.2.
-     * Measured against the server arrival of the first batch and the client-side completion
-     * of its requests (the moment the slots were freed).
+     * The next batch starts at the first sleep step after the slots are freed
      */
     public function testSleepCountsFromFreedSlotsWhenRequestsAreSlow()
     {
@@ -193,19 +179,21 @@ class reactCurlThrottleTest extends reactCurlTestCase
         $firstStart = $runs[0][0];
         $freed = max($runs[0][1], $runs[1][1]);
         $secondStart = $runs[2][0];
-        $timeline = sprintf('second batch %.3f s after the first, %.3f s after the slots were freed', $secondStart - $firstStart, $secondStart - $freed);
-        // counted from the start without moving the mark while busy: ~0.9 (right when freed); counted from the freed slots: ~1.5
+        $timeline = sprintf(
+            'second batch %.3f s after the first, %.3f s after the slots were freed',
+            $secondStart - $firstStart,
+            $secondStart - $freed
+        );
+        // ~0.9 or ~1.5 with a wrong mark
         $this->assertGreaterThan(1.1, $secondStart - $firstStart, $timeline);
         $this->assertLessThan(1.4, $secondStart - $firstStart, $timeline);
-        // started as soon as the slots were freed: ~0 here; a full sleep after that: ~0.6
+        // ~0 or ~0.6 with a wrong mark
         $this->assertGreaterThan(0.1, $secondStart - $freed, $timeline);
         $this->assertLessThan(0.5, $secondStart - $freed, $timeline);
     }
 
     /**
-     * Requests added in one go while the client runs, after the sleep of the default throttle
-     * is over, start as one batch as with khr (checked together on the next round, not one by one
-     * in add(): the first one would move the sleep mark and hold the rest for 0.9s).
+     * Requests added in one go start as one batch
      */
     public function testBatchAddedWhileRunningStartsTogether()
     {
@@ -228,7 +216,7 @@ class reactCurlThrottleTest extends reactCurlTestCase
             return count($arrivals) >= 5 && $slowDone;
         }, 5);
         sort($arrivals);
-        // started one by one in add(): the rest held for the 0.9 s sleep
+        // one by one in add() holds the rest for 0.9 s
         $this->assertLessThan(0.45, end($arrivals) - $arrivals[0], 'arrivals: ' . json_encode($arrivals));
     }
 
