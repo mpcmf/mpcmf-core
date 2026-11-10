@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "149da267e03f6d6a6736ce0e3ec682d7",
+    "content-hash": "0c723a72ae224952fdac37890c2c5b51",
     "packages": [
         {
             "name": "alcaeus/mongo-php-adapter",
@@ -396,12 +396,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/mpcmf/mpcmf-signalHandler.git",
-                "reference": "f95fa9650201940b17cb5ed99f4cf9dcc5957fb6"
+                "reference": "d48e1032afd50b4bda91538c7d813b3bfeaec5d4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/mpcmf/mpcmf-signalHandler/zipball/f95fa9650201940b17cb5ed99f4cf9dcc5957fb6",
-                "reference": "f95fa9650201940b17cb5ed99f4cf9dcc5957fb6",
+                "url": "https://api.github.com/repos/mpcmf/mpcmf-signalHandler/zipball/d48e1032afd50b4bda91538c7d813b3bfeaec5d4",
+                "reference": "d48e1032afd50b4bda91538c7d813b3bfeaec5d4",
                 "shasum": ""
             },
             "default-branch": true,
@@ -425,7 +425,7 @@
                 "issues": "https://github.com/mpcmf/mpcmf-signalHandler/issues",
                 "source": "https://github.com/mpcmf/mpcmf-signalHandler/tree/master"
             },
-            "time": "2018-03-23T11:19:18+00:00"
+            "time": "2026-11-01T16:51:30+00:00"
         },
         {
             "name": "nervetattoo/elasticsearch",
