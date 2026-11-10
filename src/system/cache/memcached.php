@@ -27,6 +27,9 @@ class memcached implements cacheInterface
 
     protected $pid;
 
+    /**
+     * Connection errors an idempotent request is repeated after
+     */
     const RETRY_RESULT_CODES = [
         \Memcached::RES_FAILURE,
         \Memcached::RES_CONNECTION_FAILURE,
@@ -35,6 +38,37 @@ class memcached implements cacheInterface
         \Memcached::RES_UNKNOWN_READ_FAILURE,
         \Memcached::RES_ERRNO,
         \Memcached::RES_SERVER_MARKED_DEAD,
+    ];
+
+    /**
+     * errno of a write to a connection the server has closed (EPIPE on Linux)
+     */
+    const ERRNO_BROKEN_PIPE = 32;
+
+    /**
+     * Backend methods safe to repeat when their reply was lost: applied twice they give the same state and result
+     */
+    const IDEMPOTENT_METHODS = [
+        'get' => true,
+        'getbykey' => true,
+        'getmulti' => true,
+        'getmultibykey' => true,
+        'getdelayed' => true,
+        'getdelayedbykey' => true,
+        'set' => true,
+        'setbykey' => true,
+        'setmulti' => true,
+        'setmultibykey' => true,
+        'delete' => true,
+        'deletebykey' => true,
+        'deletemulti' => true,
+        'deletemultibykey' => true,
+        'touch' => true,
+        'touchbykey' => true,
+        'flush' => true,
+        'getstats' => true,
+        'getversion' => true,
+        'getallkeys' => true,
     ];
 
     /**
@@ -101,9 +135,19 @@ class memcached implements cacheInterface
     /**
      * Call the backend, once more on a connection error
      *
-     * A process forked from this one closes the shared connection when it releases its inherited copy of the driver,
-     * the next request here fails once and libmemcached reconnects. A request failed that way is not applied
-     * by the server; a request whose reply was lost for another reason may have been applied before it is repeated.
+     * A process forked from this one closes the shared connection when it releases its inherited copy of the driver
+     * (libmemcached sends `quit`), the next request here fails once and libmemcached reconnects. Such a request is
+     * never applied: the server stops reading the connection at `quit`, and the write fails (RES_ERRNO with
+     * errno EPIPE, or RES_WRITE_FAILURE). A request whose reply was lost for another reason (read failure,
+     * timeout, connection closed after the request was sent) may have been applied by the server.
+     *
+     * | backend methods                                                  | repeated once after                       |
+     * |------------------------------------------------------------------|-------------------------------------------|
+     * | idempotent (IDEMPOTENT_METHODS): get*, set*, delete*, touch*,     | any connection error (RETRY_RESULT_CODES) |
+     * | flush, getStats, getVersion, getAllKeys                          |                                           |
+     * | others: add*, increment*, decrement*, cas*, append*, prepend*,   | only a request that was not sent:         |
+     * | replace*, ... (applied twice: NOTSTORED of add, double increment) | RES_WRITE_FAILURE, RES_ERRNO with errno   |
+     * |                                                                  | EPIPE (getLastErrorErrno() === 32)        |
      *
      * @param string $method
      * @param mixed  ...$arguments
@@ -113,11 +157,44 @@ class memcached implements cacheInterface
     protected function call($method, ...$arguments)
     {
         $result = $this->memcached->{$method}(...$arguments);
-        if ($result === false && in_array($this->memcached->getResultCode(), self::RETRY_RESULT_CODES, true)) {
+        if ($result === false && $this->isRetryable($method)) {
             $result = $this->memcached->{$method}(...$arguments);
         }
 
         return $result;
+    }
+
+    /**
+     * @param string $method backend method that failed
+     *
+     * @return bool
+     */
+    protected function isRetryable($method)
+    {
+        $code = $this->memcached->getResultCode();
+        if (isset(self::IDEMPOTENT_METHODS[strtolower($method)])) {
+
+            return in_array($code, self::RETRY_RESULT_CODES, true);
+        }
+
+        return $this->isNotSent($code);
+    }
+
+    /**
+     * @param int $code result code of the failed request
+     *
+     * @return bool the request did not reach the server
+     */
+    protected function isNotSent($code)
+    {
+        if ($code === \Memcached::RES_WRITE_FAILURE) {
+
+            return true;
+        }
+
+        // write() to a connection closed by the server: EPIPE is reported only for a request that was not sent
+        return $code === \Memcached::RES_ERRNO && method_exists($this->memcached, 'getLastErrorErrno')
+            && $this->memcached->getLastErrorErrno() === self::ERRNO_BROKEN_PIPE;
     }
 
     protected function checkConnection()
