@@ -24,22 +24,28 @@ trait factory
      */
     public static function factory($configSection = 'default')
     {
+        // PHP 8.1+: inherited methods share static variables, so keep instances per called class as PHP 7.4 did;
+        // still `new self` as before: a subclass without its own `use factory` gets an instance of the class using the trait
         static $instances = [];
 
-        if (!isset($instances[$configSection])) {
-            $instances[$configSection] = new self($configSection);
+        $calledClass = static::class;
+        if (!isset($instances[$calledClass][$configSection])) {
+            $instances[$calledClass][$configSection] = new self($configSection);
         }
 
-        return $instances[$configSection];
+        return $instances[$calledClass][$configSection];
     }
 
     protected function getPackageConfig()
     {
-        static $config;
+        // PHP 8.1+: inherited methods share static variables, so cache per called class
+        static $configs = [];
 
-        if ($config === null) {
-            $config = config::getConfig(get_called_class());
+        $calledClass = static::class;
+        if (!isset($configs[$calledClass])) {
+            $configs[$calledClass] = config::getConfig($calledClass);
         }
+        $config = $configs[$calledClass];
 
         if(!isset($config[$this->configSection])) {
             // TODO :: Check, really configurationException needed to throw or factoryException

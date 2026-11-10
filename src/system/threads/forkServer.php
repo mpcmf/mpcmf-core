@@ -464,10 +464,13 @@ class forkServer
                 continue;
             }
             $instances = (new \ReflectionMethod($class, 'factory'))->getStaticVariables();
-            foreach (isset($instances['instances']) ? $instances['instances'] : [] as $section => $instance) {
-                $count = (int)$isOpen($instance);
-                if ($count > 0) {
-                    $result[] = substr($class, strrpos($class, '\\') + 1) . ":{$section}" . ($count > 1 ? " x{$count}" : '');
+            // [called class => [section => instance]]: factory() keeps instances per called class
+            foreach (isset($instances['instances']) ? $instances['instances'] : [] as $calledClass => $sections) {
+                foreach ($sections as $section => $instance) {
+                    $count = (int)$isOpen($instance);
+                    if ($count > 0) {
+                        $result[] = substr($calledClass, strrpos($calledClass, '\\') + 1) . ":{$section}" . ($count > 1 ? " x{$count}" : '');
+                    }
                 }
             }
         }
