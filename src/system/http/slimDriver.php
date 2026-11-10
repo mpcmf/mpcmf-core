@@ -11,6 +11,12 @@ class slimDriver extends Slim
     const LOGGED_DEPRECATIONS_LIMIT = 10000;
 
     /**
+     * Notices of PHP 7 raised as warnings since PHP 8.0 (8.3 for unserialize()), handled as notices again.
+     * "A non-numeric value encountered" is not here: PHP 7 raised it as a warning too.
+     */
+    const PHP7_NOTICES_PATTERN = '/^(Undefined (array key|variable|global variable|property)|Trying to access array offset on|Attempt to read property|Array to string conversion|Uninitialized string offset|String offset cast occurred|Resource ID#\d+ used as offset|Illegal string offset|Object of class .+ could not be converted to (int|float)$|compact\(\): Undefined variable|unserialize\(\): Error at offset)/s';
+
+    /**
      * @var bool[] "file:line message" of deprecations logged in this process
      */
     private static $loggedDeprecations = [];
@@ -99,7 +105,7 @@ class slimDriver extends Slim
      * Slim error handler with PHP 7 semantics on PHP 8
      *
      * Slim turns every reported error into ErrorException (HTTP 500), so deprecations are only logged
-     * (each distinct one once per process) and notices promoted to warnings in PHP 8.0 are handled as
+     * (each distinct one once per process) and notices promoted to warnings in PHP 8 are handled as
      * notices again.
      *
      * @param int    $errno
@@ -125,7 +131,7 @@ class slimDriver extends Slim
             return true;
         }
 
-        if ($errno === E_WARNING && preg_match('/^(Undefined (array key|variable|global variable|property)|Trying to access array offset on|Attempt to read property)/', $errstr)) {
+        if ($errno === E_WARNING && preg_match(self::PHP7_NOTICES_PATTERN, $errstr)) {
             $errno = E_NOTICE;
         }
 
