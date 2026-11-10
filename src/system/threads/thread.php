@@ -429,10 +429,9 @@ class thread
     public function kill($_signal = SIGKILL, $_wait = false)
     {
         MPCMF_DEBUG && self::log()->addDebug("Killing process with pid {$this->pid}...", [__METHOD__]);
-        // only an alive, not yet reaped child is guaranteed to own the pid
-        for ($i = 0; $i < 10 && $this->signal($_signal); $i++) {
-            usleep(10000);
-        }
+        // once: signals are delivered asynchronously now, and a repeated SIGTERM would not stop a child
+        // in a critical section any faster. Only an alive, not yet reaped child is guaranteed to own the pid
+        $this->signal($_signal);
         if ($_wait) {
             MPCMF_DEBUG && self::log()->addDebug("Waiting process [pid {$this->pid}]...", [__METHOD__]);
             $this->wait();
