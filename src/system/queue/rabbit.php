@@ -54,7 +54,7 @@ class rabbit
     const MESSAGE_DELIVERY_PERSISTENT = 2;
 
     /**
-     * Transaction status flag
+     * Transaction status flag: the transactional channel has publishes not committed yet
      *
      * @var bool
      */
@@ -87,6 +87,37 @@ class rabbit
      * @var \AMQPChannel[]
      */
     private $channels;
+    /**
+     * Channels in transactional mode (tx.select), one per process and section, created on the first transactional publish:
+     * tx.select cannot be undone on a channel, so plain publishes never go through it
+     *
+     * @var \AMQPChannel[]
+     */
+    private $transactionChannels = [];
+    /**
+     * Exchanges by process, section, queue, type and channel kind; an exchange object is bound to the channel it was created on
+     *
+     * @var \AMQPExchange[]
+     */
+    private $exchanges = [];
+    /**
+     * The publish in progress goes to the transactional channel
+     *
+     * @var bool
+     */
+    private $publishToTransaction = false;
+    /**
+     * Publishes of the open transaction on the current transactional channel
+     *
+     * @var int
+     */
+    private $transactionPublishes = 0;
+    /**
+     * Publishes of the open transaction rolled back by the broker with a lost transactional channel
+     *
+     * @var int
+     */
+    private $transactionLost = 0;
 
     public function setCompressionType($compressionType)
     {
@@ -152,6 +183,10 @@ class rabbit
         return $this->connections[$key];
     }
 
+    /**
+     * Reconnect the connection of the current process; both channels (plain and transactional) are reopened on next use.
+     * Publishes of an open transaction are rolled back by the broker: runTasks() throws, see there
+     */
     public function reconnect()
     {
         $this->getConnection()->disconnect();
@@ -177,12 +212,23 @@ class rabbit
     public function sendToBackground($queueName, $body = null, $start = true, $persistent = true, $queueType = self::EXCHANGE_TYPE_DIRECT, $delay = 0, $options = [])
     {
         $this->checkProcessState();
-        if (!$start && !$this->transactionStarted) {
-            $this->getChannel()->startTransaction();
+        // $start=false adds the message to the transaction, $start=true with an open transaction adds it and commits;
+        // a transaction lives on its own channel, plain publishes go through the non-transactional one
+        $transactional = !$start || $this->transactionStarted;
+        if ($transactional) {
+            $this->getTransactionChannel();
             $this->transactionStarted = true;
         }
 
-        $result = $this->publishMessage($body, $queueName, $persistent, $queueType, $delay, $options);
+        $this->publishToTransaction = $transactional;
+        try {
+            $result = $this->publishMessage($body, $queueName, $persistent, $queueType, $delay, $options);
+        } finally {
+            $this->publishToTransaction = false;
+        }
+        if ($transactional) {
+            $this->transactionPublishes++;
+        }
 
         if ($start && $this->transactionStarted) {
             $this->runTasks();
@@ -353,7 +399,14 @@ class rabbit
     }
 
     /**
-     * @return bool
+     * Commit the transaction
+     *
+     * If the transactional channel was lost after the transaction got publishes (connection or channel error, reconnect()),
+     * the broker rolled them back: the rest of the transaction is rolled back too and an exception is thrown,
+     * so the caller can repeat the whole batch. A failed commit ends the transaction as well (its exception is thrown,
+     * the outcome is unknown): the next publish starts a new one.
+     *
+     * @return bool true after commit, false if there is no transaction
      *
      * @throws \AMQPChannelException
      * @throws \AMQPConnectionException
@@ -363,10 +416,23 @@ class rabbit
         $this->checkProcessState();
         $status = false;
         if ($this->transactionStarted) {
-            // ext-amqp 2.x: commitTransaction() returns void and throws on failure, 1.x returned true
-            $this->getChannel()->commitTransaction();
-            $status = true;
+            $channel = $this->getTransactionChannel();
+            if ($this->transactionLost > 0) {
+                $lost = $this->transactionLost;
+                $total = $lost + $this->transactionPublishes;
+                $this->transactionStarted = false;
+                $this->transactionPublishes = 0;
+                $this->transactionLost = 0;
+                $channel->rollbackTransaction();
+
+                throw new \AMQPChannelException("Transaction lost: the transactional channel was closed, {$lost} of {$total} messages were rolled back by the broker, the rest is rolled back");
+            }
+            // the transaction ends with the commit attempt: a failed commit is not retried, the exception goes to the caller
             $this->transactionStarted = false;
+            $this->transactionPublishes = 0;
+            // ext-amqp 2.x: commitTransaction() returns void and throws on failure, 1.x returned true
+            $channel->commitTransaction();
+            $status = true;
         }
 
         return $status;
@@ -421,44 +487,48 @@ class rabbit
             $queueName = self::EXCHANGE_POINT;
         }
 
-        /**
-         * @var \AMQPExchange[] $exchanges
-         */
-        static $exchanges = [];
-
         // per process: an exchange object holds the channel of the process that created it;
-        // per class: PHP 8.1+ shares static variables of an inherited method with subclasses
-        $key = static::class . ':' . getmypid() . ":{$this->configSection}:{$queueName}:{$queueType}";
-        if (!isset($exchanges[$key]) || $force) {
-            MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize exchange...", [__METHOD__]);
-            try {
-                $exchanges[$key] = new \AMQPExchange($this->getChannel($force));
-            } catch (\AMQPException $e) {
-                $m = $e->getMessage();
-                if($m !== 'Could not create exchange. No channel available.') {
-                    throw $e;
-                }
-                self::log()->addWarning("Reconnecting to rabbit because of exception in exchange: {$e->getMessage()}");
-                $exchanges[$key] = new \AMQPExchange($this->getChannel(true));
-            }
-            $exchanges[$key]->setName($this->getExchangeName($queueName, $queueType));
-            $exchanges[$key]->setFlags(AMQP_DURABLE);
+        // per instance and channel kind: the exchange publishes through the channel it was created on
+        $transactional = $this->publishToTransaction;
+        $key = getmypid() . ":{$this->configSection}:{$queueName}:{$queueType}:" . ($transactional ? 'tx' : 'plain');
+        if (!$force && isset($this->exchanges[$key])) {
+            // the channel is recreated after a connection or channel loss: the exchange follows it
+            $channel = $transactional ? $this->getTransactionChannel() : $this->getChannel();
+            if ($this->exchanges[$key]->getChannel() === $channel) {
 
-            $exchanges[$key]->setType($queueType);
-            if ($queueType === self::EXCHANGE_TYPE_DELAYED) {
-                $exchanges[$key]->setArgument('x-delayed-type', 'direct');
-            }
-
-            if($queueName !== self::EXCHANGE_POINT) {
-                if (method_exists($exchanges[$key], 'declareExchange')) {
-                    $exchanges[$key]->declareExchange();
-                } else {
-                    $exchanges[$key]->declare();
-                }
+                return $this->exchanges[$key];
             }
         }
 
-        return $exchanges[$key];
+        MPCMF_DEBUG && self::log()->addDebug("[{$key}] Initialize exchange...", [__METHOD__]);
+        try {
+            $exchange = new \AMQPExchange($transactional ? $this->getTransactionChannel($force) : $this->getChannel($force));
+        } catch (\AMQPException $e) {
+            $m = $e->getMessage();
+            if($m !== 'Could not create exchange. No channel available.') {
+                throw $e;
+            }
+            self::log()->addWarning("Reconnecting to rabbit because of exception in exchange: {$e->getMessage()}");
+            $exchange = new \AMQPExchange($transactional ? $this->getTransactionChannel(true) : $this->getChannel(true));
+        }
+        $this->exchanges[$key] = $exchange;
+        $exchange->setName($this->getExchangeName($queueName, $queueType));
+        $exchange->setFlags(AMQP_DURABLE);
+
+        $exchange->setType($queueType);
+        if ($queueType === self::EXCHANGE_TYPE_DELAYED) {
+            $exchange->setArgument('x-delayed-type', 'direct');
+        }
+
+        if($queueName !== self::EXCHANGE_POINT) {
+            if (method_exists($exchange, 'declareExchange')) {
+                $exchange->declareExchange();
+            } else {
+                $exchange->declare();
+            }
+        }
+
+        return $exchange;
     }
 
     /**
@@ -476,6 +546,8 @@ class rabbit
         if ($this->statePid !== null) {
             $this->declaredQueues = [];
             $this->transactionStarted = false;
+            $this->transactionPublishes = 0;
+            $this->transactionLost = 0;
         }
         $this->statePid = $pid;
     }
@@ -486,12 +558,42 @@ class rabbit
     }
 
     /**
+     * Non-transactional channel: consumers, declarations and plain publishes
+     *
      * @param bool $force
      *
      * @return \AMQPChannel
      * @throws \AMQPConnectionException
      */
     protected function getChannel($force = false)
+    {
+        return $this->openChannel($this->channels, $force, false);
+    }
+
+    /**
+     * Transactional channel (tx.select is sent on creation) of the current process: publishes with $start=false and the commit
+     *
+     * @param bool $force
+     *
+     * @return \AMQPChannel
+     * @throws \AMQPConnectionException
+     * @throws \AMQPChannelException
+     */
+    protected function getTransactionChannel($force = false)
+    {
+        return $this->openChannel($this->transactionChannels, $force, true);
+    }
+
+    /**
+     * @param \AMQPChannel[]|null $channels
+     * @param bool               $force
+     * @param bool               $transactional
+     *
+     * @return \AMQPChannel
+     * @throws \AMQPConnectionException
+     * @throws \AMQPChannelException
+     */
+    private function openChannel(&$channels, $force, $transactional)
     {
         if(function_exists('posix_getpid')) {
             $pid = posix_getpid();
@@ -501,21 +603,45 @@ class rabbit
 
         $key = "{$pid}:{$this->configSection}";
 
-        if ($force || !isset($this->channels[$key])) {
-            try {
-                $this->channels[$key] = new \AMQPChannel($this->getConnection($force));
-            } catch (\AMQPException $e) {
-                $m = $e->getMessage();
-                if($m !== 'Could not create channel. No connection available.') {
-                    throw $e;
-                }
-                self::log()->addWarning("Reconnecting to rabbit because of exception in channel: {$e->getMessage()}");
-                $this->channels[$key] = new \AMQPChannel($this->getConnection(true));
+        $current = isset($channels[$key]) ? $channels[$key] : null;
+        if (!$force && $current !== null) {
+            if (!$current->isConnected()) {
+                // closed by a channel or connection error, or by reconnect()
+                MPCMF_DEBUG && self::log()->addDebug("[{$key}] Channel is closed, opening a new one", [__METHOD__]);
+            } elseif ($current->getConnection() !== $this->getConnection(false, false) && !($transactional && $this->transactionPublishes > 0)) {
+                // the connection was replaced by a reconnect of another channel: move to it (an open transaction stays on its channel)
+                MPCMF_DEBUG && self::log()->addDebug("[{$key}] Connection replaced, opening a new channel on it", [__METHOD__]);
+            } else {
+
+                return $current;
             }
-            $this->channels[$key]->setPrefetchCount(1);
         }
 
-        return $this->channels[$key];
+        if ($transactional && $current !== null && $this->transactionPublishes > 0) {
+            // the broker rolls back the transaction of a closed channel: runTasks() reports it
+            $this->transactionLost += $this->transactionPublishes;
+            $this->transactionPublishes = 0;
+            self::log()->addWarning("[{$key}] Transactional channel replaced, {$this->transactionLost} uncommitted messages are lost");
+        }
+
+        try {
+            $channel = new \AMQPChannel($this->getConnection($force));
+        } catch (\AMQPException $e) {
+            $m = $e->getMessage();
+            if($m !== 'Could not create channel. No connection available.') {
+                throw $e;
+            }
+            self::log()->addWarning("Reconnecting to rabbit because of exception in channel: {$e->getMessage()}");
+            $channel = new \AMQPChannel($this->getConnection(true));
+        }
+        $channels[$key] = $channel;
+        if ($transactional) {
+            $channel->startTransaction();
+        } else {
+            $channel->setPrefetchCount(1);
+        }
+
+        return $channel;
     }
 
     /**
