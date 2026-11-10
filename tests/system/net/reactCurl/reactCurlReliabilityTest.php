@@ -314,12 +314,17 @@ class reactCurlReliabilityTest extends reactCurlTestCase
         }
     }
 
+    /**
+     * A task added while another one runs starts on its own: it finishes first. Not started until
+     * run() or until the running task is done, it would finish second or never; the slow task
+     * takes 1 s so that a fast request delayed by load still finishes first.
+     */
     public function testTasksAddedWhileRunningStartWithoutRun()
     {
         $loop = $this->createLoop();
         $client = $this->createClient($loop);
         $order = [];
-        $client->prepareTask(self::httpBase() . '/slow?s=0.4')->then(function () use (&$order) {
+        $client->prepareTask(self::delayUrl(1))->then(function () use (&$order) {
             $order[] = 'slow';
         });
         $client->run();
@@ -403,8 +408,8 @@ class reactCurlReliabilityTest extends reactCurlTestCase
         $client->setMaxRequest(1);
         $log = [];
         $this->collect($client, $log);
-        $running = $client->prepareTask(self::httpBase() . '/slow?s=2');
-        $queued = $client->prepareTask(self::httpBase() . '/slow?s=2');
+        $running = $client->prepareTask(self::delayUrl(2));
+        $queued = $client->prepareTask(self::delayUrl(2));
         $client->prepareTask(self::httpBase() . '/ok?after');
         $client->run();
         $loop->addTimer(0.05, function () use ($running, $queued) {
@@ -442,20 +447,29 @@ class reactCurlReliabilityTest extends reactCurlTestCase
         })));
     }
 
+    /**
+     * The deadline counts from prepareTask(): a request held by the throttle expires in the queue
+     * on time. Measured from prepareTask() to the rejection, not for the whole loop (the other
+     * requests of the test take their own time under load).
+     */
     public function testDeadlineIncludesQueueWait()
     {
         $loop = $this->createLoop();
         $client = $this->createClient($loop, false);
         $client->setMaxRequest(2);
-        $client->setSleep(1, 0.5, false);
-        $client->setDeadline(0.3);
+        $client->setSleep(1, 2.0, false);
+        $client->setDeadline(0.8);
         $log = [];
         $this->collect($client, $log);
-        $client->prepareTask(self::httpBase() . '/slow?s=1');
+        $rejectedAfter = null;
+        $client->prepareTask(self::delayUrl(3));
         $client->prepareTask(self::httpBase() . '/ok?first-batch');
-        $client->prepareTask(self::httpBase() . '/ok?throttled');
+        $prepared = microtime(true);
+        $client->prepareTask(self::httpBase() . '/ok?throttled')->then(null, function () use (&$rejectedAfter, $prepared) {
+            $rejectedAfter = microtime(true) - $prepared;
+        });
         $client->run();
-        $elapsed = $this->runLoop($loop, function () use (&$log) {
+        $this->runLoop($loop, function () use (&$log) {
             return count($log) >= 3;
         });
         sort($log);
@@ -464,7 +478,9 @@ class reactCurlReliabilityTest extends reactCurlTestCase
             'err ' . deadlineException::class . ' 28',
             'ok ' . self::httpBase() . '/ok?first-batch',
         ], $log);
-        $this->assertLessThan(0.6, $elapsed);
+        // expired only when the throttle lets it go: ~2.0; a deadline counted from the start of the transfer gives 'ok throttled' above
+        $this->assertGreaterThanOrEqual(0.79, $rejectedAfter);
+        $this->assertLessThan(1.5, $rejectedAfter);
     }
 
     public function testCookieShareKeepsCookiesInMemory()
