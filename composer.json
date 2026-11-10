@@ -90,5 +90,11 @@
   },
   "minimum-stability": "dev",
   "prefer-stable": true,
-  "prefer-lowest": false
+  "prefer-lowest": false,
+  "scripts": {
+    "test": [
+      "@php -r \"file_exists('.mpcmfroot') || touch('.mpcmfroot');\"",
+      "phpunit"
+    ]
+  }
 }

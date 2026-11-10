@@ -1,2 +1,0 @@
-# test-only project root marker: keep it out of dist archives, the application root must win
-/.mpcmfroot export-ignore
