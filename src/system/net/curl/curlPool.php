@@ -24,8 +24,9 @@ use React\Promise\PromiseInterface;
  *    applied (was: the rest of the options was lost), see setStrictOptions();
  *  - timers are cancelled with $loop->cancelTimer(): works with react/event-loop 0.4 and 1.x;
  *  - setSleep() with next < 1 no longer divides by zero;
- *  - transfers start right after add() when the pool is running, the poll timer adapts its
- *    interval (1 ms after progress, backs off to 10 ms when idle) instead of a fixed 10 ms;
+ *  - transfers start on the next loop tick after add() when the pool is running (requests added
+ *    in one go start together, as with khr), the poll timer adapts its interval (1 ms after
+ *    progress, backs off to 10 ms when idle) instead of a fixed 10 ms;
  *  - exceptions while settling are logged instead of breaking the loop.
  *
  * PHP cannot hand curl sockets to the event loop, so transfers are polled from a periodic timer.
@@ -100,6 +101,9 @@ class curlPool
 
     /** @var bool */
     protected $flushScheduled = false;
+
+    /** @var bool */
+    protected $kickScheduled = false;
 
     /** @var int finished requests, drives the throttle */
     protected $finished = 0;
@@ -211,7 +215,7 @@ class curlPool
 
             return $promise;
         }
-        if ($this->maxQueue > 0 && $this->queued >= $this->maxQueue) {
+        if ($this->maxQueue > 0 && $this->queued >= $this->maxQueue + $this->slotsOnKick()) {
             $this->fail($task, queueFullException::class, 'client', "Queue limit of {$this->maxQueue} requests reached", 0);
             $this->scheduleFlush();
 
@@ -230,7 +234,7 @@ class curlPool
                     $this->schedule(self::LEGACY_INTERVAL);
                 }
             } elseif ($this->timer !== null || $this->autoRun) {
-                $this->kick();
+                $this->scheduleKick();
             }
         }
 
@@ -420,6 +424,7 @@ class curlPool
 
     /**
      * Opt-in: reject add() with exception\queueFullException when $max requests are queued already.
+     * While the pool runs, requests that will take a free transfer slot on the next tick do not count.
      *
      * @param int $max 0 - unlimited (default)
      */
@@ -895,7 +900,37 @@ class curlPool
     }
 
     /**
-     * Start what add() queued while the pool is running, without waiting for the next tick
+     * @return int free transfer slots the requests added now take on the next tick (0 when add() does not start them)
+     */
+    protected function slotsOnKick()
+    {
+        if ($this->inTick || $this->isLegacy() || ($this->timer === null && !$this->autoRun)) {
+            return 0;
+        }
+
+        return max(0, $this->maxRequest - count($this->active));
+    }
+
+    /**
+     * Start what add() queued on the next loop tick, not inside add(): under throttling the
+     * requests added in one go are checked together and start as one batch (as with khr)
+     */
+    protected function scheduleKick()
+    {
+        if ($this->kickScheduled) {
+            return;
+        }
+        $this->kickScheduled = true;
+        $this->loop->futureTick(function () {
+            $this->kickScheduled = false;
+            if (!$this->inTick && !$this->isLegacy() && $this->queued > 0) {
+                $this->kick();
+            }
+        });
+    }
+
+    /**
+     * Start what add() queued while the pool is running, without waiting for the next poll round
      */
     protected function kick()
     {

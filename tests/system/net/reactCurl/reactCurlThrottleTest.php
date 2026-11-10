@@ -121,6 +121,35 @@ class reactCurlThrottleTest extends reactCurlTestCase
         $this->assertGaps($gaps, 0.59, 0.67);
     }
 
+    /**
+     * Requests added in one go while the client runs, after the sleep of the default throttle
+     * is over, start as one batch as with khr (checked together on the next round, not one by one
+     * in add(): the first one would move the sleep mark and hold the rest for 0.9s).
+     */
+    public function testBatchAddedWhileRunningStartsTogether()
+    {
+        $loop = $this->createLoop();
+        $client = $this->createClient($loop, false);
+        $arrivals = [];
+        $slowDone = false;
+        $client->prepareTask(self::httpBase() . '/slow?s=1.5')->then(function () use (&$slowDone) {
+            $slowDone = true;
+        });
+        $client->run();
+        $loop->addTimer(1.0, function () use ($client, &$arrivals) {
+            for ($i = 0; $i < 5; $i++) {
+                $client->prepareTask(self::httpBase() . '/ts?i=' . $i)->then(function ($result) use (&$arrivals) {
+                    $arrivals[] = (float)$result->getBody();
+                });
+            }
+        });
+        $this->runLoop($loop, function () use (&$arrivals, &$slowDone) {
+            return count($arrivals) >= 5 && $slowDone;
+        }, 5);
+        sort($arrivals);
+        $this->assertLessThan(0.1, end($arrivals) - $arrivals[0], 'arrivals: ' . json_encode($arrivals));
+    }
+
     public function testZeroSleepDisablesThrottling()
     {
         list($sizes) = $this->measure(function ($client) {

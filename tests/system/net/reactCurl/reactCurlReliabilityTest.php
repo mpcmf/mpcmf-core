@@ -184,10 +184,11 @@ class reactCurlReliabilityTest extends reactCurlTestCase
         $client->prepareTask(self::httpBase() . '/ok');
         $client->prepareTask(self::httpBase() . '/ok');
         $inside = false;
+        // started on the next tick: the bad option is found after the queue limit rejected the last two
         $this->runLoop($loop, function () use (&$calledInside) {
-            return count($calledInside) >= 2;
+            return count($calledInside) >= 3;
         });
-        $this->assertSame([false, false], $calledInside);
+        $this->assertSame([false, false, false], $calledInside);
     }
 
     /**
