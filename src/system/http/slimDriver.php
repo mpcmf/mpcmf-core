@@ -5,6 +5,15 @@ use Slim\Slim;
 
 class slimDriver extends Slim 
 {
+    /**
+     * Distinct deprecations kept to log each one once per process
+     */
+    const LOGGED_DEPRECATIONS_LIMIT = 10000;
+
+    /**
+     * @var bool[] "file:line message" of deprecations logged in this process
+     */
+    private static $loggedDeprecations = [];
 
     /**
      * Same as Slim::run(), but with PHP 8 aware error handler
@@ -90,7 +99,8 @@ class slimDriver extends Slim
      * Slim error handler with PHP 7 semantics on PHP 8
      *
      * Slim turns every reported error into ErrorException (HTTP 500), so deprecations are only logged
-     * and notices promoted to warnings in PHP 8.0 are handled as notices again.
+     * (each distinct one once per process) and notices promoted to warnings in PHP 8.0 are handled as
+     * notices again.
      *
      * @param int    $errno
      * @param string $errstr
@@ -103,7 +113,12 @@ class slimDriver extends Slim
     public static function handleErrors($errno, $errstr = '', $errfile = '', $errline = '')
     {
         if ($errno & (E_DEPRECATED | E_USER_DEPRECATED)) {
-            if ($errno & error_reporting()) {
+            $key = "{$errfile}:{$errline} {$errstr}";
+            if (($errno & error_reporting()) && !isset(self::$loggedDeprecations[$key])) {
+                if (count(self::$loggedDeprecations) >= self::LOGGED_DEPRECATIONS_LIMIT) {
+                    self::$loggedDeprecations = [];
+                }
+                self::$loggedDeprecations[$key] = true;
                 error_log("Deprecated: {$errstr} in {$errfile}:{$errline}");
             }
 
