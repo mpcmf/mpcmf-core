@@ -357,7 +357,7 @@ class threadPool
      * @param thread     $thread
      * @param int        $grace
      */
-    private function terminate($thread_key, thread $thread, $grace)
+    protected function terminate($thread_key, thread $thread, $grace)
     {
         if(!isset($this->terminatedAt[$thread_key])) {
             $thread->signal(SIGTERM);
@@ -472,7 +472,7 @@ class threadPool
      * @throws \InvalidArgumentException
      * @throws threadException
      */
-    private function createThread($task, $arguments)
+    protected function createThread($task, $arguments)
     {
         if($this->startMethod === self::START_FORK) {
             return new thread($task);
@@ -499,7 +499,7 @@ class threadPool
      *
      * @return string
      */
-    private function getChildTitle()
+    protected function getChildTitle()
     {
         $title = (string)cli_get_process_title();
         if($title === '' && is_readable('/proc/self/cmdline')) {
@@ -514,7 +514,7 @@ class threadPool
      *
      * @return array
      */
-    private function getChildEnv()
+    protected function getChildEnv()
     {
         $env = getenv();
         $env[spawnThread::ENV_TITLE] = $this->getChildTitle();

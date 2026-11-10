@@ -83,7 +83,7 @@ class action
      *
      * @return bool
      */
-    private static function isCallableMethod(array $callable)
+    protected static function isCallableMethod(array $callable)
     {
         if(is_callable($callable)) {
 

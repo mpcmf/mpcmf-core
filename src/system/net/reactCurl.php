@@ -338,7 +338,7 @@ class reactCurl
      * Exceptions thrown by done/error callbacks were swallowed silently by the promise: log them,
      * then rethrow so the promise chain behaves exactly as before.
      */
-    private function guardCallback($callback, $kind)
+    protected function guardCallback($callback, $kind)
     {
         if (!is_callable($callback)) {
             return $callback;

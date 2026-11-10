@@ -593,7 +593,7 @@ class rabbit
      * @throws \AMQPConnectionException
      * @throws \AMQPChannelException
      */
-    private function openChannel(&$channels, $force, $transactional)
+    protected function openChannel(&$channels, $force, $transactional)
     {
         if(function_exists('posix_getpid')) {
             $pid = posix_getpid();

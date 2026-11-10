@@ -46,10 +46,10 @@ class curlPool
     /** Result written to temporary files (MCurl\Client compatible) */
     const STREAM_FILE = 'php://temp/maxmemory:0';
 
-    private const LEGACY_INTERVAL = 0.01;
+    const LEGACY_INTERVAL = 0.01;
 
     /** Ticks without progress before the adaptive interval starts to grow */
-    private const ADAPTIVE_HOLD_TICKS = 5;
+    const ADAPTIVE_HOLD_TICKS = 5;
 
     /** @var LoopInterface */
     protected $loop;
