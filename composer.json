@@ -1,6 +1,5 @@
 {
   "name": "mpcmf/mpcmf-core",
-  "version": "1.0.0-dev",
   "description": "Build fast and powerful console and web applications. Part of mpcmf solution.",
   "keywords": [
     "cache",
