@@ -234,13 +234,18 @@ class rabbit
 
         try {
 
-            return $this->getExchange($queueName, $queueType)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
+            // ext-amqp 2.x: publish() returns void and throws on failure, 1.x returned true
+            $this->getExchange($queueName, $queueType)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
+
+            return true;
         } catch (\AMQPException $e) {
             $m = $e->getMessage();
             if($m === 'Could not publish to exchange. No channel available.') {
                 self::log()->addWarning("Reconnecting to rabbit because of exception in publish: {$e->getMessage()}");
 
-                return $this->getExchange($queueName, $queueType, true)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
+                $this->getExchange($queueName, $queueType, true)->publish($this->prepareBody($body), $queueName, AMQP_NOPARAM, $options);
+
+                return true;
             }
 
             throw $e;
@@ -274,11 +279,12 @@ class rabbit
     {
         $contentTypeHeader = $envelope->getHeader(self::HEADER_CONTENT_TYPE);
 
-        if ($contentTypeHeader === false) {
+        // ext-amqp 2.x returns null for a missing header, 1.x returned false
+        if ($contentTypeHeader === false || $contentTypeHeader === null) {
             $contentTypeHeader = $envelope->getHeader('content-type');
         }
 
-        if ($contentTypeHeader === 'text/plain' || $contentTypeHeader === false) {
+        if ($contentTypeHeader === 'text/plain' || $contentTypeHeader === false || $contentTypeHeader === null) {
             // TODO: Remove this
             return $envelope->getBody();
         }
@@ -341,7 +347,9 @@ class rabbit
             $options['delivery_mode'] = self::MESSAGE_DELIVERY_PERSISTENT;
         }
 
-        return $this->getExchange($delayQueueName, self::EXCHANGE_TYPE_FANOUT)->publish(json_encode($body), $queueName, AMQP_NOPARAM, $options);
+        $this->getExchange($delayQueueName, self::EXCHANGE_TYPE_FANOUT)->publish(json_encode($body), $queueName, AMQP_NOPARAM, $options);
+
+        return true;
     }
 
     /**
@@ -355,7 +363,9 @@ class rabbit
         $this->checkProcessState();
         $status = false;
         if ($this->transactionStarted) {
-            $status = $this->getChannel()->commitTransaction();
+            // ext-amqp 2.x: commitTransaction() returns void and throws on failure, 1.x returned true
+            $this->getChannel()->commitTransaction();
+            $status = true;
             $this->transactionStarted = false;
         }
 
